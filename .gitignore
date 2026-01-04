@@ -1,0 +1,29 @@
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# NodeJS
+node_modules/
+dist/
+build/
+.npm/
+
+# Database
+*.sqlite3
+# Keeping f1_data.db and votes.db for demo purposes unless they get too big
+# *.db 
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Cache
+cache/

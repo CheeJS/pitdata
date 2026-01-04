@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "C:\Users\User\Desktop\f1\backend\services\f1_service.py", line 759, in run_monte_carlo_simulation
+    drivers = session.query(Driver).all()
+NameError: name 'Driver' is not defined

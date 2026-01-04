@@ -1,0 +1,5 @@
+sqlalchemy
+pandas
+fastf1
+psycopg2-binary
+tqdm

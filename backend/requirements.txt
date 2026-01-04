@@ -1,0 +1,6 @@
+flask
+flask-cors
+fastf1
+pandas
+numpy
+gunicorn
