@@ -74,15 +74,26 @@ def get_vote_stats(race_id):
         
         # Aggregation Logic
         winner_counts = {}
+        sc_values = []
         
         for v in votes:
-            val = json.loads(v.value)
-            if v.category == "winner":
-                driver = val
-                winner_counts[driver] = winner_counts.get(driver, 0) + 1
-            elif v.category == "podium":
-                # val is ["P1", "P2", "P3"]
-                pass # TODO: complex aggregation for podiums
+            try:
+                val = json.loads(v.value)
+                
+                if v.category == "winner":
+                    # Handle legacy string vs new object
+                    driver = val.get("code") if isinstance(val, dict) else val
+                    if driver:
+                        winner_counts[driver] = winner_counts.get(driver, 0) + 1
+                        
+                elif v.category == "safety_car":
+                    # Handle legacy "YES"/"NO" -> 100/0 map, or new distinct int
+                    if val == "YES": sc_values.append(100)
+                    elif val == "NO": sc_values.append(0)
+                    elif isinstance(val, (int, float)): sc_values.append(val)
+                    
+            except:
+                continue
 
         # Format Winner Stats
         total_winner_votes = sum(winner_counts.values()) or 1
@@ -91,6 +102,9 @@ def get_vote_stats(race_id):
             for k, v in winner_counts.items()
         ]
         stats["winner"].sort(key=lambda x: x["count"], reverse=True)
+        
+        # Format SC Stats
+        stats["safety_car_avg"] = round(sum(sc_values) / len(sc_values)) if sc_values else 0
 
         return stats
     except Exception as e:

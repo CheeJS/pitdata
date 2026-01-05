@@ -169,11 +169,19 @@ def get_races_list(year=None):
         result = []
         for r in races:
             code = get_code(r.race_name)
-            # If code is still generic unk_X, we might want to try harder or just accept it.
-            # But the 'unk_X' ensures uniqueness for React keys.
+            
+            # Circuit Context Mock/Map
+            cond = {"weather": "Dry", "temp": "25°C", "deg": "Med Deg", "sc_prob": "Low"}
+            if code in ['sin', 'mon', 'baku', 'jed', 'lvg']:
+                 cond = {"weather": "Humid", "temp": "29°C", "deg": "High Deg", "sc_prob": "High (Street)"}
+            elif code in ['spa', 'gbr', 'ned', 'can']:
+                 cond = {"weather": "Mixed", "temp": "18°C", "deg": "Med Deg", "sc_prob": "Med (Weather)"}
+            elif code in ['bhr', 'abud', 'qat', 'sau']:
+                 cond = {"weather": "Dry", "temp": "28°C", "deg": "High Deg", "sc_prob": "Low-Med"}
+            elif code in ['aut', 'ita', 'usa', 'mex']:
+                 cond = {"weather": "Dry", "temp": "26°C", "deg": "Med Deg", "sc_prob": "Med"}
             
             circuit_info = CIRCUIT_DATA.get(code, {})
-            # If unknown, default laps = 50
             laps = circuit_info.get("laps", 50) 
             
             result.append({
@@ -194,7 +202,9 @@ def get_races_list(year=None):
                 "laps": laps,
                 "round": r.round,
                 "date": r.date.strftime('%d %b %Y'),
-                "date_iso": r.date.isoformat() if r.date else None
+                "date_iso": r.date.isoformat() if r.date else None,
+                "conditions": f"{cond['weather']} • {cond['temp']} • {cond['deg']}",
+                "sc_context": f"Based on {cond['sc_prob']} incident rate"
             })
         return result
     except Exception as e:
