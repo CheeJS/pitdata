@@ -45,6 +45,7 @@ class Result(Base):
     status = Column(String)
     points = Column(Float)
     time_str = Column(String)
+    session_type = Column(String) # NEW: 'FP1', 'FP2', 'FP3', 'Q', 'S', 'R'
     race = relationship("Race", back_populates="results")
 
 class Lap(Base):
@@ -135,181 +136,270 @@ def sync_season(session, year):
         
         try:
             # Load FastF1 Session (Enable telemetry for map/graph)
-            f1_session = fastf1.get_session(year, round_num, 'R')
-            f1_session.load(telemetry=True, weather=True, messages=True) 
+            # Iterate through all possible sessions
+            # Mapping: fp1, fp2, fp3, qualifying, sprint qualifying (shootout), sprint, race
+            # FastF1 uses identifiers: 'FP1', 'FP2', 'FP3', 'Q', 'SS', 'S', 'R'
             
-            # 1. Results
-            results = f1_session.results
-            result_objects = []
-            for _, row in results.iterrows():
-                time_val = str(row['Time']).split('days')[-1].strip()
-                if pd.isna(row['Time']):
-                    time_val = row['Status']
-
-                result = Result(
-                    race_id=race.id,
-                    position=row['Position'],
-                    driver_number=str(row['DriverNumber']),
-                    driver_code=row['Abbreviation'],
-                    driver_name=row['FullName'],
-                    team_name=row['TeamName'],
-                    grid_position=row['GridPosition'],
-                    status=row['Status'],
-                    points=row['Points'],
-                    time_str=time_val
-                )
-                result_objects.append(result)
-            session.add_all(result_objects)
+            session_types = ['FP1', 'FP2', 'FP3', 'Q', 'SS', 'S', 'R']
             
-            # 2. Laps & Tyres
-            print("    Fetching Lap Data...")
-            laps = f1_session.laps
-            lap_objects = []
-            for _, row in laps.iterrows():
-                lt = row['LapTime'].total_seconds() if not pd.isna(row['LapTime']) else None
-                # Cumulative Time (Time when they crossed the line)
-                ct = row['Time'].total_seconds() if not pd.isna(row['Time']) else None
-                
-                pos = int(row['Position']) if not pd.isna(row['Position']) else None
-                
-                # Tyre info
-                compound = row['Compound'] if 'Compound' in row else 'UNKNOWN'
-
-                lap = Lap(
-                    race_id=race.id,
-                    driver=row['Driver'],
-                    lap_number=int(row['LapNumber']),
-                    position=pos,
-                    lap_time=lt,
-                    cumulative_time=ct,
-                    tyre_compound=compound
-                )
-                lap_objects.append(lap)
-            session.add_all(lap_objects)
-
-            # 3. Map & Telemetry
-            print("    Fetching Map & Telemetry...")
-            
-            # Circuit Map (Use overall fastest lap for reference line)
-            fastest_lap = laps.pick_fastest()
-            if fastest_lap is not None:
-                # Use get_telemetry() to get merged CarData + PosData + Distance
-                lap_tel = fastest_lap.get_telemetry().add_distance()
-                
-                # Circuit Info (Corners)
-                circuit_info = f1_session.get_circuit_info()
-                corners_data = [] 
-                if circuit_info is not None:
-                    for _, c_row in circuit_info.corners.iterrows():
-                        corners_data.append({
-                            "number": c_row['Number'],
-                            "letter": c_row['Letter'],
-                            "distance": c_row['Distance'],
-                            "angle": c_row['Angle']
-                        })
-
-                # Circuit Map (Downsample)
-                x_vals = lap_tel['X'].iloc[::10].tolist()
-                y_vals = lap_tel['Y'].iloc[::10].tolist()
-                d_vals = lap_tel['Distance'].iloc[::10].tolist()
-                
-                circuit = Circuit(
-                    race_id=race.id,
-                    x_json=json.dumps(x_vals),
-                    y_json=json.dumps(y_vals),
-                    distance_json=json.dumps(d_vals),
-                    corners_json=json.dumps(corners_data)
-                )
-                session.add(circuit)
-
-            # Telemetry for ALL Drivers
-            telemetry_objects = []
-            unique_drivers = laps['Driver'].unique()
-            
-            for drv in unique_drivers:
+            for session_code in session_types:
                 try:
-                    drv_laps = laps.pick_driver(drv)
-                    if drv_laps.shape[0] == 0: continue
+                    f1_session = fastf1.get_session(year, round_num, session_code)
+                    # Check if session exists (some weekends don't have Sprint, etc)
+                    # FastF1 might raise error or return empty if not found? 
+                    # actually get_session returns object, .load() is where it might fail or show "no data"
                     
-                    fl = drv_laps.pick_fastest()
-                    if fl is None: continue
+                    print(f"    Processing Session: {session_code}...")
+                    # Only load what's needed. Telemetry only for Race for now to save space/time, unless requested?
+                    # User asked for RESULTS of these sessions.
+                    # Telemetry loading is heavy. Let's load minimal data for non-Race sessions.
                     
-                    # Fetch Car Data
-                    car_data = fl.get_car_data().add_distance()
+                    if session_code == 'R':
+                        f1_session.load(telemetry=True, weather=True, messages=True)
+                    else:
+                        f1_session.load(telemetry=False, weather=False, messages=False) # Lighter load for practice/quali results
+                        
+                    # 1. Results
+                    if not hasattr(f1_session, 'results') or f1_session.results.empty:
+                        print(f"      No results for {session_code}")
+                        continue
+
+                    results = f1_session.results
+                    result_objects = []
+                    for _, row in results.iterrows():
+                        time_val = str(row['Time']).split('days')[-1].strip()
+                        if pd.isna(row['Time']):
+                            time_val = str(row['Status']) # e.g. "DnF"
+
+                        # For Quali/Practice, "Time" might be best lap time?
+                        # FastF1 `results` df has columns like 'Q1', 'Q2', 'Q3' for Quali.
+                        # Standardization: Use 'Time' (Gap) for Race, 'BestLapTime' for others?
+                        
+                        display_time = time_val
+                        if session_code in ['Q', 'FP1', 'FP2', 'FP3', 'S']:
+                             # Try to get best time
+                             if 'Time' in row and not pd.isna(row['Time']):
+                                 display_time = str(row['Time']).split('days')[-1].strip()
+                             elif not pd.isna(row.get('Q3')):
+                                 display_time = str(row['Q3']).split('days')[-1].strip()
+                             elif not pd.isna(row.get('Q2')):
+                                 display_time = str(row['Q2']).split('days')[-1].strip()
+                             elif not pd.isna(row.get('Q1')):
+                                 display_time = str(row['Q1']).split('days')[-1].strip()
+                        
+                        result = Result(
+                            race_id=race.id,
+                            position=row['Position'],
+                            driver_number=str(row['DriverNumber']),
+                            driver_code=row['Abbreviation'],
+                            driver_name=row['FullName'],
+                            team_name=row['TeamName'],
+                            grid_position=row.get('GridPosition', 0), # Grid pos irrelevant for FP
+                            status=str(row['Status']),
+                            points=row['Points'],
+                            time_str=display_time,
+                            session_type=session_code
+                        )
+                        result_objects.append(result)
                     
-                    # Downsample
-                    dist_vals = car_data['Distance'].iloc[::10].tolist()
-                    speed_vals = car_data['Speed'].iloc[::10].tolist()
-                    throttle_vals = car_data['Throttle'].iloc[::10].tolist()
-                    brake_vals = car_data['Brake'].iloc[::10].tolist()
-                    gear_vals = car_data['nGear'].iloc[::10].tolist()
-                    rpm_vals = car_data['RPM'].iloc[::10].tolist()
-
-                    telemetry = Telemetry(
-                        race_id=race.id,
-                        driver=drv,
-                        distance_json=json.dumps(dist_vals),
-                        speed_json=json.dumps(speed_vals),
-                        throttle_json=json.dumps(throttle_vals),
-                        brake_json=json.dumps(brake_vals),
-                        gear_json=json.dumps(gear_vals),
-                        rpm_json=json.dumps(rpm_vals)
-                    )
-                    telemetry_objects.append(telemetry)
-                except Exception as e:
-                    print(f"      Skipping telemetry for {drv}: {e}")
-
-            session.add_all(telemetry_objects)
-
-            session.commit()
-            print(f"    Saved Results, Laps, Map, and Telemetry.")
-
-            # 6. Race Status & Weather
-            # Track Status
-            track_status = f1_session.track_status
-            weather_data = f1_session.weather_data
-            
-            status_objects = []
-            
-            # Flags
-            # Status: 1=Green, 2=Yellow, 3=SC, 4=Red, 5=VSC
-            for _, row in track_status.iterrows():
-                val = str(row['Status'])
-                label = 'GREEN'
-                if '2' in val: label = 'YELLOW'
-                if '3' in val: label = 'SC'
-                if '4' in val: label = 'RED'
-                if '5' in val: label = 'VSC'
+                    session.add_all(result_objects)
+                    
+                    # Only process Race-specific heavy data (Laps, Map, Telemetry) for the 'R' session as originally designed
+                    if session_code == 'R':
+                        # ... (Original Logic for Laps, Map, Telemetry) ...
+                        pass # The indented block below handles this, need to ensure indentation matches
                 
-                # Deduplicate? FastF1 gives intervals. Just log start times.
-                s = RaceStatus(
-                    race_id=race.id,
-                    time=row['Time'].total_seconds(),
-                    status=label,
-                    weather=None
-                )
-                status_objects.append(s)
+                except Exception as e_sess:
+                     print(f"      Could not process session {session_code}: {e_sess}")
+                     continue
 
-            # Weather (Sample every 5 mins or on change)
-            # Weather data is high freq.
-            for _, row in weather_data.iloc[::10].iterrows(): # Downsample
-                 w_info = {
-                     'temp': row['AirTemp'],
-                     'track_temp': row['TrackTemp'],
-                     'rain': row['Rainfall'],
-                     'humidity': row['Humidity']
-                 }
-                 s = RaceStatus(
-                    race_id=race.id,
-                    time=row['Time'].total_seconds(),
-                    status='WEATHER',
-                    weather=json.dumps(w_info)
-                 )
-                 status_objects.append(s)
+            # Original Logic block for Laps/Map was indented under the single `f1_session` load.
+            # Now we need to make sure we only run that logic if we have the 'R' session loaded.
+            # So I will wrap the remaining logic in `if session_code == 'R':` block?
+            # Or simpler: re-fetch the 'R' session specifically for the heavy lifting after the loop?
+            # No, efficiency.
             
-            session.add_all(status_objects)
-            session.commit()
-            print(f"    Saved Status and Weather events.")
+            # The tool call replace_file_content is tricky here because the original extraction logic follows immediately.
+            # I should rewrite the extraction logic to be inside the loop, conditionally.
+
+            
+            # 2. Laps & Tyres (Race Only)
+            # We need to ensure 'R' session runs this. 
+            # The structure above is complex to refactor in one go via chunks.
+            # Ideally, I'd split the Result extraction from the Lap/Telemetry extraction.
+            # But ETL is a single script.
+            
+            # STRATEGY: 
+            # 1. Loop types for RESULTS.
+            # 2. Then, purely for 'R' session, load Laps/Telemetry.
+            
+            # Reloading 'R' might be cleaner for the replace logic than complex nesting.
+            
+            # Let's try this:
+            # The chunk above replaces the Result Logic.
+            # Then I add a specific 'R' session loader for the rest?
+            
+            # Actually, the user wants me to do this now.
+            # I will modify extraction logic to be cleaner.
+
+            # --- 2. Laps, Map & Telemetry (Race Session Only) ---
+            # We explicitly reload the 'R' session to ensure we have the correct data for the heavy lifting.
+            try:
+                print("    Processing Full Race Data (Laps/Telemetry)...")
+                f1_session = fastf1.get_session(year, round_num, 'R')
+                f1_session.load(telemetry=True, weather=True, messages=True)
+
+                # laps & Tyres
+                print("    Fetching Lap Data...")
+                laps = f1_session.laps
+                lap_objects = []
+                for _, row in laps.iterrows():
+                    lt = row['LapTime'].total_seconds() if not pd.isna(row['LapTime']) else None
+                    # Cumulative Time (Time when they crossed the line)
+                    ct = row['Time'].total_seconds() if not pd.isna(row['Time']) else None
+                    
+                    pos = int(row['Position']) if not pd.isna(row['Position']) else None
+                    
+                    # Tyre info
+                    compound = row['Compound'] if 'Compound' in row else 'UNKNOWN'
+
+                    lap = Lap(
+                        race_id=race.id,
+                        driver=row['Driver'],
+                        lap_number=int(row['LapNumber']),
+                        position=pos,
+                        lap_time=lt,
+                        cumulative_time=ct,
+                        tyre_compound=compound
+                    )
+                    lap_objects.append(lap)
+                session.add_all(lap_objects)
+
+                # 3. Map & Telemetry
+                print("    Fetching Map & Telemetry...")
+                
+                # Circuit Map (Use overall fastest lap for reference line)
+                fastest_lap = laps.pick_fastest()
+                if fastest_lap is not None:
+                    # Use get_telemetry() to get merged CarData + PosData + Distance
+                    lap_tel = fastest_lap.get_telemetry().add_distance()
+                    
+                    # Circuit Info (Corners)
+                    circuit_info = f1_session.get_circuit_info()
+                    corners_data = [] 
+                    if circuit_info is not None:
+                        for _, c_row in circuit_info.corners.iterrows():
+                            corners_data.append({
+                                "number": c_row['Number'],
+                                "letter": c_row['Letter'],
+                                "distance": c_row['Distance'],
+                                "angle": c_row['Angle']
+                            })
+
+                    # Circuit Map (Downsample)
+                    x_vals = lap_tel['X'].iloc[::10].tolist()
+                    y_vals = lap_tel['Y'].iloc[::10].tolist()
+                    d_vals = lap_tel['Distance'].iloc[::10].tolist()
+                    
+                    circuit = Circuit(
+                        race_id=race.id,
+                        x_json=json.dumps(x_vals),
+                        y_json=json.dumps(y_vals),
+                        distance_json=json.dumps(d_vals),
+                        corners_json=json.dumps(corners_data)
+                    )
+                    session.add(circuit)
+
+                # Telemetry for ALL Drivers
+                telemetry_objects = []
+                unique_drivers = laps['Driver'].unique()
+                
+                for drv in unique_drivers:
+                    try:
+                        drv_laps = laps.pick_driver(drv)
+                        if drv_laps.shape[0] == 0: continue
+                        
+                        fl = drv_laps.pick_fastest()
+                        if fl is None: continue
+                        
+                        # Fetch Car Data
+                        car_data = fl.get_car_data().add_distance()
+                        
+                        # Downsample
+                        dist_vals = car_data['Distance'].iloc[::10].tolist()
+                        speed_vals = car_data['Speed'].iloc[::10].tolist()
+                        throttle_vals = car_data['Throttle'].iloc[::10].tolist()
+                        brake_vals = car_data['Brake'].iloc[::10].tolist()
+                        gear_vals = car_data['nGear'].iloc[::10].tolist()
+                        rpm_vals = car_data['RPM'].iloc[::10].tolist()
+
+                        telemetry = Telemetry(
+                            race_id=race.id,
+                            driver=drv,
+                            distance_json=json.dumps(dist_vals),
+                            speed_json=json.dumps(speed_vals),
+                            throttle_json=json.dumps(throttle_vals),
+                            brake_json=json.dumps(brake_vals),
+                            gear_json=json.dumps(gear_vals),
+                            rpm_json=json.dumps(rpm_vals)
+                        )
+                        telemetry_objects.append(telemetry)
+                    except Exception as e:
+                        print(f"      Skipping telemetry for {drv}: {e}")
+
+                session.add_all(telemetry_objects)
+
+                session.commit()
+                print(f"    Saved Results, Laps, Map, and Telemetry.")
+
+                # 6. Race Status & Weather
+                # Track Status
+                track_status = f1_session.track_status
+                weather_data = f1_session.weather_data
+                
+                status_objects = []
+                
+                # Flags
+                # Status: 1=Green, 2=Yellow, 3=SC, 4=Red, 5=VSC
+                for _, row in track_status.iterrows():
+                    val = str(row['Status'])
+                    label = 'GREEN'
+                    if '2' in val: label = 'YELLOW'
+                    if '3' in val: label = 'SC'
+                    if '4' in val: label = 'RED'
+                    if '5' in val: label = 'VSC'
+                    
+                    s = RaceStatus(
+                        race_id=race.id,
+                        time=row['Time'].total_seconds(),
+                        status=label,
+                        weather=None
+                    )
+                    status_objects.append(s)
+
+                # Weather (Sample every 5 mins or on change)
+                for _, row in weather_data.iloc[::10].iterrows(): # Downsample
+                     w_info = {
+                         'temp': row['AirTemp'],
+                         'track_temp': row['TrackTemp'],
+                         'rain': row['Rainfall'],
+                         'humidity': row['Humidity']
+                     }
+                     s = RaceStatus(
+                        race_id=race.id,
+                        time=row['Time'].total_seconds(),
+                        status='WEATHER',
+                        weather=json.dumps(w_info)
+                     )
+                     status_objects.append(s)
+                
+                session.add_all(status_objects)
+                session.commit()
+                print(f"    Saved Status and Weather events.")
+
+            except Exception as e_race:
+                print(f"    Error processing detailed race data: {e_race}")
+                session.rollback()
 
         except Exception as e:
             print(f"    Error processing {race_name}: {e}")

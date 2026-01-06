@@ -511,7 +511,7 @@ function StrategyView({ races }) {
         if (!selectedRace) return;
         setLoading(true);
         const params = new URLSearchParams();
-        params.append('race_id', selectedRace.id);
+        params.append('race_id', selectedRace.code);
         params.append('laps', selectedRace.laps);
         params.append('traffic', traffic);
         params.append('deg', degMult);

@@ -37,6 +37,7 @@ class Result(Base):
     status = Column(String)
     points = Column(Float)
     time_str = Column(String)
+    session_type = Column(String) # NEW: 'R', 'Q', 'S', etc.
     race = relationship("Race", back_populates="results")
 
 class Lap(Base):
@@ -92,39 +93,94 @@ def get_db_session():
     Session = sessionmaker(bind=engine)
     return Session()
 
+def get_race_results_by_id(race_id):
+    session = get_db_session()
+    try:
+        race = session.query(Race).filter(Race.id == race_id).first()
+        if not race: return None
+
+        # Fetch all results for this race
+        # We want to group them by session_type? Or just return flat list and frontend filters?
+        # Backend grouping is cleaner.
+        results = session.query(Result).filter(Result.race_id == race_id).all()
+        
+        # Helper to format result row
+        def format_res(r):
+            return {
+                "pos": r.position,
+                "driver": r.driver_name,
+                "code": r.driver_code,
+                "team": r.team_name,
+                "time": r.time_str,
+                "pts": r.points,
+                "status": r.status,
+                "grid": r.grid_position,
+                "session": r.session_type if r.session_type else 'R' # Default to Race if null
+            }
+
+        grouped_results = {}
+        # Pre-initialize common sessions to ensure order? Frontend can handle order.
+        
+        for r in results:
+            stype = r.session_type if r.session_type else 'R'
+            if stype not in grouped_results: grouped_results[stype] = []
+            grouped_results[stype].append(format_res(r))
+            
+        # Query Fastest Lap from Laps table
+        fastest_lap = session.query(Lap).filter(Lap.race_id == race_id, Lap.lap_time.isnot(None))\
+            .order_by(Lap.lap_time.asc()).first()
+            
+        fl_data = { "driver": "N/A", "time": "N/A" }
+        if fastest_lap:
+            # Format time: seconds to M:SS.ms
+            m = int(fastest_lap.lap_time // 60)
+            s = fastest_lap.lap_time % 60
+            fl_data = {
+                "driver": fastest_lap.driver,
+                "time": f"{m}:{s:.3f}"
+            }
+        
+        response = {
+            "raceId": race.id,
+            "raceName": race.race_name,
+            "circuit": race.circuit_name,
+            "date": race.date.strftime("%d %b %Y"),
+            "results": grouped_results,
+            "fastestLap": fl_data,
+            "winner": "N/A",
+            "winnerTeam": "N/A"
+        }
+        
+        # Add 'winner' info from Race session
+        race_results = grouped_results.get('R', [])
+        if race_results:
+            # Sort by pos
+            race_results.sort(key=lambda x: int(x['pos']) if isinstance(x['pos'], int) else 999)
+            if race_results:
+                winner = race_results[0]
+                response["winner"] = winner["driver"]
+                response["winnerTeam"] = winner["team"]
+        
+        return response
+
+    except Exception as e:
+        print(f"Error fetching race results: {e}")
+        return None
+    finally:
+        session.close()
+
 def get_latest_race_results():
     session = get_db_session()
     try:
         latest_race = session.query(Race).join(Result).order_by(Race.date.desc()).first()
         if not latest_race: return None
-            
-        results = session.query(Result).filter_by(race_id=latest_race.id).order_by(Result.position).all()
-        
-        data = {
-            "raceId": latest_race.id,
-            "raceName": latest_race.race_name,
-            "circuit": latest_race.circuit_name,
-            "date": latest_race.date.strftime('%d %b %Y'),
-            "winner": results[0].driver_name if results else "N/A",
-            "winnerTeam": results[0].team_name if results else "N/A",
-            "fastestLap": { "driver": "N/A", "time": "N/A" },
-            "results": []
-        }
-        
-        for r in results[:10]: 
-            data['results'].append({
-                "pos": r.position,
-                "driver": r.driver_name,
-                "team": r.team_name,
-                "time": r.time_str,
-                "pts": r.points
-            })
-        return data
+        return get_race_results_by_id(latest_race.id)
     except Exception as e:
-        print(f"DB Error: {e}")
+        print(f"Error fetching latest results: {e}")
         return None
     finally:
         session.close()
+
 
 def get_races_list(year=None):
     session = get_db_session()
@@ -185,24 +241,14 @@ def get_races_list(year=None):
             laps = circuit_info.get("laps", 50) 
             
             result.append({
-                "id": str(r.id), # Keep DB ID for some calls? Or use code? Frontend uses code for Strategy. 
-                # Strategy expects 'race_id' to be the code ('abu'). 
-                # But Simulations.jsx expects 'id' to be the code.
-                # Let's verify what Simulation.jsx uses.
-                # It uses SelectedRace.id. And passes it to API as race_id.
-                # Strategy API expects 'abu', 'bhr'. 
-                # So we MUST set 'id' = code here to match Frontend expectation.
-                # But wait, other parts of app might use numeric ID.
-                # Dashboard uses numeric ID for /api/replay/<id>.
-                # So we need TWO IDs.
-                "db_id": r.id,
-                "id": code, # Override standard ID with code for Strategy compatibility
+                "id": r.id,     # DB ID (Integer) for History/Results API
+                "code": code,   # String Code ('aus') for Strategy/Simulations
                 "name": r.race_name.replace(" Grand Prix", ""),
-                "code": code.upper(),
-                "laps": laps,
+                "date": r.date.strftime("%d %b %Y"),
+                "circuit": r.circuit_name,
                 "round": r.round,
-                "date": r.date.strftime('%d %b %Y'),
-                "date_iso": r.date.isoformat() if r.date else None,
+                "status": "Completed" if r.date < datetime.now() else "Upcoming",
+                "laps": laps,
                 "conditions": f"{cond['weather']} • {cond['temp']} • {cond['deg']}",
                 "sc_context": f"Based on {cond['sc_prob']} incident rate"
             })

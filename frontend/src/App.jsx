@@ -7,6 +7,7 @@ import TelemetryAnalysis from './components/TelemetryAnalysis';
 import Standings from './pages/Standings';
 import Simulations from './pages/Simulations';
 import Predictions from './pages/Predictions';
+import History from './pages/History';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -86,7 +87,7 @@ export default function App() {
               {activeTab === 'analysis' && <TelemetryAnalysis raceId={raceData?.raceId} />}
               {activeTab === 'standings' && <Standings />}
               {activeTab === 'simulations' && <Simulations />}
-              {activeTab === 'history' && <PlaceholderView title="History" />}
+              {activeTab === 'history' && <History />}
               {activeTab === 'predictions' && <Predictions />}
             </>
           )}
@@ -163,8 +164,8 @@ function DashboardView({ data }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatBox
           label="Fastest Lap"
-          value={data.fastestLap.time}
-          sub={data.fastestLap.driver}
+          value={data.fastestLap?.time || "N/A"}
+          sub={data.fastestLap?.driver || "N/A"}
           icon={<Timer />}
           color="purple"
         />
@@ -208,7 +209,7 @@ function DashboardView({ data }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#2A2A30]">
-              {data.results.map((row) => {
+              {(data.results['R'] || []).map((row) => {
                 const teamColor = getTeamColor(row.team);
                 return (
                   <tr key={row.pos} className="hover:bg-white/5 transition-colors group">

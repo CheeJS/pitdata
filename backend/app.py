@@ -17,6 +17,15 @@ def latest_results():
     else:
         return jsonify({"error": "Failed to fetch data"}), 500
 
+@app.route('/api/results/<int:race_id>')
+def race_results_detail(race_id):
+    from services.f1_service import get_race_results_by_id
+    data = get_race_results_by_id(race_id)
+    if data:
+        return jsonify(data)
+    else:
+        return jsonify({"error": "Results not found"}), 404
+
 @app.route('/api/replay/<int:race_id>')
 def race_replay(race_id):
     from services.f1_service import get_race_replay
