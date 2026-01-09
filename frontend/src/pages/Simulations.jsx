@@ -170,9 +170,6 @@ export default function Simulations() {
                     <button onClick={() => setActiveTab('strategy')} className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === 'strategy' ? "bg-f1-red text-white shadow-lg" : "text-gray-500 hover:text-white")}>
                         <Activity size={16} /> Strategy
                     </button>
-                    <button onClick={() => setActiveTab('crowd')} className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all", activeTab === 'crowd' ? "bg-f1-red text-white shadow-lg" : "text-gray-500 hover:text-white")}>
-                        <Zap size={16} /> Crowd
-                    </button>
                 </div>
             </div>
 

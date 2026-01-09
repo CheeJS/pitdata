@@ -196,29 +196,29 @@ def get_races_list(year=None):
         def get_code(name):
             n = name.lower()
             if "bahrain" in n: return "bhr"
-            if "saudi" in n: return "sau"
-            if "australia" in n: return "aus"
-            if "japan" in n: return "jpn"
-            if "china" in n: return "chn"
+            if "saudi" in n or "jeddah" in n: return "sau"
+            if "australia" in n or "melbourne" in n: return "aus"
+            if "japan" in n or "suzuka" in n: return "jpn"
+            if "chinese" in n or "china" in n or "shanghai" in n: return "chn"
             if "miami" in n: return "mia"
             if "emilia" in n or "imola" in n: return "emi"
-            if "monaco" in n: return "mon"
-            if "canada" in n: return "can"
-            if "spain" in n: return "esp"
-            if "austria" in n: return "aut"
-            if "britain" in n or "british" in n: return "gbr"
-            if "hungary" in n: return "hun"
-            if "belgium" in n: return "bel"
-            if "netherlands" in n or "dutch" in n: return "ned"
-            if "italy" in n or "italian" in n: return "ita"
-            if "azerbaijan" in n: return "azb"
-            if "singapore" in n: return "sin"
-            if "united states" in n or "usa" in n: return "usa"
-            if "mexico" in n: return "mex"
-            if "brazil" in n: return "bra"
+            if "monaco" in n or "monte carlo" in n: return "mon"
+            if "canadian" in n or "canada" in n or "montreal" in n: return "can"
+            if "spain" in n or "spanish" in n or "barcelona" in n: return "esp"
+            if "austria" in n or "spielberg" in n: return "aut"
+            if "britain" in n or "british" in n or "silverstone" in n: return "gbr"
+            if "hungary" in n or "hungarian" in n or "budapest" in n: return "hun"
+            if "belgium" in n or "belgian" in n or "spa" in n: return "bel"
+            if "netherlands" in n or "dutch" in n or "zandvoort" in n: return "ned"
+            if "italy" in n or "italian" in n or "monza" in n: return "ita"
+            if "azerbaijan" in n or "baku" in n: return "azb"
+            if "singapore" in n or "marina bay" in n: return "sin"
+            if "united states" in n or "usa" in n or "austin" in n or "cota" in n: return "usa"
+            if "mexico" in n or "mexican" in n: return "mex"
+            if "brazil" in n or "são paulo" in n or "sao paulo" in n or "interlagos" in n: return "bra"
             if "vegas" in n: return "lvg"
-            if "qatar" in n: return "qat"
-            if "abu dhabi" in n: return "abu"
+            if "qatar" in n or "lusail" in n: return "qat"
+            if "abu dhabi" in n or "yas marina" in n: return "abu"
             # Fallback: Use first 3 chars + ID to ensure uniqueness
             return f"unk_{r.id}"
 
@@ -607,6 +607,84 @@ def get_analysis_data(race_id, driver1, driver2, lap1_num=None, lap2_num=None):
     finally:
         db_session.close()
 
+def get_race_control_messages(race_id):
+    """
+    Fetches Race Control Messages (Flags, SC, Penalties) for a race.
+    """
+    import fastf1
+    db_session = get_db_session()
+    try:
+        race = db_session.query(Race).filter_by(id=race_id).first()
+        if not race: return {"error": "Race not found"}
+
+        # Cache Setup
+        cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data_pipeline', 'f1_cache')
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+        fastf1.Cache.enable_cache(cache_dir)
+        
+        session = fastf1.get_session(race.year, race.round, 'R')
+        session.load(telemetry=False, weather=False, messages=True) # Load ONLY messages for speed
+        
+        messages = session.race_control_messages
+        # Ensure we have a valid DataFrame (session.load can sometimes result in None or empty structures if no data)
+        # messages is a property, usually returning None or DataFrame
+        if messages is None or (hasattr(messages, 'empty') and messages.empty):
+            # Try to return at least something
+            messages = pd.DataFrame() 
+
+        # Format Messages
+        # Columns available: 'Time', 'Category', 'Message', 'lap', 'Sector', 'Status'
+        formatted_messages = []
+        for _, row in messages.iterrows():
+            # Inferred Category if missing
+            category = row['Category']
+            msg_text = str(row['Message'])
+            
+            if "SAFETY CAR" in msg_text or "VIRTUAL SAFETY CAR" in msg_text:
+                category = "SafetyCar"
+            elif "PENALTY" in msg_text or "INVESTIGATION" in msg_text:
+                category = "Penalty"
+            elif "FLAG" in msg_text:
+                category = "Flag"
+            elif category == "Other":
+                category = "General"
+
+            # Format Time
+            # We want a string for display: "HH:MM:SS" or "+1:23.456"
+            time_display = ""
+            # ... (Time format logic same)
+            raw_time = row['Time']
+            if not pd.isna(raw_time):
+                 if hasattr(raw_time, 'total_seconds'):
+                     s = int(raw_time.total_seconds())
+                     h = s // 3600
+                     m = (s % 3600) // 60
+                     s = s % 60
+                     if h > 0: time_display = f"+{h}:{m:02d}:{s:02d}"
+                     else: time_display = f"+{m}:{s:02d}"
+                 elif hasattr(raw_time, 'strftime'):
+                      try: time_display = raw_time.strftime("%H:%M:%S")
+                      except: time_display = str(raw_time)
+                 else:
+                      time_display = str(raw_time)
+
+            formatted_messages.append({
+                "time": time_display,
+                "lap": int(row['Lap']) if 'Lap' in row and not pd.isna(row['Lap']) else None,
+                "category": category,
+                "message": msg_text,
+                "flag": row['Flag'] if 'Flag' in row and not pd.isna(row['Flag']) else None
+            })
+            
+        return {"messages": formatted_messages}
+
+    except Exception as e:
+        print(f"Error fetching race control messages: {e}")
+        return {"error": str(e)}
+    finally:
+        db_session.close()
+
 def get_driver_laps(race_id, driver_id):
     """
     Returns list of valid laps for a driver
@@ -698,71 +776,167 @@ def get_season_standings(year=2024):
                     "results": {} # race_name -> position
                 }
             
+            # Determine Session Type
+            stype = str(r.session_type).upper() if r.session_type else 'R'
+
+            # Skip Practice and Qualifying for Standings Stats
+            # (Note: Pole positions could be tracked from Q, but not for "Wins"/"Points" in main table usually)
+            if stype not in ['R', 'S']:
+                continue
+
             # Update Stats
-            drivers[d_code]["points"] += r.points
-            # Count Starts
-            if "starts" not in drivers[d_code]: drivers[d_code]["starts"] = 0
-            drivers[d_code]["starts"] += 1
+            points = r.points if r.points is not None else 0
+            drivers[d_code]["points"] += points
             
-            # Count Finishes (Status "Finished" or "+" laps)
-            # Simplistic check: if status is not 'R' or DNF-like words
-            status_str = str(r.status).lower()
-            if "not classified" not in status_str and "retired" not in status_str and "disqualified" not in status_str:
-                 if "finishes" not in drivers[d_code]: drivers[d_code]["finishes"] = 0
-                 drivers[d_code]["finishes"] += 1
-            
-            if r.position == 1: drivers[d_code]["wins"] += 1
-            if r.position <= 3: drivers[d_code]["podiums"] += 1
-            
-            # Heatmap Data
-            drivers[d_code]["results"][race.race_name] = r.position
+            # Counts for MAIN RACES Only
+            if stype == "R":
+                # Count Starts
+                if "starts" not in drivers[d_code]: drivers[d_code]["starts"] = 0
+                drivers[d_code]["starts"] += 1
+                
+                # Count Finishes (Status "Finished" or "+" laps)
+                # Simplistic check: if status is not 'R' or DNF-like words
+                status_str = str(r.status).lower()
+                if "not classified" not in status_str and "retired" not in status_str and "disqualified" not in status_str:
+                     if "finishes" not in drivers[d_code]: drivers[d_code]["finishes"] = 0
+                     drivers[d_code]["finishes"] += 1
+                
+                position = r.position if r.position is not None else 999
+                if position == 1: drivers[d_code]["wins"] += 1
+                if position <= 3: drivers[d_code]["podiums"] += 1
+                
+                # Heatmap Data (Positions per Race)
+                drivers[d_code]["results"][race.race_name] = position
 
         # Post-process: Calculate History and Consistency
         driver_list = list(drivers.values())
         
-        # Sort races by date for history consistency
-        ordered_safe_races = [r for r in all_races if r.id in set(res[0].race_id for res in results)]
-        # Actually, we need to iterate ALL races up to current to show progression (even if missed)
-        # But 'results' only has rows for participation.
-        # Efficient way:
+        # Pre-calculate points per race for history
+        # driver_round_points[driver_code][race_name] = total_points_in_round (Sprint + Race)
+        driver_round_points = {}
+        
+        for r, race in results:
+             d_code = r.driver_code
+             if d_code not in driver_round_points: driver_round_points[d_code] = {}
+             if race.race_name not in driver_round_points[d_code]: driver_round_points[d_code][race.race_name] = 0
+             
+             if r.points:
+                 driver_round_points[d_code][race.race_name] += r.points
+
         for d in driver_list:
             d["history"] = []
             cumulative = 0
             # Look up result for each race in order
             for race_obj in all_races: # Iterate all season races
-                 # If race has happened (present in results set)
-                 # We need to know if this race is "completed". 
-                 # Simplification: unique race names in results
-                 if race_obj.race_name in d["results"]:
-                     pos = d["results"][race_obj.race_name]
-                     # Approximate pointsmap (Standard 2024 System)
-                     pts = 0
-                     if pos == 1: pts = 25
-                     elif pos == 2: pts = 18
-                     elif pos == 3: pts = 15
-                     elif pos == 4: pts = 12
-                     elif pos == 5: pts = 10
-                     elif pos == 6: pts = 8
-                     elif pos == 7: pts = 6
-                     elif pos == 8: pts = 4
-                     elif pos == 9: pts = 2
-                     elif pos == 10: pts = 1
-                     d["history"].append(cumulative + pts)
-                     cumulative += pts
-                 elif race_obj.race_name in set(ra.race_name for _, ra in results):
-                     # Race happened but driver has no result (DNS?) or just DNF with no row?
-                     # Should have row if DNF. If no row, maybe didn't enter.
-                     d["history"].append(cumulative)
+                 # Get points earned in this round (Sprint + Race + FL)
+                 pts = driver_round_points.get(d["code"], {}).get(race_obj.race_name, 0)
+                 
+                 # Only append if race has happened (exists in ANY results or implies date passed)
+                 # We check if *anyone* scored points or if it's in the results set
+                 # Simplest: if we have points, add them. If 0, check if race status is completed.
+                 # But we assume 'all_races' allows us to plot the whole season line?
+                 # If future race, points are 0. Cumulative stays flat.
+                 
+                 cumulative += pts
+                 d["history"].append(cumulative)
             
             d["final_points_calc"] = cumulative # Validation
 
-        driver_list.sort(key=lambda x: x["points"], reverse=True)
+        # Helper to calculate rank change
+        # 1. Calculate points before the last round
+        # We need to know which races count for "Current" vs "Previous"
+        # Since 'all_races' are ordered, we assume the season is cumulative.
+        # But `results` contains ALL results for the year.
+        # To find "previous" rank, we look at `d.history[-2]` if available? 
+        # d.history tracks cumulative points.
+        # So Rank at index -2 vs Rank at index -1.
+        
+        # We need to sort drivers by history[-2] to get previous rank.
+        
+        # Check history length first
+        season_len = len(driver_list[0]["history"]) if driver_list else 0
+        
+        if season_len >= 2:
+            # Map driver_code -> prev_points
+            prev_points_map = {}
+            for d in driver_list:
+                # history[-2] is points before last race?
+                # history has one entry per race in `all_races`.
+                # If race hasn't happened, points stay flat.
+                # We want the change due to the LATEST result.
+                # So we compare Rank(End) vs Rank(Start of Last Result).
+                # Actually, simplest is just Sort by history[-2] and get Rank.
+                prev_points_map[d["code"]] = d["history"][-2] if len(d["history"]) >= 2 else 0
+            
+            # Sort by prev points
+            sorted_prev = sorted(driver_list, key=lambda x: prev_points_map.get(x["code"], 0), reverse=True)
+            
+            # Assign prev_rank
+            for rank, d in enumerate(sorted_prev):
+                d["prev_rank"] = rank + 1
+                
+            # Now compare with current rank (already sorted by points)
+            for rank, d in enumerate(driver_list):
+                curr_rank = rank + 1
+                prev = d.get("prev_rank", curr_rank)
+                d["change"] = prev - curr_rank # Positive = Gained places (e.g. 5 -> 3 = +2)
+        else:
+            for d in driver_list: d["change"] = 0
 
-        # Calculate Consistency King
+        # --- Constructor Standings ---
+        constructors = {}
+        # We also need constructor history to compute constructor arrows
+        # Re-accumulate based on drivers
+        
+        # Initialize constructors
+        for d in driver_list:
+            team = d.get("team")
+            if not team or team == "None": continue
+            if team not in constructors:
+                constructors[team] = {
+                    "name": team,
+                    "points": 0,
+                    "wins": 0, 
+                    "podiums": 0, 
+                    "drivers": [],
+                    "history": [0] * season_len # Initialize history array
+                }
+            constructors[team]["points"] += d.get("points", 0)
+            constructors[team]["wins"] += d.get("wins", 0)
+            constructors[team]["podiums"] += d.get("podiums", 0)
+            constructors[team]["drivers"].append(d.get("code", "???"))
+            
+            # Sum history
+            for i, pts in enumerate(d.get("history", [])):
+                if i < len(constructors[team]["history"]):
+                    constructors[team]["history"][i] += pts
+
+        constructor_list = list(constructors.values())
+        constructor_list.sort(key=lambda x: x["points"], reverse=True)
+        
+        # Calculate Constructor Delta
+        if season_len >= 2:
+            prev_cons_map = {}
+            for c in constructor_list:
+                prev_cons_map[c["name"]] = c["history"][-2] if len(c["history"]) >= 2 else 0
+            
+            sorted_prev_c = sorted(constructor_list, key=lambda x: prev_cons_map.get(x["name"], 0), reverse=True)
+            
+            for rank, c in enumerate(sorted_prev_c):
+                c["prev_rank"] = rank + 1
+                
+            for rank, c in enumerate(constructor_list):
+                curr = rank + 1
+                prev = c.get("prev_rank", curr)
+                c["change"] = prev - curr
+        else:
+            for c in constructor_list: c["change"] = 0
+
+        # Calculate Consistency King (Restored)
         consistency_leader = None
         best_rate = -1
-        total_completed = len(set(r.race_id for r, _ in results))
-        min_starts = 2 if total_completed > 2 else 0 # Dynamic threshold
+        total_completed = len(set(r.race_id for r, _ in results)) # Restored variable
+        min_starts = 2 if total_completed > 2 else 0 
         
         for d in driver_list:
             starts = d.get("starts", 0)
@@ -777,8 +951,12 @@ def get_season_standings(year=2024):
                 if d["points"] > (consistency_leader.get("points") if consistency_leader else -1):
                     consistency_leader = {"name": d["name"], "rate": rate, "points": d["points"]}
 
+        # Final sort to ensure rank is correct
+        driver_list.sort(key=lambda x: x["points"], reverse=True)
+
         return {
             "drivers": driver_list,
+            "constructors": constructor_list,
             "races": race_list,
             "total_rounds": len(all_races) if len(all_races) > 0 else 24,
             "completed_rounds": total_completed,

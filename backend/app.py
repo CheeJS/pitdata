@@ -140,6 +140,14 @@ def strategy_sim():
     result = simulate_race_strategy(race_id=race_id, race_laps=laps, traffic=traffic, deg_multiplier=deg, safety_car_laps=sc_laps, grid_pos=grid_pos, weather=weather, objective=objective)
     return jsonify(result)
 
+@app.route('/api/race-control/<int:race_id>')
+def race_control_feed(race_id):
+    from services.f1_service import get_race_control_messages
+    data = get_race_control_messages(race_id)
+    if "error" in data:
+         return jsonify(data), 500
+    return jsonify(data)
+
 # --- Crowd Prediction APIs ---
 @app.route('/api/predictions/vote', methods=['POST'])
 def submit_prediction():

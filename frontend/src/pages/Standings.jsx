@@ -120,99 +120,57 @@ export default function Standings() {
                     </div>
                 </div>
 
-                {/* RIGHT: CHART & STATS */}
+                {/* RIGHT: CONSTRUCTOR STANDINGS + CHART */}
                 <div className="flex-1 flex flex-col gap-6 min-h-0 overflow-hidden">
 
-                    {/* STAT CARDS */}
-                    <div className="grid grid-cols-2 gap-4 shrink-0">
-                        <div className="bg-[#15151E] p-4 rounded-3xl border border-[#2A2A30]">
-                            <h4 className="text-xs text-gray-500 font-bold uppercase mb-1">Total Wins</h4>
-                            <div className="text-3xl font-heading font-bold text-white">{data.drivers[0].wins}</div>
-                            <div className="text-xs text-gray-400 mt-1">{data.drivers[0].name}</div>
-                        </div>
-                        <div className="bg-[#15151E] p-4 rounded-3xl border border-[#2A2A30]">
-                            <h4 className="text-xs text-gray-500 font-bold uppercase mb-1">Consistency King</h4>
-                            <div className="text-3xl font-heading font-bold text-green-400">{data.consistency_leader?.rate || 0}%</div>
-                            <div className="text-xs text-gray-400 mt-1">{data.consistency_leader?.name || "N/A"}</div>
-                        </div>
-                    </div>
-
-                    {/* CHART: CHAMPIONSHIP PROGRESSION */}
-                    <div className="flex-1 bg-[#15151E] rounded-3xl border border-[#2A2A30] p-4 flex flex-col overflow-hidden">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-sm font-bold uppercase text-gray-400 flex items-center gap-2"><TrendingUp size={14} /> Championship Fight</h3>
-                            <div className="flex gap-2 text-[10px] font-bold flex-wrap justify-end">
-                                {data.drivers.slice(0, 5).map((d) => {
-                                    // Team Color Mapping
-                                    const teamColors = {
-                                        "Red Bull Racing": "#3671C6", "Mercedes": "#6CD3BF", "Ferrari": "#E8002D",
-                                        "McLaren": "#FF8000", "Aston Martin": "#229971", "Alpine": "#0093CC",
-                                        "Williams": "#64C4FF", "RB": "#6692FF", "Kick Sauber": "#52E252", "Haas F1 Team": "#B6BABD"
-                                    };
-                                    // Fallback if full team name doesn't match perfectly
-                                    const color = teamColors[d.team] || teamColors[Object.keys(teamColors).find(k => d.team && d.team.includes(k))] || "#FFF";
-
-                                    return (
-                                        <div key={d.code} className="flex items-center gap-1">
-                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                                            <span className="text-gray-400">{d.code}</span>
-                                        </div>
-                                    )
-                                })}
-                            </div>
+                    {/* CONSTRUCTOR STANDINGS TABLE */}
+                    <div className="flex-1 bg-[#15151E] rounded-3xl border border-[#2A2A30] flex flex-col overflow-hidden">
+                        <div className="p-4 border-b border-[#2A2A30] bg-black/20 flex justify-between items-center">
+                            <h3 className="text-sm font-bold uppercase text-gray-400 flex items-center gap-2">
+                                <Trophy size={14} className="text-yellow-500" /> WCC Contenders
+                            </h3>
+                            <span className="text-[10px] text-gray-500 uppercase font-mono">{maxPointsRemaining * 2} pts remaining</span>
                         </div>
 
-                        <div className="flex-1 min-h-0">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={data.races.map((r, i) => ({
-                                    name: r.substring(0, 3).toUpperCase(),
-                                    fullRace: r,
-                                    ...data.drivers.slice(0, 5).reduce((acc, d) => ({ ...acc, [d.code]: d.history[i] || 0 }), {})
-                                }))}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#2A2A30" vertical={false} />
-                                    <XAxis dataKey="name" stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} dy={10} />
-                                    <YAxis stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} width={30} />
-                                    <Tooltip
-                                        content={({ active, payload, label }) => {
-                                            if (active && payload && payload.length) {
-                                                // Sort payload by value (points) descending
-                                                const sorted = [...payload].sort((a, b) => b.value - a.value);
-                                                const fullRaceName = payload[0].payload.fullRace;
-                                                return (
-                                                    <div className="bg-[#15151E] border border-[#2A2A30] rounded-lg p-3 shadow-xl z-50">
-                                                        <div className="text-[10px] text-gray-400 mb-2 font-bold uppercase border-b border-[#2A2A30] pb-1">
-                                                            {fullRaceName || label}
-                                                        </div>
-                                                        {sorted.map((p) => (
-                                                            <div key={p.name} className="flex items-center justify-between gap-4 text-xs font-bold mb-1 last:mb-0">
-                                                                <span style={{ color: p.stroke }}>{p.name}</span>
-                                                                <span className="text-white">{p.value} pts</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                );
-                                            }
-                                            return null;
-                                        }}
-                                    />
-                                    {data.drivers.slice(0, 5).map((d) => {
+                        <div className="overflow-y-auto custom-scrollbar flex-1 p-2">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="text-[10px] text-gray-500 uppercase border-b border-[#2A2A30]">
+                                        <th className="p-2 w-8">Pos</th>
+                                        <th className="p-2">Constructor</th>
+                                        <th className="p-2 text-right">Pts</th>
+                                        <th className="p-2 text-right">Wins</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-sm">
+                                    {data.constructors?.map((c, i) => {
                                         const teamColors = {
                                             "Red Bull Racing": "#3671C6", "Mercedes": "#6CD3BF", "Ferrari": "#E8002D",
                                             "McLaren": "#FF8000", "Aston Martin": "#229971", "Alpine": "#0093CC",
-                                            "Williams": "#64C4FF", "RB": "#6692FF", "Kick Sauber": "#52E252", "Haas F1 Team": "#B6BABD"
+                                            "Williams": "#64C4FF", "RB": "#6692FF", "Kick Sauber": "#52E252", "Haas F1 Team": "#B6BABD",
+                                            "Racing Bulls": "#6692FF"
                                         };
-                                        const color = teamColors[d.team] || teamColors[Object.keys(teamColors).find(k => d.team && d.team.includes(k))] || "#FFF";
+                                        const color = teamColors[c.name] || teamColors[Object.keys(teamColors).find(k => c.name && c.name.includes(k))] || "#FFF";
 
                                         return (
-                                            <Line
-                                                key={d.code} type="monotone" dataKey={d.code}
-                                                stroke={color} strokeWidth={3} dot={false}
-                                                activeDot={{ r: 4, strokeWidth: 0, fill: '#fff' }}
-                                            />
+                                            <tr key={c.name} className="border-b border-[#2A2A30] hover:bg-white/5 transition-colors">
+                                                <td className="p-3 font-mono text-gray-400">{i + 1}</td>
+                                                <td className="p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                                        <div>
+                                                            <div className="font-bold text-white leading-tight">{c.name}</div>
+                                                            <div className="text-[10px] text-gray-500 uppercase">{c.drivers?.join(' • ')}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-3 text-right font-mono text-white">{c.points}</td>
+                                                <td className="p-3 text-right font-mono text-gray-400">{c.wins}</td>
+                                            </tr>
                                         );
                                     })}
-                                </LineChart>
-                            </ResponsiveContainer>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 

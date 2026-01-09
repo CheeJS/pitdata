@@ -1,16 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { ChevronLeft, Calendar, MapPin, Trophy, Clock, Flag } from 'lucide-react';
+import { ChevronLeft, Calendar, MapPin, Trophy, Clock, Flag, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Country code to ISO 2-letter code mapping for flag images
+const CODE_TO_ISO = {
+    'bhr': 'bh', 'sau': 'sa', 'aus': 'au', 'jpn': 'jp',
+    'chn': 'cn', 'mia': 'us', 'emi': 'it', 'mon': 'mc',
+    'can': 'ca', 'esp': 'es', 'aut': 'at', 'gbr': 'gb',
+    'hun': 'hu', 'bel': 'be', 'ned': 'nl', 'ita': 'it',
+    'azb': 'az', 'sin': 'sg', 'usa': 'us', 'mex': 'mx',
+    'bra': 'br', 'lvg': 'us', 'qat': 'qa', 'abu': 'ae'
+};
+
+// Get flag image URL from flagcdn.com
+const getFlagUrl = (code) => {
+    const iso = CODE_TO_ISO[code] || 'un';
+    return `https://flagcdn.com/w80/${iso}.png`;
+};
+
+const AVAILABLE_YEARS = [2025, 2024, 2023, 2022, 2021, 2020];
+
 export default function History() {
-    const [view, setView] = useState('list'); // 'list' | 'detail'
+    const [view, setView] = useState('list');
     const [selectedYear, setSelectedYear] = useState(2025);
     const [races, setRaces] = useState([]);
     const [selectedRaceId, setSelectedRaceId] = useState(null);
     const [raceDetails, setRaceDetails] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
 
     // Fetch Race List
     useEffect(() => {
@@ -41,6 +60,19 @@ export default function History() {
             });
     }, [selectedRaceId]);
 
+    // Group races by month
+    const racesByMonth = useMemo(() => {
+        const groups = {};
+        races.forEach(race => {
+            // Parse date like "16 Mar 2025"
+            const date = new Date(race.date);
+            const monthKey = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            if (!groups[monthKey]) groups[monthKey] = [];
+            groups[monthKey].push(race);
+        });
+        return groups;
+    }, [races]);
+
     return (
         <div className="flex flex-col h-full animate-in fade-in duration-500">
             <AnimatePresence mode="wait">
@@ -58,39 +90,87 @@ export default function History() {
                                 <h1 className="text-4xl font-bold font-heading mb-2">Race Archive</h1>
                                 <p className="text-gray-500">Explore past race results and telemetry.</p>
                             </div>
-                            <div className="flex bg-[#15151E] rounded-lg p-1 border border-[#2A2A30]">
-                                {[2025, 2024].map(y => (
-                                    <button
-                                        key={y}
-                                        onClick={() => setSelectedYear(y)}
-                                        className={cn(
-                                            "px-4 py-2 rounded-md text-sm font-bold transition-all",
-                                            selectedYear === y ? "bg-f1-red text-white shadow-lg" : "text-gray-500 hover:text-white"
-                                        )}
-                                    >
-                                        {y}
-                                    </button>
-                                ))}
+
+                            {/* Year Dropdown */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                                    className="flex items-center gap-2 bg-[#15151E] border border-[#2A2A30] hover:border-f1-red/50 px-4 py-2.5 rounded-lg transition-all"
+                                >
+                                    <Calendar size={16} className="text-f1-red" />
+                                    <span className="font-bold text-white">{selectedYear} Season</span>
+                                    <ChevronDown size={16} className={cn("text-gray-500 transition-transform", dropdownOpen && "rotate-180")} />
+                                </button>
+
+                                <AnimatePresence>
+                                    {dropdownOpen && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            className="absolute right-0 top-full mt-2 bg-[#15151E] border border-[#2A2A30] rounded-lg overflow-hidden shadow-xl z-50 min-w-[160px]"
+                                        >
+                                            {AVAILABLE_YEARS.map(year => (
+                                                <button
+                                                    key={year}
+                                                    onClick={() => {
+                                                        setSelectedYear(year);
+                                                        setDropdownOpen(false);
+                                                    }}
+                                                    className={cn(
+                                                        "w-full px-4 py-3 text-left text-sm font-medium transition-colors flex items-center justify-between",
+                                                        selectedYear === year
+                                                            ? "bg-f1-red/10 text-f1-red"
+                                                            : "text-gray-400 hover:bg-white/5 hover:text-white"
+                                                    )}
+                                                >
+                                                    {year} Season
+                                                    {selectedYear === year && <div className="w-2 h-2 rounded-full bg-f1-red" />}
+                                                </button>
+                                            ))}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </div>
 
-                        {/* Grid */}
+                        {/* Timeline */}
                         {loading && !races.length ? (
                             <div className="text-center py-20 text-gray-500">Loading Archive...</div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                {races.map((race) => (
-                                    <RaceCard
-                                        key={race.id}
-                                        race={race}
-                                        onClick={() => {
-                                            setSelectedRaceId(race.id);
-                                            setView('detail');
-                                        }}
-                                    />
+                            <div className="relative">
+                                {/* Timeline Line */}
+                                <div className="absolute left-[19px] top-0 bottom-0 w-[2px] bg-gradient-to-b from-f1-red/50 via-[#2A2A30] to-[#2A2A30]" />
+
+                                {Object.entries(racesByMonth).map(([month, monthRaces], monthIdx) => (
+                                    <div key={month} className="mb-8">
+                                        {/* Month Header */}
+                                        <div className="flex items-center gap-4 mb-4 sticky top-0 bg-[#0B0B0F]/95 backdrop-blur-sm py-2 z-10">
+                                            <div className="w-10 h-10 rounded-full bg-[#15151E] border-2 border-[#2A2A30] flex items-center justify-center relative z-10">
+                                                <Calendar size={16} className="text-gray-500" />
+                                            </div>
+                                            <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">{month}</span>
+                                        </div>
+
+                                        {/* Races */}
+                                        <div className="space-y-3 pl-[52px]">
+                                            {monthRaces.map((race, idx) => (
+                                                <TimelineRaceCard
+                                                    key={race.id}
+                                                    race={race}
+                                                    onClick={() => {
+                                                        setSelectedRaceId(race.id);
+                                                        setView('detail');
+                                                    }}
+                                                    delay={monthIdx * 0.1 + idx * 0.05}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         )}
+
                         {!loading && races.length === 0 && (
                             <div className="text-center py-20 text-gray-500">No races found for this season.</div>
                         )}
@@ -122,49 +202,77 @@ export default function History() {
     );
 }
 
-function RaceCard({ race, onClick }) {
+function TimelineRaceCard({ race, onClick, delay }) {
     const isPast = new Date(race.date) < new Date();
+    const flagUrl = getFlagUrl(race.code);
 
-    // Fallback/Mock winner if not provided in list API yet (we only fetch basics there)
-    // Actually, backend get_latest_results fetcher returns mostly everything but `get_races_list` might send simpler data.
-    // Assuming `get_races` returns basic info.
+    // Parse date for display
+    const dateObj = new Date(race.date);
+    const dayNum = dateObj.getDate();
+    const monthShort = dateObj.toLocaleDateString('en-US', { month: 'short' });
 
     return (
-        <button
+        <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay, duration: 0.3 }}
             onClick={onClick}
-            className="text-left group bg-[#15151E] hover:bg-[#1A1A24] border border-[#2A2A30] hover:border-f1-red/50 p-5 rounded-xl transition-all relative overflow-hidden flex flex-col gap-3"
+            className="w-full group"
         >
-            <div className="flex justify-between items-start w-full">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Round {race.round}</span>
-                {isPast ? (
-                    <span className="text-[10px] bg-green-500/10 text-green-500 px-2 py-0.5 rounded border border-green-500/20 font-bold uppercase">Completed</span>
-                ) : (
-                    <span className="text-[10px] bg-gray-500/10 text-gray-500 px-2 py-0.5 rounded border border-gray-500/20 font-bold uppercase">Upcoming</span>
-                )}
-            </div>
-
-            <div>
-                <h3 className="text-lg font-bold text-white group-hover:text-f1-red transition-colors line-clamp-1">{race.name}</h3>
-                <div className="flex items-center gap-2 text-gray-500 text-xs mt-1">
-                    <MapPin size={12} /> {race.circuit}
+            <div className="flex items-center gap-4 bg-[#15151E] hover:bg-[#1A1A24] border border-[#2A2A30] hover:border-f1-red/50 rounded-xl p-4 transition-all relative overflow-hidden">
+                {/* Date Badge */}
+                <div className="flex-shrink-0 w-14 text-center">
+                    <div className="text-2xl font-black text-white leading-none">{dayNum}</div>
+                    <div className="text-[10px] font-bold text-gray-500 uppercase">{monthShort}</div>
                 </div>
-                <div className="flex items-center gap-2 text-gray-500 text-xs mt-1">
-                    <Calendar size={12} /> {new Date(race.date).toLocaleDateString()}
+
+                {/* Divider */}
+                <div className="w-px h-10 bg-[#2A2A30]" />
+
+                {/* Flag Image */}
+                <div className="flex-shrink-0 w-12 h-8 rounded overflow-hidden shadow-lg border border-white/10">
+                    <img
+                        src={flagUrl}
+                        alt={race.code}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                    />
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 text-left min-w-0">
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase">Round {race.round}</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-white group-hover:text-f1-red transition-colors truncate">
+                        {race.name} <span className="font-normal text-gray-500">Grand Prix</span>
+                    </h3>
+                    <div className="flex items-center gap-1 text-gray-500 text-xs mt-0.5">
+                        <MapPin size={10} /> {race.circuit}
+                    </div>
+                </div>
+
+                {/* Status + Arrow */}
+                <div className="flex items-center gap-3 flex-shrink-0">
+                    {isPast ? (
+                        <span className="text-[10px] bg-green-500/10 text-green-500 px-2.5 py-1 rounded-full border border-green-500/20 font-bold uppercase">
+                            Completed
+                        </span>
+                    ) : (
+                        <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2.5 py-1 rounded-full border border-amber-500/20 font-bold uppercase">
+                            Upcoming
+                        </span>
+                    )}
+                    <ChevronRight size={18} className="text-gray-600 group-hover:text-f1-red group-hover:translate-x-1 transition-all" />
                 </div>
             </div>
-
-            {/* Decorative Element */}
-            <div className="absolute right-0 bottom-0 opacity-5 group-hover:opacity-10 transition-opacity">
-                <Flag size={64} />
-            </div>
-        </button>
-    )
+        </motion.button>
+    );
 }
 
 function RaceDetailView({ data }) {
-    const [activeTab, setActiveTab] = useState('R'); // R, S, SS, Q, FP3, FP2, FP1
+    const [activeTab, setActiveTab] = useState('R');
 
-    // Check available sessions in data.results keys
     const availableSessions = Object.keys(data.results);
     const tabs = [
         { id: 'R', label: 'Race' },
@@ -176,7 +284,6 @@ function RaceDetailView({ data }) {
         { id: 'FP1', label: 'FP1' },
     ].filter(t => availableSessions.includes(t.id));
 
-    // If active tab not available, switch to first available
     useEffect(() => {
         if (!tabs.find(t => t.id === activeTab) && tabs.length > 0) {
             setActiveTab(tabs[0].id);
@@ -185,7 +292,6 @@ function RaceDetailView({ data }) {
 
     const results = data.results[activeTab] || [];
 
-    // Sort results: Pos 1 at top. Handle 'NC' or strings.
     const sortedResults = [...results].sort((a, b) => {
         const pa = parseInt(a.pos) || 999;
         const pb = parseInt(b.pos) || 999;
@@ -203,7 +309,6 @@ function RaceDetailView({ data }) {
                         <span className="flex items-center gap-1"><MapPin size={14} /> {data.circuit}</span>
                     </div>
                 </div>
-                {/* Winner Badge (Race Only) */}
                 {activeTab === 'R' && data.winner && (
                     <div className="text-right">
                         <div className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">Winner</div>
@@ -256,7 +361,6 @@ function RaceDetailView({ data }) {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                {/* Color Bar */}
                                                 <div className="w-1 h-8 rounded-full" style={{ backgroundColor: getTeamColor(row.team) }}></div>
                                                 <div>
                                                     <div className="font-bold text-white leading-tight">{row.driver}</div>
@@ -293,7 +397,6 @@ function RaceDetailView({ data }) {
     );
 }
 
-// Helper (Duplicated from App.jsx, ideally should be in utils)
 function getTeamColor(teamName) {
     if (!teamName) return '#ccc';
     const lower = teamName.toLowerCase();

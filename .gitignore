@@ -27,3 +27,12 @@ npm-debug.log*
 
 # Cache
 cache/
+
+# Debug & Temp
+standings_debug.json
+backend_error.txt
+*.log
+
+# IDE
+.vscode/
+.idea/
