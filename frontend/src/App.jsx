@@ -129,7 +129,7 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 pt-14 md:pt-0 md:ml-20 lg:ml-64 p-4 md:p-8 lg:p-12 overflow-y-auto">
+      <main className="flex-1 pt-14 pb-16 md:pb-0 md:pt-0 md:ml-20 lg:ml-64 p-4 md:p-8 lg:p-12 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           {loading ? (
             <div className="flex h-[50vh] items-center justify-center">
@@ -148,6 +148,14 @@ export default function App() {
           )}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-[#111] border-t border-[#222] flex items-center justify-around px-2 z-50">
+        <BottomNavItem icon={<Activity size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => handleTabChange('dashboard')} />
+        <BottomNavItem icon={<Trophy size={20} />} label="Standings" active={activeTab === 'standings'} onClick={() => handleTabChange('standings')} />
+        <BottomNavItem icon={<Brain size={20} />} label="Simulate" active={activeTab === 'simulations'} onClick={() => handleTabChange('simulations')} />
+        <BottomNavItem icon={<Calendar size={20} />} label="History" active={activeTab === 'history'} onClick={() => handleTabChange('history')} />
+      </nav>
     </div>
   );
 }
@@ -188,6 +196,21 @@ function MobileNavItem({ icon, label, active, onClick }) {
   )
 }
 
+function BottomNavItem({ icon, label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-lg transition-colors",
+        active ? "text-white" : "text-gray-500"
+      )}
+    >
+      {React.cloneElement(icon, { className: active ? "text-f1-red" : "text-gray-500" })}
+      <span className="text-[10px] font-medium">{label}</span>
+    </button>
+  )
+}
+
 // Helper to get font size based on name length
 function getFontSize(name) {
   if (!name) return 'text-xl';
@@ -210,269 +233,331 @@ function DashboardView({ data }) {
   const podium = raceResults.slice(0, 3);
 
   return (
-    <div className="space-y-6 md:space-y-10">
-      {/* Header / Hero */}
-      <header className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-[#15151E] border border-[#2A2A30] p-4 md:p-8 lg:p-12">
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="px-3 py-1 rounded-full bg-white/5 text-xs font-bold uppercase tracking-wider text-gray-400 border border-white/10 flex items-center gap-2">
-                <Flag size={12} /> Finished
-              </span>
-              <span className="text-gray-500 text-sm font-medium">{data.date}</span>
-            </div>
-            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-7xl font-black italic tracking-tighter uppercase mb-2">
-              {data.raceName}
-            </h1>
-            <div className="flex items-center gap-2 text-gray-400 font-medium text-lg">
-              <MapPin size={18} className="text-f1-red" />
-              {data.circuit}
-            </div>
-          </div>
-          <div className="flex flex-col items-end">
-            <div className="text-right">
-              <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">Winner</div>
-              <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-1">{data.winner}</div>
-              <div
-                className="text-sm font-bold uppercase tracking-wider inline-block px-3 py-1 rounded-lg"
-                style={{ backgroundColor: `${winnerColor}20`, color: winnerColor }}
-              >
-                {data.winnerTeam}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div
-          className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-f1-red/10 to-transparent blur-[100px] pointer-events-none"
-          style={{ '--tw-gradient-from': `${winnerColor}20` }}
-        />
-      </header>
+    <div className="space-y-4 md:space-y-8">
 
-      {/* Row 2: Podium + WDC Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Podium Visual - MINIMALIST REDESIGN */}
-        <div className="lg:col-span-1 bg-[#15151E] rounded-3xl border border-[#2A2A30] p-6 flex flex-col">
-          <h3 className="text-sm font-bold uppercase text-gray-400 mb-6 flex items-center gap-2">
-            <Trophy size={16} className="text-yellow-500" /> Podium
-          </h3>
-          <div className="flex items-end justify-center h-full pb-4 gap-2">
+      {/* ===== MOBILE LAYOUT (shown below md) ===== */}
+      <div className="md:hidden space-y-4">
+
+        {/* Latest Race Card - Clean & Simple */}
+        <section className="bg-[#111] border border-[#222] rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Latest Race</span>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-green-500/10 text-green-500 font-medium">Finished</span>
+          </div>
+          <h2 className="text-lg font-bold text-white mb-1">{data.raceName}</h2>
+          <p className="text-sm text-gray-400 mb-3">{data.circuit} • {data.date}</p>
+          <div className="flex items-center gap-3 pt-3 border-t border-[#222]">
+            <div className="w-1 h-8 rounded-full" style={{ backgroundColor: winnerColor }} />
+            <div>
+              <div className="text-xs text-gray-500 uppercase">Winner</div>
+              <div className="text-sm font-bold text-white">{data.winner}</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Podium - Minimal Horizontal */}
+        <section className="bg-[#111] border border-[#222] rounded-xl p-4">
+          <h3 className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-4">Podium</h3>
+          <div className="flex items-end justify-center gap-2 h-28">
             {/* P2 */}
             {podium[1] && (
-              <div className="flex flex-col items-center w-1/3">
-                <div className="mb-2 text-center">
-                  <div className="text-xl font-bold text-white">{podium[1].code}</div>
-                  <div className="text-[10px] text-gray-400 uppercase truncate max-w-[80px]">{podium[1].team}</div>
-                </div>
-                <div
-                  className="w-full h-32 rounded-t-lg relative"
-                  style={{ backgroundColor: `${getTeamColor(podium[1].team)}` }}
-                >
-                  <div className="absolute top-2 w-full text-center text-4xl font-black text-white/25">2</div>
+              <div className="flex-1 flex flex-col items-center">
+                <span className="text-xs font-bold text-white mb-1">{podium[1].code}</span>
+                <div className="w-full h-16 rounded-t-lg flex items-center justify-center"
+                  style={{ backgroundColor: getTeamColor(podium[1].team) }}>
+                  <span className="text-2xl font-black text-white/30">2</span>
                 </div>
               </div>
             )}
             {/* P1 */}
             {podium[0] && (
-              <div className="flex flex-col items-center w-5/12">
-                <div className="mb-2 text-center">
-                  <div className="text-2xl font-black text-white">{podium[0].code}</div>
-                  <div className="text-[10px] text-gray-400 uppercase truncate max-w-[100px]">{podium[0].team}</div>
-                </div>
-                <div
-                  className="w-full h-40 rounded-t-lg relative shadow-[0_0_50px_rgba(0,0,0,0.5)] z-10"
-                  style={{ backgroundColor: `${getTeamColor(podium[0].team)}` }}
-                >
-                  <Trophy size={24} className="absolute top-3 left-1/2 -translate-x-1/2 text-white/30" />
-                  {/* Centered Number */}
-                  <div className="absolute inset-0 flex items-center justify-center text-6xl font-black text-white/25">1</div>
+              <div className="flex-1 flex flex-col items-center">
+                <span className="text-sm font-bold text-white mb-1">{podium[0].code}</span>
+                <div className="w-full h-24 rounded-t-lg flex items-center justify-center"
+                  style={{ backgroundColor: getTeamColor(podium[0].team) }}>
+                  <span className="text-3xl font-black text-white/30">1</span>
                 </div>
               </div>
             )}
             {/* P3 */}
             {podium[2] && (
-              <div className="flex flex-col items-center w-1/3">
-                <div className="mb-2 text-center">
-                  <div className="text-xl font-bold text-white">{podium[2].code}</div>
-                  <div className="text-[10px] text-gray-400 uppercase truncate max-w-[80px]">{podium[2].team}</div>
-                </div>
-                <div
-                  className="w-full h-24 rounded-t-lg relative"
-                  style={{ backgroundColor: `${getTeamColor(podium[2].team)}` }}
-                >
-                  <div className="absolute inset-0 flex items-center justify-center text-5xl font-black text-white/25">3</div>
+              <div className="flex-1 flex flex-col items-center">
+                <span className="text-xs font-bold text-white mb-1">{podium[2].code}</span>
+                <div className="w-full h-12 rounded-t-lg flex items-center justify-center"
+                  style={{ backgroundColor: getTeamColor(podium[2].team) }}>
+                  <span className="text-xl font-black text-white/30">3</span>
                 </div>
               </div>
             )}
           </div>
+        </section>
+
+        {/* Championship Standings - Clean List */}
+        {standingsData && (
+          <section className="bg-[#111] border border-[#222] rounded-xl p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Championship</h3>
+              <span className="text-[10px] text-gray-600">{standingsData.drivers?.length || 0} drivers</span>
+            </div>
+            <div className="space-y-0 divide-y divide-[#1a1a1a]">
+              {standingsData.drivers?.slice(0, 5).map((driver, i) => (
+                <div key={driver.code} className="flex items-center justify-between py-2.5">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-gray-500 w-5">{i + 1}</span>
+                    <div className="w-0.5 h-4 rounded-full" style={{ backgroundColor: getTeamColor(driver.team) }} />
+                    <span className="text-sm font-medium text-white">{driver.name}</span>
+                  </div>
+                  <span className="text-sm text-gray-400 font-mono">{driver.points} pts</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Constructor Standings - Clean List */}
+        {standingsData?.constructors && (
+          <section className="bg-[#111] border border-[#222] rounded-xl p-4">
+            <h3 className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-4">Constructors</h3>
+            <div className="space-y-0 divide-y divide-[#1a1a1a]">
+              {standingsData.constructors.slice(0, 5).map((c, i) => {
+                const teamName = c.name || c.team;
+                return (
+                  <div key={teamName} className="flex items-center justify-between py-2.5">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-gray-500 w-5">{i + 1}</span>
+                      <div className="w-0.5 h-4 rounded-full" style={{ backgroundColor: getTeamColor(teamName) }} />
+                      <span className="text-sm font-medium text-white">{teamName}</span>
+                    </div>
+                    <span className="text-sm text-gray-400 font-mono">{c.points} pts</span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Race Results - Simple Table */}
+        <section className="bg-[#111] border border-[#222] rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#222]">
+            <h3 className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Race Results</h3>
+          </div>
+          <div className="divide-y divide-[#1a1a1a]">
+            {raceResults.slice(0, 10).map((row) => (
+              <div key={row.pos} className="flex items-center justify-between px-4 py-2.5">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-gray-500 w-5">{row.pos}</span>
+                  <div className="w-0.5 h-4 rounded-full" style={{ backgroundColor: getTeamColor(row.team) }} />
+                  <div>
+                    <span className="text-sm font-medium text-white">{row.code}</span>
+                    <span className="text-xs text-gray-600 ml-2">{row.team?.split(' ')[0]}</span>
+                  </div>
+                </div>
+                <span className="text-xs font-medium text-gray-400 bg-[#1a1a1a] px-2 py-0.5 rounded">{row.pts} pts</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* ===== DESKTOP LAYOUT (shown at md+) ===== */}
+      <div className="hidden md:block space-y-8">
+
+        {/* Header / Hero - Desktop */}
+        <header className="relative overflow-hidden rounded-2xl bg-[#09090B] border border-[#222] min-h-[280px] p-10 group flex flex-col justify-end">
+          {/* Background Flag - Full Cover with Gradient */}
+          <div className="absolute inset-0 z-0">
+            {(() => {
+              const flagCodes = {
+                'Australian': 'au', 'Bahrain': 'bh', 'Saudi Arabian': 'sa', 'Japanese': 'jp',
+                'Chinese': 'cn', 'Miami': 'us', 'Emilia Romagna': 'it', 'Monaco': 'mc',
+                'Canadian': 'ca', 'Spanish': 'es', 'Austrian': 'at', 'British': 'gb',
+                'Hungarian': 'hu', 'Belgian': 'be', 'Dutch': 'nl', 'Italian': 'it',
+                'Azerbaijan': 'az', 'Singapore': 'sg', 'United States': 'us', 'Mexico': 'mx',
+                'Brazilian': 'br', 'Las Vegas': 'us', 'Qatar': 'qa', 'Abu Dhabi': 'ae'
+              };
+              // Extract country name from "Australian Grand Prix" -> "Australian"
+              const country = data.raceName?.replace(' Grand Prix', '') || 'Australian';
+              const code = flagCodes[country] || 'un';
+
+              return (
+                <>
+                  <img
+                    src={`https://flagcdn.com/w1280/${code}.png`}
+                    alt=""
+                    className="w-full h-full object-cover opacity-20 transition-opacity duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-[#09090B]/80 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#09090B] via-[#09090B]/60 to-transparent" />
+                </>
+              );
+            })()}
+          </div>
+
+          {/* Accent Line */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-transparent z-20" />
+
+          <div className="relative z-10 flex justify-between items-end gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="px-3 py-1 rounded-full bg-green-500/10 text-xs font-bold text-green-500 border border-green-500/20 uppercase tracking-wider">
+                  Finished
+                </span>
+                <span className="text-gray-400 text-sm font-medium tracking-wide border-l border-gray-700 pl-3">
+                  {data.date}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1 mb-2">
+                <h1 className="text-5xl lg:text-7xl font-black text-white italic uppercase tracking-tighter leading-[0.9]">
+                  {data.raceName?.replace(' Grand Prix', '')}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50 block md:inline md:text-5xl ml-2 not-italic tracking-normal">GP</span>
+                </h1>
+              </div>
+
+              <div className="flex items-center gap-2 text-gray-400 mt-3">
+                <MapPin size={16} className="text-green-500" />
+                <span className="text-base font-medium">{data.circuit}</span>
+              </div>
+            </div>
+
+            <div className="text-right z-20">
+              <div className="text-xs text-gray-500 uppercase tracking-wider mb-2 font-bold">Winner</div>
+              <div className="text-4xl lg:text-5xl font-black text-white italic tracking-tight mb-2">{data.winner}</div>
+              <div className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg backdrop-blur-md border border-white/10"
+                style={{ backgroundColor: `${winnerColor}15`, color: winnerColor }}>
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: winnerColor }} />
+                {data.winnerTeam}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Row 2: Podium + WDC Chart */}
+        <div className="grid grid-cols-3 gap-6">
+          {/* Podium */}
+          <div className="bg-[#111] rounded-2xl border border-[#222] p-6 flex flex-col">
+            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-6">Podium</h3>
+            <div className="flex items-end justify-center flex-1 pb-4 gap-3">
+              {podium[1] && (
+                <div className="flex flex-col items-center w-1/3">
+                  <div className="text-lg font-bold text-white mb-2">{podium[1].code}</div>
+                  <div className="w-full h-28 rounded-t-lg flex items-center justify-center"
+                    style={{ backgroundColor: getTeamColor(podium[1].team) }}>
+                    <span className="text-4xl font-black text-white/25">2</span>
+                  </div>
+                </div>
+              )}
+              {podium[0] && (
+                <div className="flex flex-col items-center w-5/12">
+                  <div className="text-xl font-bold text-white mb-2">{podium[0].code}</div>
+                  <div className="w-full h-36 rounded-t-lg flex items-center justify-center"
+                    style={{ backgroundColor: getTeamColor(podium[0].team) }}>
+                    <span className="text-5xl font-black text-white/25">1</span>
+                  </div>
+                </div>
+              )}
+              {podium[2] && (
+                <div className="flex flex-col items-center w-1/3">
+                  <div className="text-lg font-bold text-white mb-2">{podium[2].code}</div>
+                  <div className="w-full h-20 rounded-t-lg flex items-center justify-center"
+                    style={{ backgroundColor: getTeamColor(podium[2].team) }}>
+                    <span className="text-3xl font-black text-white/25">3</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* WDC Chart */}
+          {standingsData && (
+            <div className="col-span-2 bg-[#111] rounded-2xl border border-[#222] p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Championship Battle</h3>
+                <div className="flex gap-3 text-xs">
+                  {standingsData.drivers.slice(0, 4).map((d) => (
+                    <div key={d.code} className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: getTeamColor(d.team) }} />
+                      <span className="text-gray-400">{d.code}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="h-52">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={standingsData.races.map((r, i) => ({
+                    name: r.substring(0, 3).toUpperCase(),
+                    ...standingsData.drivers.slice(0, 4).reduce((acc, d) => ({ ...acc, [d.code]: d.history[i] || 0 }), {})
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                    <XAxis dataKey="name" stroke="#444" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#444" fontSize={10} tickLine={false} axisLine={false} width={30} />
+                    <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px' }} />
+                    {standingsData.drivers.slice(0, 4).map((d) => (
+                      <Line key={d.code} type="monotone" dataKey={d.code}
+                        stroke={getTeamColor(d.team)} strokeWidth={2} dot={false} />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* WDC Fight Chart */}
-        {standingsData && (
-          <div className="lg:col-span-2 bg-[#15151E] rounded-3xl border border-[#2A2A30] p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold uppercase text-white flex items-center gap-2">
-                <Trophy size={18} className="text-yellow-500" /> WDC Fight
-              </h3>
-              <div className="flex gap-2 text-[10px] font-bold flex-wrap justify-end">
-                {/* ... existing avatars ... */}
-                {standingsData.drivers.slice(0, 4).map((d) => {
-                  const color = getTeamColor(d.team);
+        {/* Row 3: Race Control + Constructors + Results */}
+        <div className="grid grid-cols-3 gap-6">
+          <div className="h-[380px]">
+            <RaceControlFeed raceId={data.raceId || 72} />
+          </div>
+
+          {/* Constructor Standings */}
+          {standingsData?.constructors && (
+            <div className="bg-[#111] rounded-2xl border border-[#222] p-6 flex flex-col h-[380px]">
+              <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4">Constructors</h3>
+              <div className="flex-1 space-y-3 overflow-y-auto">
+                {standingsData.constructors.map((c, i) => {
+                  const teamName = c.name || c.team;
+                  const maxPts = standingsData.constructors[0]?.points || 1;
                   return (
-                    <div key={d.code} className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                      <span className="text-gray-400">{d.code}</span>
+                    <div key={teamName}>
+                      <div className="flex justify-between text-xs mb-1.5">
+                        <span className="font-medium text-white">{i + 1}. {teamName}</span>
+                        <span className="text-gray-500 font-mono">{c.points}</span>
+                      </div>
+                      <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all"
+                          style={{ width: `${(c.points / maxPts) * 100}%`, backgroundColor: getTeamColor(teamName) }} />
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </div>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={standingsData.races.map((r, i) => ({
-                  name: r.substring(0, 3).toUpperCase(),
-                  fullRace: r,
-                  ...standingsData.drivers.slice(0, 4).reduce((acc, d) => ({ ...acc, [d.code]: d.history[i] || 0 }), {})
-                }))}>
-                  {/* ... chart config ... */}
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2A2A30" vertical={false} />
-                  <XAxis dataKey="name" stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} dy={5} />
-                  <YAxis stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} width={30} />
-                  <Tooltip
-                    content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        const sorted = [...payload].sort((a, b) => b.value - a.value);
-                        const fullRaceName = payload[0].payload.fullRace;
-                        return (
-                          <div className="bg-[#15151E] border border-[#2A2A30] rounded-lg p-3 shadow-xl z-50">
-                            <div className="text-[10px] text-gray-400 mb-2 font-bold uppercase border-b border-[#2A2A30] pb-1">
-                              {fullRaceName || label}
-                            </div>
-                            {sorted.map((p) => (
-                              <div key={p.name} className="flex items-center justify-between gap-4 text-xs font-bold mb-1 last:mb-0">
-                                <span style={{ color: p.stroke }}>{p.name}</span>
-                                <span className="text-white">{p.value} pts</span>
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  {standingsData.drivers.slice(0, 4).map((d) => {
-                    const color = getTeamColor(d.team);
-                    return (
-                      <Line
-                        key={d.code} type="monotone" dataKey={d.code}
-                        stroke={color} strokeWidth={3} dot={false}
-                        activeDot={{ r: 4, strokeWidth: 0, fill: '#fff' }}
-                      />
-                    );
-                  })}
-                </LineChart>
-              </ResponsiveContainer>
+          )}
+
+          {/* Top 10 Results */}
+          <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden flex flex-col h-[380px]">
+            <div className="px-4 py-3 border-b border-[#222]">
+              <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Top 10</h3>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Row 3: Race Control + Constructors + Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Race Control Feed */}
-        <div className="lg:col-span-1 h-[400px]">
-          <RaceControlFeed raceId={data.raceId || 72} />
-        </div>
-
-        {/* Constructor Standings Widget - FIXED NAMES (USE .name NOT .team) */}
-        {standingsData && standingsData.constructors && (
-          <div className="lg:col-span-1 bg-[#15151E] rounded-3xl border border-[#2A2A30] p-6 h-[400px] flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-sm font-bold uppercase text-gray-400 flex items-center gap-2">
-                <BarChart size={16} className="text-blue-400" /> Constructor Standings
-              </h3>
-              <button
-                onClick={() => setActiveTab('standings')}
-                className="text-[10px] font-bold text-blue-400 hover:text-white transition-colors uppercase bg-blue-500/10 px-2 py-1 rounded-md"
-              >
-                View Full
-              </button>
-            </div>
-            <div className="flex-1 space-y-3 overflow-y-auto custom-scrollbar">
-              {standingsData.constructors.map((c, i) => {
-                const maxPts = standingsData.constructors[0]?.points || 1;
-                const pct = (c.points / maxPts) * 100;
-                const teamName = c.name || c.team;
-                const color = getTeamColor(teamName);
-                const change = c.change || 0;
-
-                return (
-                  <div key={teamName} className="group relative z-10 w-full mb-3 last:mb-0">
-                    <div className="flex justify-between text-xs mb-1 w-full items-center">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="font-bold text-white group-hover:text-white transition-colors truncate">{i + 1}. {teamName}</span>
-                        {change !== 0 && (
-                          <div className={`flex items-center gap-0.5 text-[10px] ${change > 0 ? "text-green-500" : "text-red-500"}`}>
-                            {change > 0 ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                            <span>{Math.abs(change)}</span>
-                          </div>
-                        )}
-                        {change === 0 && <span className="text-gray-600 text-[10px]">-</span>}
-                      </div>
-                      <span className="text-gray-400 font-mono group-hover:text-gray-300 whitespace-nowrap">{c.points} pts</span>
-                    </div>
-                    <div className="h-2 bg-[#2A2A30] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500 relative"
-                        style={{ width: `${pct}%`, backgroundColor: color }}
-                      >
-                        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
+            <div className="flex-1 overflow-y-auto divide-y divide-[#1a1a1a]">
+              {raceResults.slice(0, 10).map((row) => (
+                <div key={row.pos} className="flex items-center justify-between px-4 py-2">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-gray-600 w-5">{row.pos}</span>
+                    <div className="w-0.5 h-5 rounded-full" style={{ backgroundColor: getTeamColor(row.team) }} />
+                    <div>
+                      <div className="text-sm font-medium text-white">{row.code}</div>
+                      <div className="text-[10px] text-gray-600">{row.team?.split(' ')[0]}</div>
                     </div>
                   </div>
-                );
-              })}
+                  <span className="text-xs font-medium text-gray-500 bg-[#1a1a1a] px-2 py-0.5 rounded">{row.pts}</span>
+                </div>
+              ))}
             </div>
           </div>
-        )}
-
-        {/* Top 10 Classification */}
-        <div className="lg:col-span-1 bg-[#15151E] rounded-3xl border border-[#2A2A30] overflow-hidden flex flex-col h-[400px]">
-          <div className="p-4 border-b border-[#2A2A30] flex justify-between items-center bg-[#1F1F27]">
-            <h3 className="text-sm font-bold uppercase tracking-wide">{data.raceName || "Race"} Top 10</h3>
-          </div>
-          <div className="overflow-y-auto flex-1 custom-scrollbar">
-            <table className="w-full text-left">
-              <tbody className="divide-y divide-[#2A2A30]">
-                {raceResults.slice(0, 10).map((row) => {
-                  const teamColor = getTeamColor(row.team);
-                  return (
-                    <tr key={row.pos} className="hover:bg-white/5 transition-colors group">
-                      <td className="px-4 py-3 font-heading font-bold text-lg text-gray-500 group-hover:text-white transition-colors w-12">
-                        {row.pos}
-                      </td>
-                      <td className="px-2 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-1 h-6 rounded-full" style={{ backgroundColor: teamColor }}></div>
-                          <div>
-                            <div className="font-bold text-sm leading-tight">{row.code || row.driver?.split(' ').pop()}</div>
-                            <div className="text-[10px] text-gray-500 uppercase">{row.team?.split(' ')[0]}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-2 py-3 text-right">
-                        <span className="inline-block min-w-[24px] text-center font-bold bg-[#2A2A30] py-0.5 px-1.5 rounded text-xs">
-                          {row.pts}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
         </div>
-      </div >
-    </div >
+      </div>
+    </div>
   )
 }
 

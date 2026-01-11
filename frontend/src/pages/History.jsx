@@ -14,7 +14,6 @@ const CODE_TO_ISO = {
     'bra': 'br', 'lvg': 'us', 'qat': 'qa', 'abu': 'ae'
 };
 
-// Get flag image URL from flagcdn.com
 const getFlagUrl = (code) => {
     const iso = CODE_TO_ISO[code] || 'un';
     return `https://flagcdn.com/w80/${iso}.png`;
@@ -31,7 +30,6 @@ export default function History() {
     const [loading, setLoading] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
-    // Fetch Race List
     useEffect(() => {
         setLoading(true);
         axios.get(`http://localhost:5000/api/races?year=${selectedYear}`)
@@ -45,7 +43,6 @@ export default function History() {
             });
     }, [selectedYear]);
 
-    // Fetch Race Details when race selected
     useEffect(() => {
         if (!selectedRaceId) return;
         setLoading(true);
@@ -60,11 +57,9 @@ export default function History() {
             });
     }, [selectedRaceId]);
 
-    // Group races by month
     const racesByMonth = useMemo(() => {
         const groups = {};
         races.forEach(race => {
-            // Parse date like "16 Mar 2025"
             const date = new Date(race.date);
             const monthKey = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
             if (!groups[monthKey]) groups[monthKey] = [];
@@ -74,7 +69,7 @@ export default function History() {
     }, [races]);
 
     return (
-        <div className="flex flex-col h-full animate-in fade-in duration-500">
+        <div className="h-full flex flex-col overflow-hidden">
             <AnimatePresence mode="wait">
                 {view === 'list' ? (
                     <motion.div
@@ -82,98 +77,172 @@ export default function History() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
-                        className="flex-1 overflow-y-auto"
+                        className="flex-1 flex flex-col overflow-hidden"
                     >
-                        {/* Header */}
-                        <div className="mb-6 md:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                            <div>
-                                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-heading mb-2">Race Archive</h1>
-                                <p className="text-gray-500">Explore past race results and telemetry.</p>
+                        {/* ===== MOBILE LIST VIEW (with timeline style) ===== */}
+                        <div className="md:hidden flex-1 flex flex-col overflow-hidden">
+                            {/* Header */}
+                            <div className="p-4 shrink-0 border-b border-[#222]">
+                                <div className="flex items-center justify-between">
+                                    <h1 className="text-lg font-bold text-white">Race Archive</h1>
+
+                                    {/* Year Selector */}
+                                    <select
+                                        value={selectedYear}
+                                        onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                                        className="bg-[#111] border border-[#222] rounded-lg px-3 py-1.5 text-sm text-white"
+                                    >
+                                        {AVAILABLE_YEARS.map(year => (
+                                            <option key={year} value={year}>{year}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">{races.length} races this season</p>
                             </div>
 
-                            {/* Year Dropdown */}
-                            <div className="relative">
-                                <button
-                                    onClick={() => setDropdownOpen(!dropdownOpen)}
-                                    className="flex items-center gap-2 bg-[#15151E] border border-[#2A2A30] hover:border-f1-red/50 px-4 py-2.5 rounded-lg transition-all"
-                                >
-                                    <Calendar size={16} className="text-f1-red" />
-                                    <span className="font-bold text-white">{selectedYear} Season</span>
-                                    <ChevronDown size={16} className={cn("text-gray-500 transition-transform", dropdownOpen && "rotate-180")} />
-                                </button>
+                            {/* Timeline List */}
+                            <div className="flex-1 overflow-y-auto px-4 pb-20">
+                                {loading ? (
+                                    <div className="text-center py-10 text-gray-500">Loading...</div>
+                                ) : (
+                                    <div className="relative pt-4">
+                                        {/* Timeline Line */}
+                                        <div className="absolute left-[15px] top-0 bottom-0 w-[2px] bg-gradient-to-b from-f1-red/50 via-[#222] to-[#222]" />
 
-                                <AnimatePresence>
-                                    {dropdownOpen && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: -10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            className="absolute right-0 top-full mt-2 bg-[#15151E] border border-[#2A2A30] rounded-lg overflow-hidden shadow-xl z-50 min-w-[160px]"
-                                        >
-                                            {AVAILABLE_YEARS.map(year => (
-                                                <button
-                                                    key={year}
-                                                    onClick={() => {
-                                                        setSelectedYear(year);
-                                                        setDropdownOpen(false);
-                                                    }}
-                                                    className={cn(
-                                                        "w-full px-4 py-3 text-left text-sm font-medium transition-colors flex items-center justify-between",
-                                                        selectedYear === year
-                                                            ? "bg-f1-red/10 text-f1-red"
-                                                            : "text-gray-400 hover:bg-white/5 hover:text-white"
-                                                    )}
-                                                >
-                                                    {year} Season
-                                                    {selectedYear === year && <div className="w-2 h-2 rounded-full bg-f1-red" />}
-                                                </button>
-                                            ))}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                        {Object.entries(racesByMonth).map(([month, monthRaces]) => (
+                                            <div key={month} className="mb-6">
+                                                {/* Month Header */}
+                                                <div className="flex items-center gap-3 mb-3 sticky top-0 bg-[#0B0B0F]/95 backdrop-blur-sm py-2 z-10">
+                                                    <div className="w-8 h-8 rounded-full bg-[#111] border-2 border-[#222] flex items-center justify-center relative z-10">
+                                                        <Calendar size={12} className="text-gray-500" />
+                                                    </div>
+                                                    <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">{month}</span>
+                                                </div>
+
+                                                {/* Races */}
+                                                <div className="space-y-2 pl-[40px]">
+                                                    {monthRaces.map((race) => (
+                                                        <button
+                                                            key={race.id}
+                                                            onClick={() => {
+                                                                setSelectedRaceId(race.id);
+                                                                setView('detail');
+                                                            }}
+                                                            className="w-full bg-[#111] border border-[#222] rounded-xl p-3 flex items-center justify-between text-left hover:border-f1-red/30 transition-colors"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="text-center shrink-0 w-10">
+                                                                    <div className="text-lg font-bold text-white">{new Date(race.date).getDate()}</div>
+                                                                    <div className="text-[9px] text-gray-500 uppercase">{new Date(race.date).toLocaleDateString('en-US', { month: 'short' })}</div>
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-sm font-medium text-white">{race.name}</div>
+                                                                    <div className="text-[10px] text-gray-500">{race.circuit}</div>
+                                                                </div>
+                                                            </div>
+                                                            <ChevronRight size={16} className="text-gray-600" />
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        {/* Timeline */}
-                        {loading && !races.length ? (
-                            <div className="text-center py-20 text-gray-500">Loading Archive...</div>
-                        ) : (
-                            <div className="relative">
-                                {/* Timeline Line */}
-                                <div className="absolute left-[19px] top-0 bottom-0 w-[2px] bg-gradient-to-b from-f1-red/50 via-[#2A2A30] to-[#2A2A30]" />
+                        {/* ===== DESKTOP LIST VIEW ===== */}
+                        <div className="hidden md:flex flex-col flex-1 p-6 overflow-hidden">
+                            {/* Header */}
+                            <div className="flex justify-between items-center mb-6 shrink-0">
+                                <div>
+                                    <h1 className="text-2xl font-bold text-white">Race Archive</h1>
+                                    <p className="text-gray-500 text-sm mt-1">Explore past race results</p>
+                                </div>
 
-                                {Object.entries(racesByMonth).map(([month, monthRaces], monthIdx) => (
-                                    <div key={month} className="mb-8">
-                                        {/* Month Header */}
-                                        <div className="flex items-center gap-4 mb-4 sticky top-0 bg-[#0B0B0F]/95 backdrop-blur-sm py-2 z-10">
-                                            <div className="w-10 h-10 rounded-full bg-[#15151E] border-2 border-[#2A2A30] flex items-center justify-center relative z-10">
-                                                <Calendar size={16} className="text-gray-500" />
-                                            </div>
-                                            <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">{month}</span>
-                                        </div>
+                                {/* Year Dropdown */}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setDropdownOpen(!dropdownOpen)}
+                                        className="flex items-center gap-2 bg-[#111] border border-[#222] hover:border-f1-red/50 px-4 py-2.5 rounded-lg transition-all"
+                                    >
+                                        <Calendar size={16} className="text-f1-red" />
+                                        <span className="font-medium text-white">{selectedYear} Season</span>
+                                        <ChevronDown size={16} className={cn("text-gray-500 transition-transform", dropdownOpen && "rotate-180")} />
+                                    </button>
 
-                                        {/* Races */}
-                                        <div className="space-y-3 pl-[52px]">
-                                            {monthRaces.map((race, idx) => (
-                                                <TimelineRaceCard
-                                                    key={race.id}
-                                                    race={race}
-                                                    onClick={() => {
-                                                        setSelectedRaceId(race.id);
-                                                        setView('detail');
-                                                    }}
-                                                    delay={monthIdx * 0.1 + idx * 0.05}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
+                                    <AnimatePresence>
+                                        {dropdownOpen && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                className="absolute right-0 top-full mt-2 bg-[#111] border border-[#222] rounded-lg overflow-hidden shadow-xl z-50 min-w-[160px]"
+                                            >
+                                                {AVAILABLE_YEARS.map(year => (
+                                                    <button
+                                                        key={year}
+                                                        onClick={() => {
+                                                            setSelectedYear(year);
+                                                            setDropdownOpen(false);
+                                                        }}
+                                                        className={cn(
+                                                            "w-full px-4 py-3 text-left text-sm font-medium transition-colors flex items-center justify-between",
+                                                            selectedYear === year
+                                                                ? "bg-f1-red/10 text-f1-red"
+                                                                : "text-gray-400 hover:bg-white/5 hover:text-white"
+                                                        )}
+                                                    >
+                                                        {year} Season
+                                                        {selectedYear === year && <div className="w-2 h-2 rounded-full bg-f1-red" />}
+                                                    </button>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                             </div>
-                        )}
 
-                        {!loading && races.length === 0 && (
-                            <div className="text-center py-20 text-gray-500">No races found for this season.</div>
-                        )}
+                            {/* Timeline */}
+                            <div className="flex-1 overflow-y-auto">
+                                {loading && !races.length ? (
+                                    <div className="text-center py-20 text-gray-500">Loading Archive...</div>
+                                ) : (
+                                    <div className="relative">
+                                        <div className="absolute left-[19px] top-0 bottom-0 w-[2px] bg-gradient-to-b from-f1-red/50 via-[#222] to-[#222]" />
+
+                                        {Object.entries(racesByMonth).map(([month, monthRaces], monthIdx) => (
+                                            <div key={month} className="mb-8">
+                                                <div className="flex items-center gap-4 mb-4 sticky top-0 bg-[#0B0B0F]/95 backdrop-blur-sm py-2 z-10">
+                                                    <div className="w-10 h-10 rounded-full bg-[#111] border-2 border-[#222] flex items-center justify-center relative z-10">
+                                                        <Calendar size={16} className="text-gray-500" />
+                                                    </div>
+                                                    <span className="text-sm font-medium text-gray-400 uppercase tracking-wider">{month}</span>
+                                                </div>
+
+                                                <div className="space-y-3 pl-[52px]">
+                                                    {monthRaces.map((race, idx) => (
+                                                        <TimelineRaceCard
+                                                            key={race.id}
+                                                            race={race}
+                                                            onClick={() => {
+                                                                setSelectedRaceId(race.id);
+                                                                setView('detail');
+                                                            }}
+                                                            delay={monthIdx * 0.1 + idx * 0.05}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {!loading && races.length === 0 && (
+                                    <div className="text-center py-20 text-gray-500">No races found for this season.</div>
+                                )}
+                            </div>
+                        </div>
                     </motion.div>
                 ) : (
                     <motion.div
@@ -181,17 +250,17 @@ export default function History() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20 }}
-                        className="flex-1 flex flex-col min-h-0"
+                        className="flex-1 flex flex-col min-h-0 p-4 md:p-6"
                     >
                         <button
                             onClick={() => { setView('list'); setSelectedRaceId(null); setRaceDetails(null); }}
-                            className="flex items-center gap-2 text-gray-500 hover:text-white mb-6 transition-colors w-fit"
+                            className="flex items-center gap-2 text-gray-500 hover:text-white mb-4 transition-colors w-fit text-sm"
                         >
-                            <ChevronLeft size={20} /> Back to {selectedYear} Season
+                            <ChevronLeft size={16} /> Back
                         </button>
 
                         {loading || !raceDetails ? (
-                            <div className="flex-1 flex items-center justify-center text-gray-500">Loading Results...</div>
+                            <div className="flex-1 flex items-center justify-center text-gray-500">Loading...</div>
                         ) : (
                             <RaceDetailView data={raceDetails} />
                         )}

@@ -178,12 +178,13 @@ export default function Predictions() {
     const [podium, setPodium] = useState({ 1: null, 2: null, 3: null });
     const [selectingPosition, setSelectingPosition] = useState(1);
 
+
     // Side Predictions
-    const [fastestLap, setFastestLap] = useState(null);
+    const [winningGap, setWinningGap] = useState('5-10s');
     const [dnfPredictions, setDnfPredictions] = useState([]);
     const [weather, setWeather] = useState('dry');
     const [pitStrategy, setPitStrategy] = useState({ stops: 1, tyres: ['S', 'M', 'M', 'M'] });
-    const [scProbability, setScProbability] = useState(50);
+    const [safetyCar, setSafetyCar] = useState({ enabled: true, count: 1 });
 
     // Tyre Data
     const TYRE_COLORS = {
@@ -249,7 +250,7 @@ export default function Predictions() {
         setLoading(true);
         setUserVote(null);
         setPodium({ 1: null, 2: null, 3: null });
-        setFastestLap(null);
+        setWinningGap('5-10s');
         setDnfPredictions([]);
         setShowAllDrivers(false);
         setShowResults(false);
@@ -303,11 +304,11 @@ export default function Predictions() {
 
         const votePayload = {
             podium,
-            fastestLap,
+            winningGap,
             dnfPredictions,
             weather,
             pitStrategy,
-            scProbability
+            safetyCar
         };
         setUserVote(votePayload);
 
@@ -333,9 +334,9 @@ export default function Predictions() {
     // AI prediction based on weather
     const aiPrediction = useMemo(() => {
         if (weather === 'wet') {
-            return { winner: "HAM", p2: "VER", p3: "NOR", confidence: 65, safetyCar: 85, fastestLap: "VER" };
+            return { winner: "HAM", p2: "VER", p3: "NOR", confidence: 65, safetyCar: true, winningGap: "4.2s" };
         }
-        return { winner: "VER", p2: "NOR", p3: "LEC", confidence: 78, safetyCar: 55, fastestLap: "NOR" };
+        return { winner: "VER", p2: "NOR", p3: "LEC", confidence: 78, safetyCar: false, winningGap: "8.5s" };
     }, [weather]);
 
     const podiumFilled = podium[1] && podium[2] && podium[3];
@@ -402,53 +403,79 @@ export default function Predictions() {
                 )}
             </AnimatePresence>
 
-            {/* 1. HEADER */}
-            <div className="bg-[#15151E] border border-[#2A2A30] rounded-xl md:rounded-2xl p-3 md:p-4 flex flex-col gap-3 md:gap-0 md:flex-row justify-between items-stretch md:items-center shadow-lg relative overflow-hidden shrink-0 mx-3 md:mx-6 mt-3 md:mt-6">
-                <div className="absolute top-0 left-0 w-1 h-full bg-f1-red" />
+            {/* 1. HEADER - DASHBOARD STYLE HERO */}
+            <header className="relative overflow-hidden rounded-2xl bg-[#09090B] border border-[#222] min-h-[220px] md:min-h-[280px] mx-3 md:mx-6 mt-3 md:mt-6 shrink-0 flex flex-col justify-end p-6 md:p-10 group">
+                {/* Background Flag - Full Cover with Gradient */}
+                <div className="absolute inset-0 z-0">
+                    {(() => {
+                        const flagCodes = {
+                            'Australian': 'au', 'Bahrain': 'bh', 'Saudi Arabian': 'sa', 'Japanese': 'jp',
+                            'Chinese': 'cn', 'Miami': 'us', 'Emilia Romagna': 'it', 'Monaco': 'mc',
+                            'Canadian': 'ca', 'Spanish': 'es', 'Austrian': 'at', 'British': 'gb',
+                            'Hungarian': 'hu', 'Belgian': 'be', 'Dutch': 'nl', 'Italian': 'it',
+                            'Azerbaijan': 'az', 'Singapore': 'sg', 'United States': 'us', 'Mexico': 'mx',
+                            'Brazilian': 'br', 'Las Vegas': 'us', 'Qatar': 'qa', 'Abu Dhabi': 'ae'
+                        };
+                        const code = flagCodes[selectedRace.name] || 'un';
+                        return (
+                            <>
+                                {/* Vivid Flag Image */}
+                                <img
+                                    src={`https://flagcdn.com/w1280/${code}.png`}
+                                    alt=""
+                                    className="w-full h-full object-cover opacity-20 md:opacity-15 md:group-hover:opacity-20 transition-opacity duration-700"
+                                />
+                                {/* Gradient Overlays for Text Readability */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-[#09090B]/80 to-transparent" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#09090B] via-[#09090B]/60 to-transparent" />
+                            </>
+                        );
+                    })()}
+                </div>
 
-                <div className="flex items-center gap-4 z-10">
-                    <div className="w-12 h-12 bg-[#2A2A30] rounded-xl flex items-center justify-center font-bold text-xl text-white shadow-inner">{selectedRace.round || "#"}</div>
-                    <div>
-                        <h2 className="text-base sm:text-lg md:text-xl font-bold text-white leading-tight">{selectedRace.name}</h2>
-                        <div className="flex items-center gap-3 text-xs text-gray-400 font-medium uppercase tracking-wider mt-1">
-                            <span className="flex items-center gap-1"><MapPin size={12} /> {selectedRace.circuit || "Circuit"}</span>
-                            <span className="flex items-center gap-1"><Calendar size={12} /> {selectedRace.date}</span>
+                {/* Accent Line */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-f1-red to-transparent z-20" />
+
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                    {/* Left: Race Info */}
+                    <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-4">
+                            <span className="px-3 py-1 rounded-full bg-f1-red/10 text-xs font-bold text-f1-red border border-f1-red/20 uppercase tracking-wider">
+                                Predictions Open
+                            </span>
+                            <span className="text-gray-400 text-sm font-medium tracking-wide border-l border-gray-700 pl-3">
+                                {selectedRace.date}
+                            </span>
+                        </div>
+
+                        <div className="flex flex-col gap-1 mb-2">
+                            <div className="flex items-center gap-3 text-white/50 text-sm md:text-base font-medium tracking-[0.2em] uppercase">
+                                Round {races.findIndex(r => r.id === selectedRace.id) + 1}
+                            </div>
+                            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white italic uppercase tracking-tighter leading-[0.9]">
+                                {selectedRace.name}
+                            </h1>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-gray-400 mt-2">
+                            <MapPin size={16} className="text-f1-red" />
+                            <span className="text-sm md:text-base font-medium">{selectedRace.circuit || "Circuit"}</span>
                         </div>
                     </div>
-                </div>
 
-                <div className="flex items-center gap-4 mt-4 md:mt-0 z-10">
-                    {/* Weather Toggle */}
-                    <div className="flex bg-[#0B0B0F] rounded-lg p-1 border border-[#2A2A30]">
-                        <button
-                            onClick={() => !userVote && setWeather('dry')}
-                            className={cn(
-                                "px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1 transition-all",
-                                weather === 'dry' ? "bg-yellow-500/20 text-yellow-400" : "text-gray-500"
-                            )}
+                    {/* Right: Controls */}
+                    <div className="flex flex-col items-end gap-3 z-20">
+                        <label className="text-xs text-gray-500 uppercase font-bold tracking-wider">Select Race</label>
+                        <select
+                            className="bg-black/50 backdrop-blur-md border border-white/10 text-white text-sm rounded-lg py-3 px-4 outline-none focus:border-f1-red focus:ring-1 focus:ring-f1-red transition-all cursor-pointer min-w-[200px]"
+                            value={selectedRace.id}
+                            onChange={e => setSelectedRace(races.find(r => r.id == e.target.value))}
                         >
-                            <Sun size={14} /> Dry
-                        </button>
-                        <button
-                            onClick={() => !userVote && setWeather('wet')}
-                            className={cn(
-                                "px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1 transition-all",
-                                weather === 'wet' ? "bg-blue-500/20 text-blue-400" : "text-gray-500"
-                            )}
-                        >
-                            <CloudRain size={14} /> Wet
-                        </button>
+                            {races.map(r => <option key={r.id} value={r.id}>{r.name} GP</option>)}
+                        </select>
                     </div>
-
-                    <select
-                        className="bg-[#0B0B0F] border border-[#2A2A30] text-white text-sm rounded-lg py-2 px-3 outline-none focus:border-f1-red"
-                        value={selectedRace.id}
-                        onChange={e => setSelectedRace(races.find(r => r.id == e.target.value))}
-                    >
-                        {races.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                    </select>
                 </div>
-            </div>
+            </header>
 
 
 
@@ -556,15 +583,16 @@ export default function Predictions() {
                             <div className="flex items-center justify-between gap-2 overflow-hidden py-2" style={{ minHeight: '80px' }}>
                                 <AnimatePresence mode="popLayout" initial={false}>
                                     {Array.from({ length: pitStrategy.stops + 1 }).map((_, i) => (
-                                        <React.Fragment key={`stint-${i}`}>
-                                            <motion.div
-                                                className="flex flex-col items-center gap-1 group cursor-pointer relative z-10"
-                                                onClick={() => cycleTyre(i)}
-                                                initial={{ scale: 0, opacity: 0 }}
-                                                animate={{ scale: 1, opacity: 1 }}
-                                                exit={{ scale: 0, opacity: 0 }}
-                                                transition={{ type: "spring", stiffness: 300, damping: 25, delay: i * 0.1 }}
-                                            >
+                                        <motion.div
+                                            key={`stint-${i}`}
+                                            layout
+                                            initial={{ opacity: 0, scale: 0.8 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.8 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="flex items-center"
+                                        >
+                                            <div className="flex flex-col items-center gap-1 group cursor-pointer relative z-10" onClick={() => cycleTyre(i)}>
                                                 <AnimatePresence mode="wait">
                                                     <motion.div
                                                         key={pitStrategy.tyres[i] || 'M'}
@@ -582,45 +610,111 @@ export default function Predictions() {
                                                         {pitStrategy.tyres[i] || 'M'}
                                                     </motion.div>
                                                 </AnimatePresence>
-                                                <motion.span
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    className="text-[10px] text-gray-500 uppercase font-bold"
-                                                >
+                                                <span className="text-[10px] text-gray-500 uppercase font-bold">
                                                     {i === 0 ? 'Start' : i === pitStrategy.stops ? 'End' : `Stint ${i + 1}`}
-                                                </motion.span>
-                                            </motion.div>
+                                                </span>
+                                            </div>
 
                                             {i < pitStrategy.stops && (
-                                                <motion.div
-                                                    initial={{ scaleX: 0, opacity: 0 }}
-                                                    animate={{ scaleX: 1, opacity: 1 }}
-                                                    transition={{ delay: i * 0.1 + 0.1 }}
-                                                >
+                                                <div className="mx-2">
                                                     <ChevronRight size={20} className="text-gray-600/50" />
-                                                </motion.div>
+                                                </div>
                                             )}
-                                        </React.Fragment>
+                                        </motion.div>
                                     ))}
                                 </AnimatePresence>
                             </div>
                         </div>
 
 
+                        {/* Winning Margin Selector */}
+                        <div className="bg-[#0B0B0F] rounded-xl p-4 border border-[#2A2A30]">
+                            <h4 className="text-sm font-bold text-green-400 flex items-center gap-2 mb-3">
+                                <Timer size={14} /> Winning Margin
+                            </h4>
+                            <div className="flex bg-[#1A1A24] p-1 rounded-lg">
+                                {['< 5s', '5-10s', '> 10s'].map(gap => (
+                                    <button
+                                        key={gap}
+                                        onClick={() => !userVote && setWinningGap(gap)}
+                                        disabled={!!userVote}
+                                        className={cn(
+                                            "flex-1 py-2 rounded-md text-xs font-bold transition-all",
+                                            winningGap === gap
+                                                ? "bg-green-500 text-black shadow-lg"
+                                                : "text-gray-400 hover:text-white"
+                                        )}
+                                    >
+                                        {gap}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* Safety Car */}
                         <div className="bg-[#0B0B0F] rounded-xl p-4 border border-[#2A2A30]">
-                            <div className="flex justify-between items-center mb-3">
-                                <h4 className="text-sm font-bold text-orange-400 flex items-center gap-2">
-                                    <AlertTriangle size={14} /> Safety Car
-                                </h4>
-                                <span className="text-lg font-mono font-bold text-orange-400">{scProbability}%</span>
+                            <h4 className="text-sm font-bold text-orange-400 flex items-center gap-2 mb-3">
+                                <AlertTriangle size={14} /> Safety Car
+                            </h4>
+
+                            {/* Yes/No Toggle */}
+                            <div className="flex bg-[#1A1A24] p-1 rounded-lg mb-3">
+                                <button
+                                    onClick={() => !userVote && setSafetyCar(prev => ({ ...prev, enabled: false }))}
+                                    disabled={!!userVote}
+                                    className={cn(
+                                        "flex-1 py-2 rounded-md text-xs font-bold transition-all",
+                                        !safetyCar.enabled
+                                            ? "bg-gray-600 text-white shadow-lg"
+                                            : "text-gray-400 hover:text-white"
+                                    )}
+                                >
+                                    No
+                                </button>
+                                <button
+                                    onClick={() => !userVote && setSafetyCar(prev => ({ ...prev, enabled: true }))}
+                                    disabled={!!userVote}
+                                    className={cn(
+                                        "flex-1 py-2 rounded-md text-xs font-bold transition-all",
+                                        safetyCar.enabled
+                                            ? "bg-orange-500 text-black shadow-lg"
+                                            : "text-gray-400 hover:text-white"
+                                    )}
+                                >
+                                    Yes
+                                </button>
                             </div>
-                            <input
-                                type="range" min="0" max="100" value={scProbability}
-                                disabled={!!userVote}
-                                onChange={(e) => setScProbability(parseInt(e.target.value))}
-                                className="w-full h-2 bg-[#2A2A30] rounded-lg appearance-none cursor-pointer accent-orange-500"
-                            />
+
+                            {/* Count Selector - only show if Yes */}
+                            <AnimatePresence>
+                                {safetyCar.enabled && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="text-[10px] text-gray-500 uppercase mb-2">How many?</div>
+                                        <div className="flex gap-2">
+                                            {[1, 2, 3].map(n => (
+                                                <button
+                                                    key={n}
+                                                    onClick={() => !userVote && setSafetyCar(prev => ({ ...prev, count: n }))}
+                                                    disabled={!!userVote}
+                                                    className={cn(
+                                                        "flex-1 py-2 rounded-lg text-sm font-bold transition-all border",
+                                                        safetyCar.count === n
+                                                            ? "bg-orange-500/20 text-orange-400 border-orange-500/50"
+                                                            : "bg-[#1A1A24] text-gray-400 border-[#2A2A30] hover:text-white"
+                                                    )}
+                                                >
+                                                    {n === 3 ? '3+' : n}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
 
@@ -638,72 +732,183 @@ export default function Predictions() {
 
                 {/* RIGHT: INSIGHTS & LEADERBOARD */}
                 <div className="flex-1 flex flex-col gap-3 md:gap-4">
-                    {/* AI vs You Comparison */}
+                    {/* AI vs You Comparison - Improved */}
                     <div className="bg-[#15151E] rounded-3xl border border-[#2A2A30] p-5">
                         <h3 className="text-sm font-bold text-gray-400 uppercase mb-4 flex items-center gap-2">
                             <Brain size={14} /> AI vs Your Prediction
                         </h3>
 
                         <div className="grid grid-cols-2 gap-4">
+                            {/* AI Prediction */}
                             <div className="bg-[#0B0B0F] rounded-xl p-4 border border-purple-500/30">
-                                <div className="text-xs text-purple-400 uppercase mb-2">AI Prediction</div>
-                                <div className="text-lg font-bold text-white mb-1">
-                                    🥇 {aiPrediction.winner} 🥈 {aiPrediction.p2} 🥉 {aiPrediction.p3}
+                                <div className="text-xs text-purple-400 uppercase mb-3">AI Prediction</div>
+                                <div className="space-y-2">
+                                    {[
+                                        { pos: 1, driver: aiPrediction.winner, label: '1ST' },
+                                        { pos: 2, driver: aiPrediction.p2, label: '2ND' },
+                                        { pos: 3, driver: aiPrediction.p3, label: '3RD' }
+                                    ].map(({ pos, driver, label }) => (
+                                        <div key={pos} className="flex items-center gap-2">
+                                            <span className="text-[10px] text-gray-500 w-6">{label}</span>
+                                            <div className="w-1 h-4 rounded-full" style={{ backgroundColor: DRIVER_DATA[driver]?.color || '#666' }} />
+                                            <span className="text-sm font-bold text-white">{driver}</span>
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="text-xs text-gray-500">
-                                    FL: {aiPrediction.fastestLap} | SC: {aiPrediction.safetyCar}%
+                                <div className="mt-3 pt-3 border-t border-[#2A2A30] grid grid-cols-2 gap-2 text-[10px]">
+                                    <div>
+                                        <span className="text-gray-500">Winning Gap</span>
+                                        <div className="text-white font-bold">{aiPrediction.winningGap}</div>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-500">Safety Car</span>
+                                        <div className="text-white font-bold">{aiPrediction.safetyCar ? 'Yes' : 'No'}</div>
+                                    </div>
                                 </div>
                             </div>
+
+                            {/* Your Prediction */}
                             <div className={cn("bg-[#0B0B0F] rounded-xl p-4 border", userVote ? "border-f1-red/30" : "border-[#2A2A30]")}>
-                                <div className="text-xs text-f1-red uppercase mb-2">Your Prediction</div>
+                                <div className="text-xs text-f1-red uppercase mb-3">Your Prediction</div>
                                 {podium[1] ? (
                                     <>
-                                        <div className="text-lg font-bold text-white mb-1">
-                                            🥇 {podium[1]} 🥈 {podium[2] || '?'} 🥉 {podium[3] || '?'}
+                                        <div className="space-y-2">
+                                            {[
+                                                { pos: 1, driver: podium[1], label: '1ST' },
+                                                { pos: 2, driver: podium[2], label: '2ND' },
+                                                { pos: 3, driver: podium[3], label: '3RD' }
+                                            ].map(({ pos, driver, label }) => (
+                                                <div key={pos} className="flex items-center gap-2">
+                                                    <span className="text-[10px] text-gray-500 w-6">{label}</span>
+                                                    <div className="w-1 h-4 rounded-full" style={{ backgroundColor: driver ? DRIVER_DATA[driver]?.color : '#333' }} />
+                                                    <span className="text-sm font-bold text-white">{driver || '?'}</span>
+                                                </div>
+                                            ))}
                                         </div>
-                                        <div className="text-xs text-gray-500">
-                                            FL: {fastestLap || '?'} | SC: {scProbability}%
+                                        <div className="mt-3 pt-3 border-t border-[#2A2A30] grid grid-cols-2 gap-2 text-[10px]">
+                                            <div>
+                                                <span className="text-gray-500">Winning Gap</span>
+                                                <div className="text-white font-bold">{winningGap}</div>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-500">Safety Car</span>
+                                                <div className="text-white font-bold">{safetyCar.enabled ? `Yes (${safetyCar.count === 3 ? '3+' : safetyCar.count})` : 'No'}</div>
+                                            </div>
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="text-sm text-gray-600">Make your prediction...</div>
+                                    <div className="text-sm text-gray-600 py-4 text-center">Make your prediction...</div>
                                 )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Community Stats - Coming Soon */}
+                    {/* Community Predictions - Enhanced with Tabs */}
                     <div className="bg-[#15151E] rounded-3xl border border-[#2A2A30] p-5 flex-1 min-h-0 flex flex-col">
-                        <h3 className="text-sm font-bold text-gray-400 uppercase mb-4 flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
                             <BarChart3 size={14} /> Community Predictions
                         </h3>
                         <div className="flex-1 overflow-y-auto space-y-3">
-                            {stats?.winner?.length > 0 ? (
-                                stats.winner.map((w, i) => (
-                                    <div key={w.code} className="group">
-                                        <div className="flex justify-between text-xs mb-1">
+                            {/* Winner Predictions */}
+                            {[
+                                { code: 'VER', percent: 42, team: 'Red Bull Racing' },
+                                { code: 'NOR', percent: 28, team: 'McLaren' },
+                                { code: 'LEC', percent: 15, team: 'Ferrari' },
+                                { code: 'HAM', percent: 8, team: 'Ferrari' },
+                                { code: 'PIA', percent: 5, team: 'McLaren' },
+                                { code: 'RUS', percent: 2, team: 'Mercedes' }
+                            ].map((w, i) => (
+                                <div key={w.code} className="group">
+                                    <div className="flex justify-between items-center text-xs mb-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-1 h-3 rounded-full" style={{ backgroundColor: DRIVER_DATA[w.code]?.color || '#666' }} />
                                             <span className={cn("font-bold", i === 0 ? "text-white" : "text-gray-400")}>{w.code}</span>
-                                            <span className="text-gray-500">{w.percent}%</span>
+                                            <span className="text-[10px] text-gray-600">{w.team}</span>
                                         </div>
-                                        <div className="h-2 bg-[#0B0B0F] rounded-full overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${w.percent}%` }}
-                                                className={cn("h-full rounded-full transition-colors", i === 0 ? "bg-f1-red" : "bg-gray-700 group-hover:bg-gray-500")}
-                                            />
-                                        </div>
+                                        <span className={cn("font-bold", i === 0 ? "text-f1-red" : "text-gray-500")}>{w.percent}%</span>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
-                                    <BarChart3 size={32} className="mb-2 text-gray-600" />
-                                    <p className="text-xs text-gray-500">Be the first to predict!</p>
+                                    <div className="h-2 bg-[#0B0B0F] rounded-full overflow-hidden">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${w.percent}%` }}
+                                            className={cn("h-full rounded-full transition-colors", i === 0 ? "bg-f1-red" : "bg-gray-700 group-hover:bg-gray-500")}
+                                        />
+                                    </div>
                                 </div>
-                            )}
+                            ))}
+
+                            {/* Strategy Section - Pit Stops */}
+                            <div className="mt-4 pt-4 border-t border-[#2A2A30]">
+                                <div className="text-[10px] text-gray-500 uppercase mb-3">Pit Stops</div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { stops: 1, percent: 45 },
+                                        { stops: 2, percent: 48 },
+                                        { stops: 3, percent: 7 }
+                                    ].map(({ stops, percent }) => (
+                                        <div key={stops} className="bg-[#0B0B0F] rounded-lg p-3 text-center">
+                                            <div className="text-lg font-bold text-white">{stops}</div>
+                                            <div className="text-[10px] text-gray-500">Stop{stops > 1 ? 's' : ''}</div>
+                                            <div className="text-xs text-cyan-400 font-bold mt-1">{percent}%</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Tyre Predictions */}
+                            <div className="mt-4 pt-4 border-t border-[#2A2A30]">
+                                <div className="text-[10px] text-gray-500 uppercase mb-3">Starting Tyre</div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { tyre: 'S', percent: 65, color: '#FF3333' },
+                                        { tyre: 'M', percent: 30, color: '#FFE040' },
+                                        { tyre: 'H', percent: 5, color: '#F0F0F0' }
+                                    ].map(({ tyre, percent, color }) => (
+                                        <div key={tyre} className="bg-[#0B0B0F] rounded-lg p-3 text-center border" style={{ borderColor: color + '30' }}>
+                                            <div className="w-8 h-8 rounded-full border-2 mx-auto flex items-center justify-center font-bold" style={{ borderColor: color, color }}>
+                                                {tyre}
+                                            </div>
+                                            <div className="text-xs font-bold mt-2" style={{ color }}>{percent}%</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Winning Margin Predictions */}
+                            <div className="mt-4 pt-4 border-t border-[#2A2A30]">
+                                <div className="text-[10px] text-gray-500 uppercase mb-3">Winning Margin</div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { label: '< 5s', percent: 32 },
+                                        { label: '5-10s', percent: 45 },
+                                        { label: '> 10s', percent: 23 }
+                                    ].map(({ label, percent }) => (
+                                        <div key={label} className="bg-[#0B0B0F] rounded-lg p-3 text-center">
+                                            <div className="text-sm font-bold text-white mb-1">{label}</div>
+                                            <div className="text-xs text-green-400 font-bold">{percent}%</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Safety Car Predictions */}
+                            <div className="mt-4 pt-4 border-t border-[#2A2A30]">
+                                <div className="text-[10px] text-gray-500 uppercase mb-3">Safety Car</div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="bg-[#0B0B0F] rounded-lg p-3 text-center">
+                                        <div className="text-lg font-bold text-green-400">Yes</div>
+                                        <div className="text-xs text-gray-500">67%</div>
+                                    </div>
+                                    <div className="bg-[#0B0B0F] rounded-lg p-3 text-center">
+                                        <div className="text-lg font-bold text-gray-400">No</div>
+                                        <div className="text-xs text-gray-500">33%</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
-import { Play, Pause, Zap, TrendingUp, ChevronDown, Flag, Thermometer, Droplets, RotateCcw, ArrowUp, ArrowDown, Timer, Circle, Wrench, AlertTriangle } from 'lucide-react';
+import { Play, Pause, Zap, TrendingUp, ChevronDown, ChevronUp, Flag, Thermometer, Droplets, RotateCcw, ArrowUp, ArrowDown, Timer, Circle, Wrench, AlertTriangle, List } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function RaceReplay({ raceId: initialRaceId }) {
+export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
     const [raceId, setRaceId] = useState(initialRaceId || 0);
     const [raceList, setRaceList] = useState([]);
     const [activeDriver, setActiveDriver] = useState(null);
@@ -16,6 +16,8 @@ export default function RaceReplay({ raceId: initialRaceId }) {
     const [speed, setSpeed] = useState(20);
     const [loading, setLoading] = useState(false);
     const [raceEvents, setRaceEvents] = useState([]);
+    const [mobileTab, setMobileTab] = useState('map'); // 'map', 'standings', 'events'
+    const [showLeaderboard, setShowLeaderboard] = useState(true); // Toggle mini leaderboard
 
     // Use refs to avoid re-render loops
     const prevPositionsRef = useRef({});
@@ -247,8 +249,88 @@ export default function RaceReplay({ raceId: initialRaceId }) {
 
     return (
         <div className="h-full flex flex-col bg-[#0A0A0F]" style={{ overflow: 'hidden', maxHeight: '100%' }}>
-            {/* TOP BAR */}
-            <div className="flex flex-wrap items-center justify-between gap-2 bg-[#15151E] border-b border-[#2A2A30] px-3 md:px-4 py-2 shrink-0">
+            {/* ===== MOBILE TOP BAR ===== */}
+            <div className="md:hidden flex flex-col bg-[#111] border-b border-[#222] shrink-0">
+                {/* Row 1: Race Selector */}
+                <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-3 flex-1">
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-f1-red animate-pulse" />
+                            <span className="text-[10px] font-bold text-f1-red uppercase">Live</span>
+                        </div>
+                        <select
+                            value={raceId}
+                            onChange={(e) => { setRaceId(parseInt(e.target.value)); setRaceTime(0); }}
+                            className="flex-1 bg-[#0a0a0a] text-white font-medium text-sm border border-[#222] rounded-lg px-3 py-2.5 focus:outline-none focus:border-f1-red"
+                        >
+                            {raceList.map(r => <option key={r.id} value={r.id} className="bg-[#1A1A22]">{r.name}</option>)}
+                        </select>
+                    </div>
+                    <div className={cn("ml-3 px-3 py-1.5 rounded text-[10px] font-bold uppercase shrink-0",
+                        currentStatus === 'GREEN' ? "bg-green-500 text-white" : currentStatus === 'YELLOW' ? "bg-yellow-500 text-black" : "bg-red-500 text-white")}>
+                        {currentStatus}
+                    </div>
+                </div>
+
+                {/* Row 2: Playback Controls */}
+                <div className="flex items-center gap-3 px-4 py-3 border-t border-[#1a1a1a]">
+                    {/* Play/Pause */}
+                    <button onClick={() => setRaceTime(0)} className="p-2 text-gray-500 hover:text-white">
+                        <RotateCcw size={18} />
+                    </button>
+                    <button
+                        onClick={() => setIsPlaying(!isPlaying)}
+                        className="w-11 h-11 flex items-center justify-center bg-f1-red rounded-full text-white shrink-0"
+                    >
+                        {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
+                    </button>
+
+                    {/* Progress Bar - Full Width */}
+                    <div className="flex-1 flex items-center gap-2">
+                        <input
+                            type="range"
+                            min="0"
+                            max={maxTime}
+                            step="1"
+                            value={raceTime}
+                            onChange={(e) => { setRaceTime(parseFloat(e.target.value)); setIsPlaying(false); }}
+                            className="flex-1 accent-f1-red h-2 bg-[#222] rounded-full appearance-none cursor-pointer"
+                        />
+                    </div>
+
+                    {/* Lap Counter */}
+                    <div className="text-center shrink-0 pl-2">
+                        <div className="text-[10px] text-gray-500 uppercase">Lap</div>
+                        <div className="text-sm font-mono font-bold text-white">{activeDriverState?.lap || 1}/{replayData?.totalLaps || '—'}</div>
+                    </div>
+                </div>
+
+                {/* Speed Controls Row */}
+                <div className="flex items-center justify-between px-4 py-2.5 border-t border-[#1a1a1a] bg-[#0a0a0a]">
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] text-gray-500 uppercase mr-1">Speed</span>
+                        {[1, 5, 20, 50].map(s => (
+                            <button
+                                key={s}
+                                onClick={() => setSpeed(s)}
+                                className={cn("px-2.5 py-1 text-[10px] font-bold rounded transition-colors",
+                                    speed === s ? "bg-f1-red text-white" : "bg-[#111] text-gray-500 hover:text-white")}
+                            >
+                                {s}x
+                            </button>
+                        ))}
+                    </div>
+                    {currentWeather && (
+                        <div className="flex items-center gap-3 text-[10px] text-gray-400">
+                            <span><Thermometer size={10} className="inline mr-0.5" />{currentWeather.temp}°C</span>
+                            <span className={currentWeather.rain ? "text-blue-400" : ""}><Droplets size={10} className="inline mr-0.5" />{currentWeather.rain ? "WET" : "DRY"}</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ===== DESKTOP TOP BAR ===== */}
+            <div className="hidden md:flex flex-wrap items-center justify-between gap-2 bg-[#15151E] border-b border-[#2A2A30] px-3 md:px-4 py-2 shrink-0">
                 <div className="flex items-center gap-2 md:gap-3">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-f1-red animate-pulse" />
@@ -288,16 +370,145 @@ export default function RaceReplay({ raceId: initialRaceId }) {
                 </div>
             </div>
 
-            {/* MAIN */}
-            <div className="flex-1 flex" style={{ overflow: 'hidden', minHeight: 0 }}>
-                {/* LEFT: LEADERBOARD - Hidden on mobile */}
-                <div className="hidden md:flex w-56 bg-[#12121A] border-r border-[#2A2A30] flex-col min-h-0">
+            {/* ===== MOBILE LAYOUT ===== */}
+            <div className="md:hidden flex-1 flex flex-col overflow-hidden" style={{ minHeight: 'calc(100vh - 180px)' }}>
+                {/* Full-screen Track Map - Clean View */}
+                <div className="flex-1 relative bg-[#050508]" style={{ minHeight: '350px' }}>
+                    {/* Mini Leaderboard Toggle - Top Right */}
+                    <button
+                        onClick={() => setShowLeaderboard(!showLeaderboard)}
+                        className="absolute top-3 right-3 z-20 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-[#333] flex items-center gap-1.5"
+                    >
+                        <List size={14} className="text-gray-400" />
+                        <span className="text-[10px] text-gray-400">P1-5</span>
+                        {showLeaderboard ? <ChevronUp size={12} className="text-gray-500" /> : <ChevronDown size={12} className="text-gray-500" />}
+                    </button>
+
+                    {/* Mini Leaderboard - Top 5 Positions */}
+                    <AnimatePresence>
+                        {showLeaderboard && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="absolute top-14 right-3 z-20 bg-black/80 backdrop-blur-sm rounded-lg border border-[#222] overflow-hidden"
+                            >
+                                {currentPositions.slice(0, 5).map((d) => {
+                                    const meta = replayData?.drivers?.[d.driver];
+                                    return (
+                                        <div
+                                            key={d.driver}
+                                            onClick={() => setActiveDriver(d.driver)}
+                                            className={cn(
+                                                "flex items-center gap-2 px-3 py-1.5 border-b border-[#1a1a1a] last:border-b-0 cursor-pointer",
+                                                activeDriver === d.driver && "bg-white/10"
+                                            )}
+                                        >
+                                            <span className={cn(
+                                                "w-4 text-center font-bold text-xs",
+                                                d.rank === 1 ? "text-f1-red" : d.rank <= 3 ? "text-white" : "text-gray-500"
+                                            )}>{d.rank}</span>
+                                            <div className="w-1 h-4 rounded-full" style={{ backgroundColor: meta?.color || '#444' }} />
+                                            <span className="text-xs font-medium text-white w-10">{d.driver}</span>
+                                            <span className="text-[10px] text-gray-500 font-mono">
+                                                {d.interval ? `+${d.interval.toFixed(1)}` : 'Leader'}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* The Map */}
+                    {replayData?.map ? (
+                        <SVGTrackMap
+                            map={replayData.map}
+                            positions={currentPositions}
+                            activeDriver={activeDriver}
+                            drivers={replayData.drivers}
+                            showAllLabels={true}
+                        />
+                    ) : (
+                        <div className="h-full flex items-center justify-center">
+                            <div className="text-center">
+                                <div className="w-8 h-8 border-2 border-f1-red border-t-transparent rounded-full animate-spin mx-auto" />
+                                <div className="text-gray-500 text-sm mt-2">Loading track...</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Compact Position Ticker - Bottom */}
+                <div className="bg-[#0a0a0a] border-t border-[#222] shrink-0">
+                    {/* Horizontal Scroll Position Strip */}
+                    <div className="flex overflow-x-auto py-2 px-2 gap-1 no-scrollbar">
+                        {currentPositions.slice(0, 20).map((d) => {
+                            const meta = replayData?.drivers?.[d.driver];
+                            const isTop3 = d.rank <= 3;
+                            const isActive = activeDriver === d.driver;
+                            return (
+                                <button
+                                    key={d.driver}
+                                    onClick={() => setActiveDriver(d.driver)}
+                                    className={cn(
+                                        "flex items-center gap-1 px-2 py-1 rounded shrink-0 transition-all",
+                                        isActive ? "bg-white/10 ring-1 ring-white/30" : "bg-[#111]",
+                                        isTop3 && !isActive && "bg-[#151515]"
+                                    )}
+                                >
+                                    <span className={cn(
+                                        "text-[10px] font-bold w-3",
+                                        d.rank === 1 ? "text-f1-red" : d.rank <= 3 ? "text-white" : "text-gray-500"
+                                    )}>{d.rank}</span>
+                                    <div className="w-0.5 h-3 rounded-full" style={{ backgroundColor: meta?.color || '#444' }} />
+                                    <span className="text-[10px] font-medium text-white">{d.driver}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Selected Driver Info Bar */}
+                    {activeDriver && (
+                        <div className="flex items-center justify-between px-3 py-2 border-t border-[#1a1a1a] bg-[#0d0d0d]">
+                            <div className="flex items-center gap-2">
+                                <div className="w-1 h-5 rounded-full" style={{ backgroundColor: replayData?.drivers?.[activeDriver]?.color || '#888' }} />
+                                <div>
+                                    <div className="text-xs font-bold text-white">{activeDriver}</div>
+                                    <div className="text-[9px] text-gray-500">{replayData?.drivers?.[activeDriver]?.team || 'Unknown'}</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="text-center">
+                                    <div className="text-[9px] text-gray-500 uppercase">Pos</div>
+                                    <div className="text-sm font-bold text-white">P{currentPositions.find(p => p.driver === activeDriver)?.rank || '-'}</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-[9px] text-gray-500 uppercase">Gap</div>
+                                    <div className="text-sm font-mono text-gray-300">
+                                        {(() => {
+                                            const pos = currentPositions.find(p => p.driver === activeDriver);
+                                            return pos?.interval ? `+${pos.interval.toFixed(1)}s` : 'Leader';
+                                        })()}
+                                    </div>
+                                </div>
+                                <TyreIcon compound={currentPositions.find(p => p.driver === activeDriver)?.tyre || 'M'} />
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ===== DESKTOP LAYOUT ===== */}
+            <div className="hidden md:flex flex-1" style={{ overflow: 'hidden', minHeight: 0 }}>
+                {/* LEFT: LEADERBOARD */}
+                <div className="w-56 bg-[#12121A] border-r border-[#2A2A30] flex flex-col min-h-0">
                     <div className="p-2 border-b border-[#2A2A30] text-[9px] font-bold uppercase text-gray-500 shrink-0">Standings</div>
                     <div className="flex-1 overflow-y-auto min-h-0">
                         <AnimatePresence>
                             {currentPositions.map((d) => {
                                 const meta = replayData?.drivers?.[d.driver];
-                                const posChange = positionChanges[d.driver];
+                                const posChange = positionChangesRef.current[d.driver];
                                 return (
                                     <motion.div key={d.driver} layout transition={{ type: "spring", stiffness: 200, damping: 25 }}
                                         onClick={() => setActiveDriver(d.driver)}
@@ -322,26 +533,9 @@ export default function RaceReplay({ raceId: initialRaceId }) {
 
                 {/* CENTER: SVG TRACK MAP */}
                 <div className="flex-1 relative overflow-hidden bg-[#0A0A0F] min-h-0">
-                    <div className="absolute top-2 left-2 md:top-4 md:left-4 z-10">
-                        <div className="text-base md:text-xl font-heading font-black text-white uppercase">{currentRaceName}</div>
-                        <div className="text-[10px] md:text-xs text-gray-500 mt-0.5">Lap {activeDriverState?.lap || 1} / {replayData?.totalLaps || '—'}</div>
-                    </div>
-
-                    {/* Mobile Position List */}
-                    <div className="md:hidden absolute top-2 right-2 bg-[#12121A]/90 border border-[#2A2A30] rounded-lg p-2 max-w-[120px] max-h-[200px] overflow-y-auto z-10">
-                        {currentPositions.slice(0, 5).map((d) => {
-                            const meta = replayData?.drivers?.[d.driver];
-                            return (
-                                <div key={d.driver} className="flex items-center gap-1.5 py-0.5">
-                                    <span className={cn("w-4 text-center font-bold text-[10px]", d.rank === 1 ? "text-f1-red" : "text-gray-400")}>{d.rank}</span>
-                                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta?.color || '#444' }} />
-                                    <span className="text-white text-[10px] font-medium">{d.driver}</span>
-                                </div>
-                            );
-                        })}
-                        {currentPositions.length > 5 && (
-                            <div className="text-[9px] text-gray-500 text-center mt-1">+{currentPositions.length - 5} more</div>
-                        )}
+                    <div className="absolute top-4 left-4 z-10">
+                        <div className="text-xl font-heading font-black text-white uppercase">{currentRaceName}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">Lap {activeDriverState?.lap || 1} / {replayData?.totalLaps || '—'}</div>
                     </div>
 
                     {replayData?.map && (
@@ -472,7 +666,7 @@ export default function RaceReplay({ raceId: initialRaceId }) {
 }
 
 // SVG Track Map - Smooth GPU-accelerated transforms
-function SVGTrackMap({ map, positions, activeDriver, drivers }) {
+function SVGTrackMap({ map, positions, activeDriver, drivers, showAllLabels = false }) {
     const containerRef = useRef(null);
     const [dims, setDims] = useState({ width: 800, height: 400 });
 
@@ -541,6 +735,8 @@ function SVGTrackMap({ map, positions, activeDriver, drivers }) {
                     const meta = drivers?.[p.driver];
                     const color = meta?.color || '#666';
                     const isActive = p.driver === activeDriver;
+                    const isTop10 = p.rank <= 10;
+                    const showLabel = isActive || (showAllLabels && isTop10);
                     const w = isActive ? 16 : 10;
                     const h = isActive ? 6 : 4;
 
@@ -548,8 +744,16 @@ function SVGTrackMap({ map, positions, activeDriver, drivers }) {
                         <g key={p.driver} transform={`translate(${pos.x}, ${pos.y}) rotate(${angle})`}>
                             {isActive && <ellipse cx={0} cy={0} rx={12} ry={8} fill={color} opacity={0.3} />}
                             <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={2} fill={color} />
-                            {isActive && (
-                                <text x={14} y={4} fill="white" fontSize="10" fontWeight="bold" transform={`rotate(${-angle})`}>
+                            {showLabel && (
+                                <text
+                                    x={14}
+                                    y={4}
+                                    fill="white"
+                                    fontSize={isActive ? "10" : "8"}
+                                    fontWeight="bold"
+                                    transform={`rotate(${-angle})`}
+                                    style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
+                                >
                                     {p.driver}
                                 </text>
                             )}

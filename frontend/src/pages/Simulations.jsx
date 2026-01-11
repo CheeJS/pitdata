@@ -15,7 +15,6 @@ export default function Simulations() {
     const [races, setRaces] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Initial Data Fetch
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -30,33 +29,68 @@ export default function Simulations() {
         fetchData();
     }, []);
 
-    if (loading) return <div className="p-8 text-white animate-pulse">Loading Simulation Engine...</div>;
+    if (loading) return <div className="p-8 text-white animate-pulse">Loading...</div>;
 
     return (
-        <div className="p-4 md:p-6 space-y-4 md:space-y-6 h-screen flex flex-col overflow-hidden animate-in fade-in duration-500">
-            {/* HEADER */}
-            <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 border-b border-[#2A2A30] pb-4 md:pb-6 shrink-0">
-                <div>
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-heading font-bold italic uppercase text-white tracking-tighter">Simulation Hub</h1>
-                    <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
-                        Advanced Analysis Engine <ChevronRight size={12} /> {activeTab}
-                    </p>
+        <div className="h-full flex flex-col overflow-hidden">
+
+            {/* ===== MOBILE LAYOUT ===== */}
+            <div className="md:hidden flex-1 flex flex-col overflow-hidden">
+                {/* Header */}
+                <div className="p-4 space-y-3 shrink-0">
+                    <h1 className="text-lg font-bold text-white">Simulations</h1>
+
+                    {/* Tabs */}
+                    <div className="flex bg-[#111] p-1 rounded-lg border border-[#222]">
+                        <button onClick={() => setActiveTab('simulator')}
+                            className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-medium transition-all",
+                                activeTab === 'simulator' ? "bg-f1-red text-white" : "text-gray-500")}>
+                            <BarChart3 size={14} /> Race Sim
+                        </button>
+                        <button onClick={() => setActiveTab('strategy')}
+                            className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-medium transition-all",
+                                activeTab === 'strategy' ? "bg-f1-red text-white" : "text-gray-500")}>
+                            <Activity size={14} /> Strategy
+                        </button>
+                    </div>
                 </div>
 
-                {/* TABS */}
-                <div className="flex bg-[#15151E] p-1 rounded-xl border border-[#2A2A30] self-start sm:self-auto">
-                    <button onClick={() => setActiveTab('simulator')} className={cn("flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all", activeTab === 'simulator' ? "bg-f1-red text-white shadow-lg" : "text-gray-500 hover:text-white")}>
-                        <BarChart3 size={14} /> <span className="hidden sm:inline">Race</span> Sim
-                    </button>
-                    <button onClick={() => setActiveTab('strategy')} className={cn("flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all", activeTab === 'strategy' ? "bg-f1-red text-white shadow-lg" : "text-gray-500 hover:text-white")}>
-                        <Activity size={14} /> Strategy
-                    </button>
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-4 pb-20">
+                    {activeTab === 'simulator' && <RaceSimulator races={races} />}
+                    {activeTab === 'strategy' && <StrategyView races={races} />}
                 </div>
             </div>
 
-            {/* TAB CONTENT */}
-            {activeTab === 'simulator' && <RaceSimulator races={races} />}
-            {activeTab === 'strategy' && <StrategyView races={races} />}
+            {/* ===== DESKTOP LAYOUT ===== */}
+            <div className="hidden md:flex flex-col flex-1 p-6 space-y-6 overflow-hidden">
+                {/* Header */}
+                <div className="flex justify-between items-end border-b border-[#222] pb-6 shrink-0">
+                    <div>
+                        <h1 className="text-2xl font-bold text-white">Simulation Hub</h1>
+                        <p className="text-gray-500 text-xs mt-1">Monte Carlo race prediction engine</p>
+                    </div>
+
+                    <div className="flex bg-[#111] p-1 rounded-xl border border-[#222]">
+                        <button onClick={() => setActiveTab('simulator')}
+                            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                                activeTab === 'simulator' ? "bg-f1-red text-white" : "text-gray-500 hover:text-white")}>
+                            <BarChart3 size={16} /> Race Sim
+                        </button>
+                        <button onClick={() => setActiveTab('strategy')}
+                            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                                activeTab === 'strategy' ? "bg-f1-red text-white" : "text-gray-500 hover:text-white")}>
+                            <Activity size={16} /> Strategy
+                        </button>
+                    </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-hidden">
+                    {activeTab === 'simulator' && <RaceSimulator races={races} />}
+                    {activeTab === 'strategy' && <StrategyView races={races} />}
+                </div>
+            </div>
         </div>
     );
 }
@@ -405,6 +439,7 @@ function RaceSimulator({ races }) {
 function StrategyView({ races }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showScenario, setShowScenario] = useState(false); // mobile toggle
 
     // Context State
     const [selectedRace, setSelectedRace] = useState(races && races.length > 0 ? (races.find(r => r.code === 'ABU') || races[races.length - 1]) : null);
@@ -474,55 +509,92 @@ function StrategyView({ races }) {
     const verdict = data.verdict;
 
     return (
-        <div className="flex-1 bg-[#15151E] rounded-3xl border border-[#2A2A30] flex flex-col overflow-hidden relative">
+        <div className="flex-1 bg-[#111] md:bg-[#15151E] rounded-xl md:rounded-3xl border border-[#222] md:border-[#2A2A30] flex flex-col overflow-hidden relative">
             {/* RACE CONTEXT BAR */}
-            <div className="bg-[#0B0B0F] border-b border-[#2A2A30] p-3 md:p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0 overflow-x-auto">
-                <div className="flex flex-wrap items-center gap-3 md:gap-6">
-                    {/* Race Selector */}
-                    <div>
-                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Race Event</label>
+            <div className="bg-[#0B0B0F] border-b border-[#222] p-3 md:p-4 shrink-0">
+                {/* Mobile: Stacked layout */}
+                <div className="md:hidden space-y-3">
+                    <div className="flex items-center justify-between">
                         <select
                             value={selectedRace?.id || ''}
                             onChange={(e) => setSelectedRace(races.find(r => r.id === e.target.value))}
-                            className="bg-[#15151E] text-white text-sm font-bold border border-[#2A2A30] rounded px-3 py-1 outline-none focus:border-f1-red"
+                            className="bg-[#111] text-white text-sm font-medium border border-[#222] rounded-lg px-3 py-2 flex-1"
                         >
                             {races && races.map(r => (
-                                <option key={r.id} value={r.id}>{r.name} ({r.laps} Laps)</option>
+                                <option key={r.id} value={r.id}>{r.name}</option>
                             ))}
                         </select>
                     </div>
-
-                    {/* Grid Pos */}
-                    <div>
-                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Start Pos</label>
+                    <div className="flex gap-2">
                         <select
                             value={gridPos}
                             onChange={(e) => setGridPos(parseInt(e.target.value))}
-                            className="bg-[#15151E] text-white text-sm font-bold border border-[#2A2A30] rounded px-3 py-1 outline-none"
+                            className="bg-[#111] text-white text-sm border border-[#222] rounded-lg px-3 py-2 flex-1"
                         >
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(p => (
                                 <option key={p} value={p}>P{p}</option>
                             ))}
                         </select>
+                        <select
+                            value={objective}
+                            onChange={(e) => setObjective(e.target.value)}
+                            className="bg-[#111] text-white text-sm border border-[#222] rounded-lg px-3 py-2 flex-1"
+                        >
+                            <option>Minimise Time</option>
+                            <option>Track Position</option>
+                        </select>
                     </div>
                 </div>
 
-                {/* Objective */}
-                <div>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Strategy Goal</label>
-                    <select
-                        value={objective}
-                        onChange={(e) => setObjective(e.target.value)}
-                        className="bg-[#15151E] text-white text-sm font-bold border border-[#2A2A30] rounded px-3 py-1 outline-none text-right"
-                    >
-                        <option>Minimise Time</option>
-                        <option>Track Position</option>
-                    </select>
+                {/* Desktop: Original layout */}
+                <div className="hidden md:flex flex-row items-center justify-between gap-3 overflow-x-auto">
+                    <div className="flex flex-wrap items-center gap-3 md:gap-6">
+                        {/* Race Selector */}
+                        <div>
+                            <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Race Event</label>
+                            <select
+                                value={selectedRace?.id || ''}
+                                onChange={(e) => setSelectedRace(races.find(r => r.id === e.target.value))}
+                                className="bg-[#15151E] text-white text-sm font-bold border border-[#2A2A30] rounded px-3 py-1 outline-none focus:border-f1-red"
+                            >
+                                {races && races.map(r => (
+                                    <option key={r.id} value={r.id}>{r.name} ({r.laps} Laps)</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Grid Pos */}
+                        <div>
+                            <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Start Pos</label>
+                            <select
+                                value={gridPos}
+                                onChange={(e) => setGridPos(parseInt(e.target.value))}
+                                className="bg-[#15151E] text-white text-sm font-bold border border-[#2A2A30] rounded px-3 py-1 outline-none"
+                            >
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(p => (
+                                    <option key={p} value={p}>P{p}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Objective */}
+                    <div>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Strategy Goal</label>
+                        <select
+                            value={objective}
+                            onChange={(e) => setObjective(e.target.value)}
+                            className="bg-[#15151E] text-white text-sm font-bold border border-[#2A2A30] rounded px-3 py-1 outline-none text-right"
+                        >
+                            <option>Minimise Time</option>
+                            <option>Track Position</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
             {/* MAIN CONTENT */}
-            <div className="p-6 flex flex-col flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+            <div className="p-4 md:p-6 flex flex-col flex-1 min-h-0 overflow-y-auto custom-scrollbar pb-20 md:pb-6">
                 {/* ONE-LINE DEFINITION */}
                 <div className="mb-6 flex items-baseline gap-2">
                     <span className="text-gray-400 text-sm">Simulating</span>
