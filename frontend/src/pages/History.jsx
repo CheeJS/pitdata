@@ -85,9 +85,9 @@ export default function History() {
                         className="flex-1 overflow-y-auto"
                     >
                         {/* Header */}
-                        <div className="mb-8 flex justify-between items-center">
+                        <div className="mb-6 md:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
-                                <h1 className="text-4xl font-bold font-heading mb-2">Race Archive</h1>
+                                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-heading mb-2">Race Archive</h1>
                                 <p className="text-gray-500">Explore past race results and telemetry.</p>
                             </div>
 
@@ -219,18 +219,18 @@ function TimelineRaceCard({ race, onClick, delay }) {
             onClick={onClick}
             className="w-full group"
         >
-            <div className="flex items-center gap-4 bg-[#15151E] hover:bg-[#1A1A24] border border-[#2A2A30] hover:border-f1-red/50 rounded-xl p-4 transition-all relative overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-4 bg-[#15151E] hover:bg-[#1A1A24] border border-[#2A2A30] hover:border-f1-red/50 rounded-xl p-3 md:p-4 transition-all relative overflow-hidden">
                 {/* Date Badge */}
-                <div className="flex-shrink-0 w-14 text-center">
-                    <div className="text-2xl font-black text-white leading-none">{dayNum}</div>
+                <div className="flex-shrink-0 w-10 sm:w-14 text-center">
+                    <div className="text-lg sm:text-2xl font-black text-white leading-none">{dayNum}</div>
                     <div className="text-[10px] font-bold text-gray-500 uppercase">{monthShort}</div>
                 </div>
 
                 {/* Divider */}
-                <div className="w-px h-10 bg-[#2A2A30]" />
+                <div className="w-px h-10 bg-[#2A2A30] hidden sm:block" />
 
                 {/* Flag Image */}
-                <div className="flex-shrink-0 w-12 h-8 rounded overflow-hidden shadow-lg border border-white/10">
+                <div className="flex-shrink-0 w-8 h-6 sm:w-12 sm:h-8 rounded overflow-hidden shadow-lg border border-white/10">
                     <img
                         src={flagUrl}
                         alt={race.code}
@@ -244,7 +244,7 @@ function TimelineRaceCard({ race, onClick, delay }) {
                     <div className="flex items-center gap-2">
                         <span className="text-[10px] font-bold text-gray-500 uppercase">Round {race.round}</span>
                     </div>
-                    <h3 className="text-lg font-bold text-white group-hover:text-f1-red transition-colors truncate">
+                    <h3 className="text-sm sm:text-base md:text-lg font-bold text-white group-hover:text-f1-red transition-colors truncate">
                         {race.name} <span className="font-normal text-gray-500">Grand Prix</span>
                     </h3>
                     <div className="flex items-center gap-1 text-gray-500 text-xs mt-0.5">
@@ -253,17 +253,17 @@ function TimelineRaceCard({ race, onClick, delay }) {
                 </div>
 
                 {/* Status + Arrow */}
-                <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                     {isPast ? (
-                        <span className="text-[10px] bg-green-500/10 text-green-500 px-2.5 py-1 rounded-full border border-green-500/20 font-bold uppercase">
+                        <span className="text-[9px] sm:text-[10px] bg-green-500/10 text-green-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-green-500/20 font-bold uppercase">
                             Completed
                         </span>
                     ) : (
-                        <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2.5 py-1 rounded-full border border-amber-500/20 font-bold uppercase">
+                        <span className="text-[9px] sm:text-[10px] bg-amber-500/10 text-amber-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-amber-500/20 font-bold uppercase">
                             Upcoming
                         </span>
                     )}
-                    <ChevronRight size={18} className="text-gray-600 group-hover:text-f1-red group-hover:translate-x-1 transition-all" />
+                    <ChevronRight size={16} className="text-gray-600 group-hover:text-f1-red group-hover:translate-x-1 transition-all hidden sm:block" />
                 </div>
             </div>
         </motion.button>

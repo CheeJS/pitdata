@@ -36,11 +36,11 @@ export default function Standings() {
     const leaderPoints = data.drivers[0].points;
 
     return (
-        <div className="p-6 space-y-6 h-screen flex flex-col overflow-hidden animate-in fade-in duration-500">
+        <div className="p-4 md:p-6 space-y-4 md:space-y-6 h-screen flex flex-col overflow-hidden animate-in fade-in duration-500">
             {/* HEADER */}
-            <div className="flex justify-between items-end border-b border-[#2A2A30] pb-6 shrink-0">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-[#2A2A30] pb-4 md:pb-6 shrink-0">
                 <div>
-                    <h1 className="text-3xl font-heading font-bold italic uppercase text-white tracking-tighter">Season Standings</h1>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-heading font-bold italic uppercase text-white tracking-tighter">Season Standings</h1>
                     <div className="flex items-center gap-3 mt-2">
                         <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">{completedRounds} / {totalRounds} Rounds Completed</span>
                         <div className="h-1 w-24 bg-[#2A2A30] rounded-full overflow-hidden">
@@ -48,9 +48,9 @@ export default function Standings() {
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 bg-[#15151E] px-3 py-1.5 rounded-lg border border-[#2A2A30]">
-                    <Trophy size={16} className="text-yellow-500" />
-                    <span className="text-white font-bold text-sm">Leader: {data.drivers[0].name} ({leaderPoints} pts)</span>
+                <div className="flex items-center gap-2 bg-[#15151E] px-2 sm:px-3 py-1.5 rounded-lg border border-[#2A2A30]">
+                    <Trophy size={16} className="text-yellow-500 shrink-0" />
+                    <span className="text-white font-bold text-xs sm:text-sm truncate">Leader: {data.drivers[0].name} ({leaderPoints} pts)</span>
                 </div>
             </div>
 
@@ -66,8 +66,8 @@ export default function Standings() {
                         <span className="text-[10px] text-gray-500 uppercase font-mono">{maxPointsRemaining} pts remaining</span>
                     </div>
 
-                    <div className="overflow-y-auto custom-scrollbar flex-1 p-2">
-                        <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto custom-scrollbar flex-1 p-2">
+                        <table className="w-full text-left border-collapse min-w-[500px]">
                             <thead>
                                 <tr className="text-[10px] text-gray-500 uppercase border-b border-[#2A2A30]">
                                     <th className="p-2 w-8">Pos</th>
@@ -132,8 +132,8 @@ export default function Standings() {
                             <span className="text-[10px] text-gray-500 uppercase font-mono">{maxPointsRemaining * 2} pts remaining</span>
                         </div>
 
-                        <div className="overflow-y-auto custom-scrollbar flex-1 p-2">
-                            <table className="w-full text-left border-collapse">
+                        <div className="overflow-x-auto custom-scrollbar flex-1 p-2">
+                            <table className="w-full text-left border-collapse min-w-[400px]">
                                 <thead>
                                     <tr className="text-[10px] text-gray-500 uppercase border-b border-[#2A2A30]">
                                         <th className="p-2 w-8">Pos</th>

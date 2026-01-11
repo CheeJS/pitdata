@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Flag, Trophy, Calendar, ChevronRight, ChevronUp, ChevronDown, Activity, Zap, Timer, MapPin, BarChart, Brain } from 'lucide-react';
+import { Flag, Trophy, Calendar, ChevronRight, ChevronUp, ChevronDown, Activity, Zap, Timer, MapPin, BarChart, Brain, Menu, X } from 'lucide-react';
 import axios from 'axios';
 import { cn } from './lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -15,6 +15,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [raceData, setRaceData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Fetch real data
@@ -47,10 +48,62 @@ export default function App() {
     fetchData();
   }, []);
 
+  // Close mobile menu when tab changes
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setMobileMenuOpen(false);
+  };
+
   return (
-    <div className="min-h-screen bg-[#0B0B0F] text-white flex font-body selection:bg-f1-red selection:text-white">
-      {/* Sidebar - Sleek & Minimal */}
-      <aside className="fixed left-0 top-0 h-full w-20 lg:w-64 bg-[#121216] border-r border-[#2A2A30] flex flex-col z-50 transition-all duration-300">
+    <div className="min-h-screen bg-[#0B0B0F] text-white flex flex-col md:flex-row font-body selection:bg-f1-red selection:text-white">
+      {/* Mobile Header */}
+      <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#121216] border-b border-[#2A2A30] flex items-center justify-between px-4 z-50">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-tr from-f1-red to-red-600 rounded-lg flex items-center justify-center font-bold italic tracking-tighter shadow-[0_0_15px_rgba(225,6,0,0.4)]">F1</div>
+          <span className="font-heading text-lg font-bold tracking-widest text-white">INSIGHT</span>
+        </div>
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 rounded-lg transition-colors"
+        >
+          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Slide-out Menu */}
+      <aside className={cn(
+        "md:hidden fixed top-14 right-0 h-[calc(100%-3.5rem)] w-64 bg-[#121216] border-l border-[#2A2A30] z-50 transition-transform duration-300 ease-in-out",
+        mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+      )}>
+        <nav className="py-6 px-4 space-y-2">
+          <MobileNavItem icon={<Activity />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => handleTabChange('dashboard')} />
+          <MobileNavItem icon={<Timer />} label="Race Replay" active={activeTab === 'replay'} onClick={() => handleTabChange('replay')} />
+          <MobileNavItem icon={<BarChart />} label="Analysis" active={activeTab === 'analysis'} onClick={() => handleTabChange('analysis')} />
+          <MobileNavItem icon={<Trophy />} label="Standings" active={activeTab === 'standings'} onClick={() => handleTabChange('standings')} />
+          <MobileNavItem icon={<Brain />} label="Simulations" active={activeTab === 'simulations'} onClick={() => handleTabChange('simulations')} />
+          <MobileNavItem icon={<Calendar />} label="History" active={activeTab === 'history'} onClick={() => handleTabChange('history')} />
+          <MobileNavItem icon={<Zap />} label="Predictions" active={activeTab === 'predictions'} onClick={() => handleTabChange('predictions')} />
+        </nav>
+
+        <div className="absolute bottom-4 left-4 right-4">
+          <div className="bg-[#1A1A20] rounded-xl p-4 border border-[#2A2A30]">
+            <div className="text-xs text-gray-500 font-medium mb-2">NEXT RACE</div>
+            <div className="font-bold text-sm">Azerbaijan GP</div>
+            <div className="text-xs text-f1-red mt-1 font-bold">In 2 Weeks</div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Desktop Sidebar - Hidden on mobile */}
+      <aside className="hidden md:flex fixed left-0 top-0 h-full w-20 lg:w-64 bg-[#121216] border-r border-[#2A2A30] flex-col z-50 transition-all duration-300">
         <div className="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-[#2A2A30]">
           <div className="w-8 h-8 bg-gradient-to-tr from-f1-red to-red-600 rounded-lg flex items-center justify-center font-bold italic tracking-tighter shadow-[0_0_15px_rgba(225,6,0,0.4)]">F1</div>
           <span className="hidden lg:block ml-3 font-heading text-xl font-bold tracking-widest text-white">INSIGHT</span>
@@ -76,7 +129,7 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-20 lg:ml-64 p-8 lg:p-12 overflow-y-auto">
+      <main className="flex-1 pt-14 md:pt-0 md:ml-20 lg:ml-64 p-4 md:p-8 lg:p-12 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           {loading ? (
             <div className="flex h-[50vh] items-center justify-center">
@@ -117,6 +170,24 @@ function NavItem({ icon, label, active, onClick }) {
   )
 }
 
+function MobileNavItem({ icon, label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative",
+        active
+          ? "bg-gradient-to-r from-f1-red/20 to-transparent text-f1-red"
+          : "text-gray-400 hover:text-white hover:bg-white/5"
+      )}
+    >
+      {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-f1-red rounded-r-full" />}
+      {React.cloneElement(icon, { size: 20, className: active ? "text-f1-red" : "text-gray-400" })}
+      <span className="font-medium tracking-wide text-sm">{label}</span>
+    </button>
+  )
+}
+
 // Helper to get font size based on name length
 function getFontSize(name) {
   if (!name) return 'text-xl';
@@ -139,9 +210,9 @@ function DashboardView({ data }) {
   const podium = raceResults.slice(0, 3);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 md:space-y-10">
       {/* Header / Hero */}
-      <header className="relative overflow-hidden rounded-3xl bg-[#15151E] border border-[#2A2A30] p-8 lg:p-12">
+      <header className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-[#15151E] border border-[#2A2A30] p-4 md:p-8 lg:p-12">
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
             <div className="flex items-center gap-2 mb-4">
@@ -150,7 +221,7 @@ function DashboardView({ data }) {
               </span>
               <span className="text-gray-500 text-sm font-medium">{data.date}</span>
             </div>
-            <h1 className="text-5xl lg:text-7xl font-black italic tracking-tighter uppercase mb-2">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-7xl font-black italic tracking-tighter uppercase mb-2">
               {data.raceName}
             </h1>
             <div className="flex items-center gap-2 text-gray-400 font-medium text-lg">
@@ -161,7 +232,7 @@ function DashboardView({ data }) {
           <div className="flex flex-col items-end">
             <div className="text-right">
               <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">Winner</div>
-              <div className="text-3xl lg:text-4xl font-bold text-white mb-1">{data.winner}</div>
+              <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-1">{data.winner}</div>
               <div
                 className="text-sm font-bold uppercase tracking-wider inline-block px-3 py-1 rounded-lg"
                 style={{ backgroundColor: `${winnerColor}20`, color: winnerColor }}

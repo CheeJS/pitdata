@@ -403,13 +403,13 @@ export default function Predictions() {
             </AnimatePresence>
 
             {/* 1. HEADER */}
-            <div className="bg-[#15151E] border border-[#2A2A30] rounded-2xl p-4 flex flex-col md:flex-row justify-between items-center shadow-lg relative overflow-hidden shrink-0 mx-6 mt-6">
+            <div className="bg-[#15151E] border border-[#2A2A30] rounded-xl md:rounded-2xl p-3 md:p-4 flex flex-col gap-3 md:gap-0 md:flex-row justify-between items-stretch md:items-center shadow-lg relative overflow-hidden shrink-0 mx-3 md:mx-6 mt-3 md:mt-6">
                 <div className="absolute top-0 left-0 w-1 h-full bg-f1-red" />
 
                 <div className="flex items-center gap-4 z-10">
                     <div className="w-12 h-12 bg-[#2A2A30] rounded-xl flex items-center justify-center font-bold text-xl text-white shadow-inner">{selectedRace.round || "#"}</div>
                     <div>
-                        <h2 className="text-xl font-bold text-white leading-tight">{selectedRace.name}</h2>
+                        <h2 className="text-base sm:text-lg md:text-xl font-bold text-white leading-tight">{selectedRace.name}</h2>
                         <div className="flex items-center gap-3 text-xs text-gray-400 font-medium uppercase tracking-wider mt-1">
                             <span className="flex items-center gap-1"><MapPin size={12} /> {selectedRace.circuit || "Circuit"}</span>
                             <span className="flex items-center gap-1"><Calendar size={12} /> {selectedRace.date}</span>
@@ -453,9 +453,9 @@ export default function Predictions() {
 
 
             {/* 3. MAIN CONTENT */}
-            <div className="flex gap-6 flex-1 min-h-0 overflow-hidden p-6">
+            <div className="flex flex-col lg:flex-row gap-4 md:gap-6 flex-1 min-h-0 overflow-hidden p-3 md:p-6">
                 {/* LEFT: PREDICTION PANEL */}
-                <div className={cn("flex-[1.5] bg-[#15151E] rounded-3xl border border-[#2A2A30] flex flex-col p-6 overflow-y-auto custom-scrollbar", userVote && "opacity-80")}>
+                <div className={cn("flex-1 lg:flex-[1.5] bg-[#15151E] rounded-2xl md:rounded-3xl border border-[#2A2A30] flex flex-col p-4 md:p-6 overflow-y-auto custom-scrollbar", userVote && "opacity-80")}>
 
                     {/* PODIUM VISUALIZATION */}
                     <div className="mb-6">
@@ -475,7 +475,7 @@ export default function Predictions() {
                             <span className="text-sm text-gray-400">Select drivers for podium (click to add/remove)</span>
                             {userVote && <span className="text-xs text-f1-red flex items-center gap-1"><Lock size={10} /> Locked</span>}
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             {CONTENDERS.map(driver => {
                                 const podiumPos = Object.entries(podium).find(([pos, d]) => d === driver)?.[0];
                                 return (
@@ -504,7 +504,7 @@ export default function Predictions() {
 
                         <AnimatePresence>
                             {showAllDrivers && (
-                                <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} className="grid grid-cols-4 gap-2 mt-3 overflow-hidden">
+                                <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3 overflow-hidden">
                                     {Object.keys(DRIVER_DATA).filter(d => !CONTENDERS.includes(d)).map(driver => {
                                         const podiumPos = Object.entries(podium).find(([pos, d]) => d === driver)?.[0];
                                         return (
@@ -637,7 +637,7 @@ export default function Predictions() {
                 </div>
 
                 {/* RIGHT: INSIGHTS & LEADERBOARD */}
-                <div className="flex-1 flex flex-col gap-4">
+                <div className="flex-1 flex flex-col gap-3 md:gap-4">
                     {/* AI vs You Comparison */}
                     <div className="bg-[#15151E] rounded-3xl border border-[#2A2A30] p-5">
                         <h3 className="text-sm font-bold text-gray-400 uppercase mb-4 flex items-center gap-2">

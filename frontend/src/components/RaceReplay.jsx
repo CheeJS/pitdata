@@ -248,14 +248,14 @@ export default function RaceReplay({ raceId: initialRaceId }) {
     return (
         <div className="h-full flex flex-col bg-[#0A0A0F]" style={{ overflow: 'hidden', maxHeight: '100%' }}>
             {/* TOP BAR */}
-            <div className="flex items-center justify-between bg-[#15151E] border-b border-[#2A2A30] px-4 py-2 shrink-0">
-                <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-[#15151E] border-b border-[#2A2A30] px-3 md:px-4 py-2 shrink-0">
+                <div className="flex items-center gap-2 md:gap-3">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-f1-red animate-pulse" />
                         <span className="text-xs font-bold text-white uppercase">Live</span>
                     </div>
                     <select value={raceId} onChange={(e) => { setRaceId(parseInt(e.target.value)); setRaceTime(0); }}
-                        className="bg-transparent text-white font-bold text-sm focus:outline-none cursor-pointer border-none">
+                        className="bg-transparent text-white font-bold text-xs md:text-sm focus:outline-none cursor-pointer border-none max-w-[120px] md:max-w-none truncate">
                         {raceList.map(r => <option key={r.id} value={r.id} className="bg-[#1A1A22]">{r.name}</option>)}
                     </select>
                     <div className={cn("px-2 py-0.5 rounded text-[10px] font-bold uppercase",
@@ -271,10 +271,10 @@ export default function RaceReplay({ raceId: initialRaceId }) {
                     </div>
                 )}
 
-                <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-gray-400 font-mono">L{activeDriverState?.lap || 1}/{replayData?.totalLaps || '—'}</span>
+                <div className="flex items-center gap-1 md:gap-2">
+                    <span className="text-[10px] text-gray-400 font-mono hidden sm:inline">L{activeDriverState?.lap || 1}/{replayData?.totalLaps || '—'}</span>
                     <button onClick={() => setRaceTime(0)} className="p-1 text-gray-500 hover:text-white"><RotateCcw size={12} /></button>
-                    <div className="flex bg-black/30 rounded p-0.5">
+                    <div className="hidden sm:flex bg-black/30 rounded p-0.5">
                         {[1, 5, 20, 50].map(s => (
                             <button key={s} onClick={() => setSpeed(s)} className={cn("px-1.5 py-0.5 text-[9px] font-bold rounded", speed === s ? "bg-white text-black" : "text-gray-500")}>{s}x</button>
                         ))}
@@ -283,15 +283,15 @@ export default function RaceReplay({ raceId: initialRaceId }) {
                         {isPlaying ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" className="ml-0.5" />}
                     </button>
                     <input type="range" min="0" max={maxTime} step="1" value={raceTime} onChange={(e) => { setRaceTime(parseFloat(e.target.value)); setIsPlaying(false); }}
-                        className="w-24 accent-f1-red h-1 bg-[#2A2A30] rounded appearance-none cursor-pointer" />
-                    <span className="text-[10px] text-gray-400 font-mono w-14">{new Date(raceTime * 1000).toISOString().substr(11, 8)}</span>
+                        className="w-16 sm:w-24 accent-f1-red h-1 bg-[#2A2A30] rounded appearance-none cursor-pointer" />
+                    <span className="text-[10px] text-gray-400 font-mono w-14 hidden sm:inline">{new Date(raceTime * 1000).toISOString().substr(11, 8)}</span>
                 </div>
             </div>
 
             {/* MAIN */}
             <div className="flex-1 flex" style={{ overflow: 'hidden', minHeight: 0 }}>
-                {/* LEFT: LEADERBOARD */}
-                <div className="w-56 bg-[#12121A] border-r border-[#2A2A30] flex flex-col min-h-0">
+                {/* LEFT: LEADERBOARD - Hidden on mobile */}
+                <div className="hidden md:flex w-56 bg-[#12121A] border-r border-[#2A2A30] flex-col min-h-0">
                     <div className="p-2 border-b border-[#2A2A30] text-[9px] font-bold uppercase text-gray-500 shrink-0">Standings</div>
                     <div className="flex-1 overflow-y-auto min-h-0">
                         <AnimatePresence>
@@ -322,9 +322,26 @@ export default function RaceReplay({ raceId: initialRaceId }) {
 
                 {/* CENTER: SVG TRACK MAP */}
                 <div className="flex-1 relative overflow-hidden bg-[#0A0A0F] min-h-0">
-                    <div className="absolute top-4 left-4 z-10">
-                        <div className="text-xl font-heading font-black text-white uppercase">{currentRaceName}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">Lap {activeDriverState?.lap || 1} / {replayData?.totalLaps || '—'}</div>
+                    <div className="absolute top-2 left-2 md:top-4 md:left-4 z-10">
+                        <div className="text-base md:text-xl font-heading font-black text-white uppercase">{currentRaceName}</div>
+                        <div className="text-[10px] md:text-xs text-gray-500 mt-0.5">Lap {activeDriverState?.lap || 1} / {replayData?.totalLaps || '—'}</div>
+                    </div>
+
+                    {/* Mobile Position List */}
+                    <div className="md:hidden absolute top-2 right-2 bg-[#12121A]/90 border border-[#2A2A30] rounded-lg p-2 max-w-[120px] max-h-[200px] overflow-y-auto z-10">
+                        {currentPositions.slice(0, 5).map((d) => {
+                            const meta = replayData?.drivers?.[d.driver];
+                            return (
+                                <div key={d.driver} className="flex items-center gap-1.5 py-0.5">
+                                    <span className={cn("w-4 text-center font-bold text-[10px]", d.rank === 1 ? "text-f1-red" : "text-gray-400")}>{d.rank}</span>
+                                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta?.color || '#444' }} />
+                                    <span className="text-white text-[10px] font-medium">{d.driver}</span>
+                                </div>
+                            );
+                        })}
+                        {currentPositions.length > 5 && (
+                            <div className="text-[9px] text-gray-500 text-center mt-1">+{currentPositions.length - 5} more</div>
+                        )}
                     </div>
 
                     {replayData?.map && (
@@ -337,8 +354,8 @@ export default function RaceReplay({ raceId: initialRaceId }) {
                     )}
                 </div>
 
-                {/* RIGHT: INFO PANEL - Fixed height, internal scroll */}
-                <div className="w-64 bg-[#12121A] border-l border-[#2A2A30] relative" style={{ overflow: 'hidden' }}>
+                {/* RIGHT: INFO PANEL - Hidden on mobile */}
+                <div className="hidden md:block w-64 bg-[#12121A] border-l border-[#2A2A30] relative" style={{ overflow: 'hidden' }}>
                     <div className="absolute inset-0 flex flex-col">
                         {/* Selected Driver Card */}
                         {activeDriverState && (

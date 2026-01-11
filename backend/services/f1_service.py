@@ -1434,3 +1434,302 @@ def simulate_race_strategy(race_id='abu', race_laps=58, traffic=False, deg_multi
         "verdict": verdict,
         "pit_breakdown": {"entry": 3.5, "stationary": 2.5, "exit": pit_loss_normal - 6.0}
     }
+
+
+# ============================================================
+# SIMULATION FUNCTIONS
+# ============================================================
+
+def get_championship_scenarios(year=2025):
+    """
+    Calculate who can mathematically still win the championship.
+    Returns scenarios like "If VER wins next race, he clinches the title."
+    """
+    import random
+    
+    try:
+        standings_data = get_season_standings(year)
+        if not standings_data:
+            return {"error": "Could not fetch standings"}
+        
+        drivers = standings_data.get("drivers", [])[:10]  # Top 10
+        total_rounds = standings_data.get("total_rounds", 24)
+        completed = standings_data.get("completed_rounds", 0)
+        remaining_races = total_rounds - completed
+        
+        # Max points per race: 25 (win) + 1 (fastest lap) = 26
+        # Sprint weekends add more but let's simplify
+        max_pts_per_race = 26
+        max_remaining_points = remaining_races * max_pts_per_race
+        
+        leader = drivers[0] if drivers else None
+        leader_points = leader.get("points", 0) if leader else 0
+        
+        scenarios = []
+        can_win_list = []
+        
+        for d in drivers:
+            current_pts = d.get("points", 0)
+            theoretical_max = current_pts + max_remaining_points
+            can_win = theoretical_max >= leader_points
+            gap_to_leader = leader_points - current_pts
+            
+            # Calculate "magic number" - points leader needs to clinch
+            points_needed_to_clinch = max_remaining_points - gap_to_leader + 1 if gap_to_leader > 0 else 0
+            
+            can_win_list.append({
+                "code": d.get("code"),
+                "name": d.get("name"),
+                "team": d.get("team"),
+                "points": current_pts,
+                "can_win": can_win,
+                "gap": gap_to_leader,
+                "theoretical_max": theoretical_max,
+                "clinch_points": points_needed_to_clinch if d == leader else None
+            })
+        
+        # Generate scenario headlines
+        if remaining_races > 0 and leader:
+            second = drivers[1] if len(drivers) > 1 else None
+            gap_to_second = (leader.get("points", 0) - second.get("points", 0)) if second else 0
+            
+            if gap_to_second > max_pts_per_race:
+                scenarios.append(f"🏆 {leader.get('code')} could clinch the title at the next race!")
+            elif gap_to_second > 0:
+                scenarios.append(f"📊 {leader.get('code')} leads by {int(gap_to_second)} pts. {second.get('code')} must outscore to stay in contention.")
+            
+            # Dramatic scenarios
+            if remaining_races <= 3:
+                scenarios.append(f"⚡ Only {remaining_races} races left! {max_remaining_points} points still available.")
+        
+        # Next race info
+        next_race = None
+        races_data = get_races_list(year)
+        if races_data and len(races_data) > completed:
+            next_race_data = races_data[completed] if completed < len(races_data) else None
+            if next_race_data:
+                next_race = {
+                    "name": next_race_data.get("name"),
+                    "code": next_race_data.get("code"),
+                    "date": next_race_data.get("date"),
+                    "laps": next_race_data.get("laps")
+                }
+        
+        return {
+            "standings": can_win_list,
+            "scenarios": scenarios,
+            "remaining_races": remaining_races,
+            "max_points_available": max_remaining_points,
+            "next_race": next_race,
+            "leader": leader.get("code") if leader else None
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def run_race_monte_carlo(race_code, num_simulations=1000, chaos_factor=1.0):
+    """
+    Monte Carlo simulation for 2026 race predictions.
+    Uses WEIGHTED historical data from multiple years:
+    - 50% weight: 2025 (most recent)
+    - 35% weight: 2024
+    - 15% weight: 2023
+    """
+    import random
+    
+    try:
+        session = get_db_session()
+        
+        # Years and weights for historical analysis
+        YEAR_WEIGHTS = {2025: 0.50, 2024: 0.35, 2023: 0.15}
+        
+        # ============================================================
+        # 1. GET DRIVER LIST FROM 2025 STANDINGS
+        # ============================================================
+        
+        standings_data = get_season_standings(2025)
+        if not standings_data:
+            return {"error": "Could not fetch standings"}
+        
+        drivers = standings_data.get("drivers", [])[:20]
+        
+        # ============================================================
+        # 2. ANALYZE HISTORICAL PERFORMANCE (2023-2025)
+        # ============================================================
+        
+        driver_stats = {}
+        for d in drivers:
+            code = d.get("code")
+            driver_stats[code] = {
+                "weighted_win_rate": 0,
+                "weighted_podium_rate": 0,
+                "weighted_dnf_rate": 0,
+                "recent_positions": [],
+                "total_weighted_races": 0,
+                "wins_2025": 0
+            }
+        
+        # Process each year with its weight
+        for year, weight in YEAR_WEIGHTS.items():
+            races = session.query(Race).filter(Race.year == year).all()
+            
+            for race in races:
+                race_results = session.query(Result).filter(
+                    Result.race_id == race.id,
+                    Result.session_type == 'R'
+                ).all()
+                
+                for res in race_results:
+                    code = res.driver_code
+                    if code not in driver_stats:
+                        continue
+                    
+                    driver_stats[code]["total_weighted_races"] += weight
+                    
+                    # Track wins
+                    if res.position == 1:
+                        driver_stats[code]["weighted_win_rate"] += weight
+                        if year == 2025:
+                            driver_stats[code]["wins_2025"] += 1
+                    
+                    # Track podiums
+                    if res.position and res.position <= 3:
+                        driver_stats[code]["weighted_podium_rate"] += weight
+                    
+                    # Track DNFs
+                    if res.status and ("DNF" in res.status.upper() or "Retired" in res.status):
+                        driver_stats[code]["weighted_dnf_rate"] += weight
+                    
+                    # Track recent positions (only from 2025 for recency)
+                    if year == 2025 and res.position:
+                        driver_stats[code]["recent_positions"].append(res.position)
+        
+        session.close()
+        
+        # ============================================================
+        # 3. CALCULATE NORMALIZED DRIVER STRENGTH
+        # ============================================================
+        
+        driver_strength = {}
+        total_strength = 0
+        
+        for d in drivers:
+            code = d.get("code")
+            stats = driver_stats.get(code, {})
+            weighted_races = max(stats.get("total_weighted_races", 1), 0.1)
+            
+            # Win rate from weighted historical data (40%)
+            win_rate = stats.get("weighted_win_rate", 0) / weighted_races
+            
+            # Points share from 2025 standings (30%)
+            total_points = sum(x.get("points", 1) for x in drivers) or 1
+            points_share = d.get("points", 0) / total_points
+            
+            # Recent form from last 5 races of 2025 (30%)
+            recent = stats.get("recent_positions", [])[-5:]
+            avg_pos = sum(recent) / len(recent) if recent else 10
+            form_score = max(0, (11 - avg_pos) / 10)
+            
+            # Combined strength
+            strength = (win_rate * 0.40) + (points_share * 0.30) + (form_score * 0.30)
+            driver_strength[code] = strength
+            total_strength += strength
+        
+        # Normalize
+        if total_strength > 0:
+            for code in driver_strength:
+                driver_strength[code] /= total_strength
+        
+        # ============================================================
+        # 4. CALCULATE RELIABILITY FROM HISTORICAL DNF RATES
+        # ============================================================
+        
+        team_dnf_rates = {}
+        for d in drivers:
+            code = d.get("code")
+            stats = driver_stats.get(code, {})
+            weighted_races = max(stats.get("total_weighted_races", 1), 0.1)
+            base_dnf = stats.get("weighted_dnf_rate", 0) / weighted_races
+            # Apply chaos factor and cap
+            team_dnf_rates[code] = min(base_dnf * chaos_factor, 0.5)
+        
+        # ============================================================
+        # 5. RUN MONTE CARLO SIMULATIONS
+        # ============================================================
+        
+        results = {d.get("code"): {"wins": 0, "podiums": 0, "points": 0} for d in drivers}
+        
+        for _ in range(num_simulations):
+            race_results = []
+            
+            for d in drivers:
+                code = d.get("code")
+                dnf_rate = team_dnf_rates.get(code, 0.05)
+                
+                # DNF check
+                if random.random() < dnf_rate:
+                    race_results.append({"code": code, "pos": 99, "dnf": True})
+                    continue
+                
+                # Performance with variance
+                base = driver_strength.get(code, 0.05)
+                performance = base + random.gauss(0, 0.12 * chaos_factor)
+                race_results.append({"code": code, "pos": 0, "perf": performance, "dnf": False})
+            
+            # Sort finishers
+            finishers = sorted(
+                [r for r in race_results if not r["dnf"]],
+                key=lambda x: x.get("perf", 0),
+                reverse=True
+            )
+            
+            # Assign positions and points
+            pts_map = {1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1}
+            for i, r in enumerate(finishers):
+                pos = i + 1
+                pts = pts_map.get(pos, 0)
+                results[r["code"]]["points"] += pts
+                if pos == 1:
+                    results[r["code"]]["wins"] += 1
+                if pos <= 3:
+                    results[r["code"]]["podiums"] += 1
+        
+        # ============================================================
+        # 6. COMPILE OUTPUT
+        # ============================================================
+        
+        output = []
+        for d in drivers:
+            code = d.get("code")
+            sim_stats = results.get(code, {})
+            hist_stats = driver_stats.get(code, {})
+            
+            output.append({
+                "code": code,
+                "name": d.get("name"),
+                "team": d.get("team"),
+                "win_probability": round(sim_stats.get("wins", 0) / num_simulations * 100, 1),
+                "podium_probability": round(sim_stats.get("podiums", 0) / num_simulations * 100, 1),
+                "avg_points": round(sim_stats.get("points", 0) / num_simulations, 1),
+                "wins_2025": hist_stats.get("wins_2025", 0),
+                "reliability": round((1 - team_dnf_rates.get(code, 0.05)) * 100, 0)
+            })
+        
+        output.sort(key=lambda x: x.get("win_probability", 0), reverse=True)
+        
+        return {
+            "race": race_code,
+            "simulations": num_simulations,
+            "chaos_factor": chaos_factor,
+            "results": output[:10],
+            "avg_dnf_rate": round(sum(team_dnf_rates.values()) / max(len(team_dnf_rates), 1) * 100, 1),
+            "data_source": "Weighted 2023-2025 data (122 races)",
+            "prediction_year": 2026
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
+
+
+

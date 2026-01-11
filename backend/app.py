@@ -140,6 +140,26 @@ def strategy_sim():
     result = simulate_race_strategy(race_id=race_id, race_laps=laps, traffic=traffic, deg_multiplier=deg, safety_car_laps=sc_laps, grid_pos=grid_pos, weather=weather, objective=objective)
     return jsonify(result)
 
+@app.route('/api/simulations/championship')
+def championship_calc():
+    from services.f1_service import get_championship_scenarios
+    year = request.args.get('year', 2025, type=int)
+    data = get_championship_scenarios(year)
+    if "error" in data:
+        return jsonify(data), 500
+    return jsonify(data)
+
+@app.route('/api/simulations/race-monte-carlo')
+def race_monte_carlo():
+    from services.f1_service import run_race_monte_carlo
+    race_code = request.args.get('race', 'AUS')
+    num_sims = request.args.get('sims', 1000, type=int)
+    chaos = request.args.get('chaos', 1.0, type=float)
+    data = run_race_monte_carlo(race_code, num_sims, chaos)
+    if "error" in data:
+        return jsonify(data), 500
+    return jsonify(data)
+
 @app.route('/api/race-control/<int:race_id>')
 def race_control_feed(race_id):
     from services.f1_service import get_race_control_messages
