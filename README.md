@@ -1,93 +1,95 @@
-# F1 Insight - Strategy & Prediction Engine
+# F1 Insight - Strategy & Prediction Platform
 
-A high-fidelity Formula 1 strategy simulation and community prediction platform. This application combines granular race data with physics-based modeling to simulate race strategies, visualize tyre degradation, and aggregate community predictions.
+A high-fidelity Formula 1 strategy simulation and community prediction engine. This platform provides advanced race strategy modeling, historical data analysis, and simulated telemetry replay functionality.
 
-## Tech Stack
+## Technology Stack
 
 ### Frontend
 - **Framework**: React 18 (Vite)
 - **Styling**: Tailwind CSS
-- **Animations**: Framer Motion
-- **Visualization**: Recharts
-- **Icons**: Lucide React
+- **Visualization**: Recharts, D3.js (via simple SVG maps)
+- **State Management**: React Context & Hooks
 
 ### Backend
 - **Server**: Python (Flask)
-- **Database**: SQLite (SQLAlchemy ORM)
-- **Data Processing**: Pandas, NumPy
-- **F1 Data Integration**: FastF1 Library
+- **Database**: PostgreSQL (Production) / SQLite (Development)
+- **ORM**: SQLAlchemy
+- **Data Source**: FastF1 Library (Official F1 Live Timing Archives)
+
+### Infrastructure
+- **Containerization**: Docker & Docker Compose
+- **Cloud**: AWS RDS (PostgreSQL)
 
 ## Key Features
 
-1. **Race Strategy Simulations**:
-   - Compares 1-stop vs 2-stop strategies.
-   - Accounts for tyre degradation, fuel load, and pit loss.
-   - Supports "what-if" scenarios (Safety Cars, Traffic, Grid Position).
+### 1. Strategy Simulation
+Physics-based modeling to simulate race outcomes based on tyre degradation, fuel load, and pit stop strategies.
+- **Tyre Model**: 4th-order polynomial degradation curves based on Pirelli data.
+- **Race Variables**: Stochastic traffic modeling and safety car probability injection.
+- **Scenarios**: Compare 1-stop vs 2-stop strategies under various conditions.
 
-2. **Grand Prix Predictions**:
-   - Community voting system for Race Winner and Safety Car probability.
-   - Visualization of community confidence vs AI models.
-   - Demo mode for historical/portfolio exploration.
+### 2. Telemetry Analysis & Replay
+- **Data Visualization**: Lap-by-lap comparison of Speed, Throttle, and Brake telemetry.
+- **Race Replay**: Simulated "live" playback of historical races with synchronized track map and leaderboards.
+- **2026 Regulations**: Support for projected 2026 car performance metrics.
 
-3. **Live Telemetry Replay (Simulated)**:
-   - Visualization of lap telemetry (Speed, Throttle, Brake).
-   - Track dominance and sector analysis.
-
-## Mathematical Models
-
-The core of the application relies on a deterministic physics model coupled with stochastic elements for race disruptions.
-
-### 1. Tyre Degradation Model
-Tyre performance is modeled using a non-linear degradation curve. As the tyre ages, performance drops not linearly, but accelerates as it approaches its "cliff" (end of life).
-
-**Formula:**
-Current Degradation = (Lap * Base Deg) * Degradation Curve
-Degradation Curve = 1 + 0.5 * (Tyre Age / Tyre Life)^4
-
-This 4th-order polynomial ensures that tyres remain relatively stable during their prime window but degrade rapidly once they pass their expected lifespan, mimicking real Pirelli tyre characteristics.
-
-### 2. Fuel Correction
-Standard F1 cars start heavy (110kg fuel) and get lighter. The model applies a generic fuel correction factor.
-
-**Formula:**
-Lap Time Gain = Lap Number * 0.06s
-
-### 3. Traffic & Pit Loss
-- **Traffic**: A stochastic model injects time penalties based on Grid Position. If a car starts P11+, traffic probability increases by 2% per position.
-- **Pit Stops**:
-  - Normal Pit Loss: Circuit-dependent (e.g., 22s at Monza).
-  - Safety Car Pit Loss: Reduced to 55% of normal time, incentivizing "cheap" stops.
-
-## Data Pipeline
-
-1. **Extraction**: The ETL pipeline uses `FastF1` to fetch session data (Laps, Telemetry, Weather) from the official F1 Livetiming API archives.
-2. **Transformation**: Data is normalized, sector times are calculated, and circuit geometry (X, Y coordinates) is simplified for web rendering.
-3. **Loading**: Processed data is stored in a normalized SQLite Schema (`races`, `results`, `laps`, `telemetry`).
-
-## Project Structure
-
-/backend
-  /services
-    - f1_service.py: Core data retrieval and simulation logic.
-    - voting_service.py: Prediction aggregation logic.
-  - app.py: REST API entry point.
-
-/frontend
-  /src/pages
-    - Predictions.jsx: Voting interface.
-    - Simulations.jsx: Strategy dashboard.
+### 3. Community Predictions
+- **Voting System**: Aggregated community predictions for race winners and safety car probabilities.
+- **Analysis**: Compare user predictions against statistical model outputs.
 
 ## Setup Instructions
 
-1. Install Python dependencies:
+### Prerequisites
+- Python 3.9+
+- Node.js 16+
+- PostgreSQL (optional, defaults to SQLite if unconfigured)
+
+### Local Development
+
+1. **Backend Setup**
+   ```bash
+   cd backend
+   python -m venv venv
+   # Activate venv (Windows: venv\Scripts\activate, Mac/Linux: source venv/bin/activate)
    pip install -r requirements.txt
+   python app.py
+   ```
 
-2. Run Backend:
-   python backend/app.py
-
-3. Install Node dependencies:
+2. **Frontend Setup**
+   ```bash
    cd frontend
    npm install
-
-4. Run Frontend:
    npm run dev
+   ```
+
+3. **Database Seeding**
+   The application requires baseline data to function.
+   ```bash
+   cd backend
+   python seed_history.py
+   ```
+
+### Docker Deployment
+
+To run the full stack using Docker:
+
+```bash
+docker-compose up --build
+```
+
+## Project Structure
+
+- `backend/`: Flask API, data processing scripts, and simulation logic.
+- `frontend/`: React application, UI components, and visualization modules.
+- `data_pipeline/`: Scripts for fetching and normalizing FastF1 data.
+
+## Configuration
+
+Environment variables can be set in a `.env` file or directly in the environment.
+
+- `DATABASE_URL`: Connection string for PostgreSQL (e.g., `postgresql://user:pass@host:5432/db`).
+- `FLASK_ENV`: Set to `development` or `production`.
+
+## License
+
+Proprietary software. All rights reserved.

@@ -14,15 +14,23 @@ import RaceControlFeed from './components/RaceControlFeed';
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [raceData, setRaceData] = useState(null);
+  const [standingsData, setStandingsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    // Fetch real data
+    // Fetch real data in parallel
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/latest-results');
-        setRaceData(response.data);
+        const [resultsRes, standingsRes] = await Promise.all([
+          axios.get('http://localhost:5000/api/latest-results'),
+          axios.get('http://localhost:5000/api/standings?year=2026')
+        ]);
+
+        setRaceData(resultsRes.data);
+        if (standingsRes.data && !standingsRes.data.error) {
+          setStandingsData(standingsRes.data);
+        }
       } catch (error) {
         console.error("Using fallback data due to API error:", error);
         // Fallback data for design preview
@@ -137,7 +145,7 @@ export default function App() {
             </div>
           ) : (
             <>
-              {activeTab === 'dashboard' && <DashboardView data={raceData} />}
+              {activeTab === 'dashboard' && <DashboardView data={raceData} standingsData={standingsData} />}
               {activeTab === 'replay' && <RaceReplay raceId={raceData?.raceId} />}
               {activeTab === 'analysis' && <TelemetryAnalysis raceId={raceData?.raceId} />}
               {activeTab === 'standings' && <Standings />}
@@ -217,20 +225,25 @@ function getFontSize(name) {
   return name.length > 3 ? 'text-lg' : 'text-xl';
 }
 
-function DashboardView({ data }) {
+function DashboardView({ data, standingsData }) {
   const winnerColor = getTeamColor(data.winnerTeam);
 
-  // Fetch standings for WDC chart + Constructors
-  const [standingsData, setStandingsData] = React.useState(null);
-  React.useEffect(() => {
-    axios.get('http://localhost:5000/api/standings?year=2025')
-      .then(res => { if (!res.data.error) setStandingsData(res.data); })
-      .catch(e => console.error("Standings fetch error", e));
-  }, []);
+  // Standings data is now passed as a prop from App to improve loading performance
 
   // Extract Podium (P1, P2, P3) from results
-  const raceResults = data.results?.['R'] || [];
-  const podium = raceResults.slice(0, 3);
+  const [resultType, setResultType] = useState('R');
+
+  // Extract Results based on toggle
+  const raceResults = data.results?.[resultType] || [];
+  // Podium always follows Race results for the Hero/Podium cards, or should it change? 
+  // Usually Podium is for the Race. Let's keep Podium fixed to Race for now to avoid confusion 
+  // or switch it if the user wants Q1/Q2/Q3 distinct views? 
+  // For 'Qualifying', podium is Top 3 Qualifiers. 
+  const displayPodium = data.results?.['R']?.slice(0, 3) || [];
+  const podium = displayPodium; // Keep podium fixed to Race for Hero visuals?
+  // User asked for "Qualifying Results", usually meaning the list.
+  // Let's keep Hero/Podium focused on the MAIN Event (Race) unless we want full Q mode.
+  // I will make the LIST dynamic.
 
   return (
     <div className="space-y-4 md:space-y-8">
@@ -338,8 +351,12 @@ function DashboardView({ data }) {
 
         {/* Race Results - Simple Table */}
         <section className="bg-[#111] border border-[#222] rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-[#222]">
-            <h3 className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Race Results</h3>
+          <div className="px-4 py-3 border-b border-[#222] flex items-center justify-between">
+            <h3 className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">{resultType === 'R' ? 'Race Results' : 'Qualifying'}</h3>
+            <div className="flex bg-[#1a1a1a] rounded-lg p-0.5">
+              <button onClick={() => setResultType('R')} className={cn("px-2 py-0.5 text-[10px] font-medium rounded-md transition-all", resultType === 'R' ? "bg-f1-red text-white shadow-sm" : "text-gray-500 hover:text-white")}>Race</button>
+              <button onClick={() => setResultType('Q')} className={cn("px-2 py-0.5 text-[10px] font-medium rounded-md transition-all", resultType === 'Q' ? "bg-f1-red text-white shadow-sm" : "text-gray-500 hover:text-white")}>Quali</button>
+            </div>
           </div>
           <div className="divide-y divide-[#1a1a1a]">
             {raceResults.slice(0, 10).map((row) => (
@@ -431,6 +448,9 @@ function DashboardView({ data }) {
             </div>
           </div>
         </header>
+
+        {/* Weekend Timeline */}
+        {data.sessions && <WeekendSchedule sessions={data.sessions} />}
 
         {/* Row 2: Podium + WDC Chart */}
         <div className="grid grid-cols-3 gap-6">
@@ -536,8 +556,12 @@ function DashboardView({ data }) {
 
           {/* Top 10 Results */}
           <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden flex flex-col h-[380px]">
-            <div className="px-4 py-3 border-b border-[#222]">
-              <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Top 10</h3>
+            <div className="px-4 py-3 border-b border-[#222] flex items-center justify-between">
+              <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">{resultType === 'R' ? 'Top 10' : 'Qualifying Top 10'}</h3>
+              <div className="flex bg-[#1a1a1a] rounded-lg p-0.5">
+                <button onClick={() => setResultType('R')} className={cn("px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all", resultType === 'R' ? "bg-f1-red text-white shadow-lg" : "text-gray-500 hover:text-white")}>Race</button>
+                <button onClick={() => setResultType('Q')} className={cn("px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all", resultType === 'Q' ? "bg-f1-red text-white shadow-lg" : "text-gray-500 hover:text-white")}>Qualifying</button>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto divide-y divide-[#1a1a1a]">
               {raceResults.slice(0, 10).map((row) => (
@@ -610,4 +634,41 @@ function getTeamColor(teamName) {
   if (lower.includes('sauber') || lower.includes('kick')) return '#52e252';
   if (lower.includes('rb') || lower.includes('alpha')) return '#6692FF';
   return '#666';
+}
+
+function WeekendSchedule({ sessions }) {
+  if (!sessions) return null;
+
+  const schedule = [
+    { id: 'media', label: 'Media Day', time: null, date: 'Thursday' }, // Generic placeholder
+    { id: 'fp1', label: 'Practice 1', time: sessions.fp1 },
+    { id: 'fp2', label: 'Practice 2', time: sessions.fp2 },
+    { id: 'fp3', label: 'Practice 3', time: sessions.fp3 },
+    { id: 'quali', label: 'Qualifying', time: sessions.qualifying },
+    { id: 'race', label: 'Race', time: sessions.sprint || sessions.date } // Fallback logic
+    // Note: 'date' in root object is usually Race Date. 'sessions.race' isn't in API, use root date or derived.
+  ];
+
+  // Helper to format
+  const formatTime = (iso) => {
+    if (!iso) return '--:--';
+    const d = new Date(iso);
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', weekday: 'short' });
+  };
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      {schedule.map((s) => {
+        if (!s.time && s.id !== 'media') return null; // Skip empty sessions
+        return (
+          <div key={s.id} className="bg-[#111] border border-[#222] rounded-xl p-3 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+            {/* Active Indicator (Mock logic: if generic date matches?) */}
+            <div className="text-[10px] uppercase font-bold text-gray-500 mb-1">{s.label}</div>
+            <div className="text-sm font-bold text-white">{s.id === 'media' ? 'All Day' : formatTime(s.time)}</div>
+            {s.id === 'media' && <div className="absolute top-0 right-0 p-1"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div></div>}
+          </div>
+        )
+      })}
+    </div>
+  )
 }

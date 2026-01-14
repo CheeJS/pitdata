@@ -236,7 +236,7 @@ export default function Predictions() {
 
     // 2. Fetch Races
     useEffect(() => {
-        axios.get('http://localhost:5000/api/races?year=2025')
+        axios.get('http://localhost:5000/api/races?year=2026')
             .then(res => {
                 setRaces(res.data);
                 if (res.data.length > 0) setSelectedRace(res.data[0]);

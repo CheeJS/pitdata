@@ -1,8 +1,44 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
-import { Play, Pause, Zap, TrendingUp, ChevronDown, ChevronUp, Flag, Thermometer, Droplets, RotateCcw, ArrowUp, ArrowDown, Timer, Circle, Wrench, AlertTriangle, List } from 'lucide-react';
+import { Play, Pause, Zap, TrendingUp, ChevronDown, ChevronUp, Flag, Thermometer, Droplets, RotateCcw, ArrowUp, ArrowDown, ArrowRight, Timer, Circle, Wrench, AlertTriangle, List } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Placeholder grid for 2026 (races haven't happened yet)
+const F1_2026_GRID = [
+    { driver: 'VER', team: 'Red Bull Racing', color: '#3671C6' },
+    { driver: 'PIA', team: 'McLaren', color: '#FF8000' },
+    { driver: 'NOR', team: 'McLaren', color: '#FF8000' },
+    { driver: 'LEC', team: 'Ferrari', color: '#E8002D' },
+    { driver: 'ALO', team: 'Aston Martin', color: '#229971' },
+    { driver: 'RUS', team: 'Mercedes', color: '#6CD3BF' },
+    { driver: 'BOR', team: 'Racing Bulls', color: '#6692FF' },
+    { driver: 'HAD', team: 'Racing Bulls', color: '#6692FF' },
+    { driver: 'OCO', team: 'Haas F1 Team', color: '#B6BABD' },
+    { driver: 'TSU', team: 'Red Bull Racing', color: '#3671C6' },
+    { driver: 'LAW', team: 'Williams', color: '#64C4FF' },
+    { driver: 'BEA', team: 'Haas F1 Team', color: '#B6BABD' },
+    { driver: 'SAI', team: 'Williams', color: '#64C4FF' },
+    { driver: 'HAM', team: 'Ferrari', color: '#E8002D' },
+    { driver: 'ALB', team: 'Alpine', color: '#0093CC' },
+    { driver: 'STR', team: 'Aston Martin', color: '#229971' },
+    { driver: 'ANT', team: 'Mercedes', color: '#6CD3BF' },
+    { driver: 'HUL', team: 'Kick Sauber', color: '#52E252' },
+    { driver: 'GAS', team: 'Alpine', color: '#0093CC' },
+    { driver: 'COL', team: 'Kick Sauber', color: '#52E252' },
+];
+
+const getStatusClasses = (status) => {
+    switch (status) {
+        case 'GREEN': return "bg-green-500 text-white";
+        case 'YELLOW': return "bg-yellow-400 text-black";
+        case 'RED': return "bg-red-600 text-white";
+        case 'SC': return "bg-orange-500 text-white";
+        case 'VSC': return "bg-orange-400 text-black";
+        case 'CHEQUERED': return "bg-white text-black border border-gray-300";
+        default: return "bg-gray-500 text-white";
+    }
+};
 
 export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
     const [raceId, setRaceId] = useState(initialRaceId || 0);
@@ -13,31 +49,40 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
     const [timeOffset, setTimeOffset] = useState(0);
     const [raceTime, setRaceTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [speed, setSpeed] = useState(20);
+    const [speed, setSpeed] = useState(5);
     const [loading, setLoading] = useState(false);
-    const [raceEvents, setRaceEvents] = useState([]);
     const [mobileTab, setMobileTab] = useState('map'); // 'map', 'standings', 'events'
     const [showLeaderboard, setShowLeaderboard] = useState(true); // Toggle mini leaderboard
+    const [year, setYear] = useState(2026);
+    const [error, setError] = useState(null);
+    const AVAILABLE_YEARS = [2026, 2025, 2024];
 
-    // Use refs to avoid re-render loops
+    // Use refs to avoid re-render loops (still needed for map/interpolation but not for events)
     const prevPositionsRef = useRef({});
     const prevTyresRef = useRef({});
     const feedRef = useRef(null);
+    const [, forceUpdate] = useState(0); // Kept for map smoothness if needed
     const positionChangesRef = useRef({});
-    const [, forceUpdate] = useState(0);
 
-    // Init
+
+    // Load Race List when Year changes
     useEffect(() => {
-        const init = async () => {
+        const fetchRaces = async () => {
             try {
-                const res = await axios.get('http://localhost:5000/api/races');
+                const res = await axios.get(`http://localhost:5000/api/races?year=${year}`);
                 setRaceList(res.data);
-                if (!raceId && res.data.length > 0) setRaceId(res.data[0].id);
-                else if (initialRaceId) setRaceId(initialRaceId);
+
+                // If initialRaceId is provided and valid for this year, use it. Otherwise default to first race.
+                // Note: We prioritize initialRaceId only on first load (if we had a way to track that), 
+                // but since year defaults to 2026/2025, we might need to sync year with initialRaceId if advanced.
+                // For now, simple logic: pick first race of the year.
+                if (res.data.length > 0) {
+                    setRaceId(res.data[0].id);
+                }
             } catch (e) { console.error(e); }
         };
-        init();
-    }, [initialRaceId]);
+        fetchRaces();
+    }, [year]);
 
     useEffect(() => {
         if (!raceId) return;
@@ -46,12 +91,24 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
             setReplayData(null);
             setIsPlaying(false);
             setRaceTime(0);
-            prevPositionsRef.current = {};
+            prevPositionsRef.current = {}; // Reset position history
             prevTyresRef.current = {};
             positionChangesRef.current = {};
-            setRaceEvents([]);
+
+            setError(null);
             try {
                 const repRes = await axios.get(`http://localhost:5000/api/replay/${raceId}`);
+
+                // Handle expected missing data (200 OK with error code)
+                if (repRes.data.code === 'NO_DATA' || repRes.data.error) {
+                    if (year >= 2026) {
+                        setError("This race has not occurred yet. Check back after the race weekend!");
+                    } else {
+                        setError("Replay telemetry not available for this race.");
+                    }
+                    return;
+                }
+
                 setReplayData(repRes.data);
 
                 let minStart = Infinity;
@@ -75,7 +132,13 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 setMaxTime(max || 7200);
 
                 if (repRes.data.data[1]?.[0]) setActiveDriver(repRes.data.data[1][0].driver);
-            } catch (error) { console.error(error); }
+            } catch (error) {
+                // Only log unexpected errors
+                if (error.response?.status !== 404) {
+                    console.error("RaceReplay Error:", error);
+                }
+                setError("Replay telemetry not available for this race.");
+            }
             finally { setLoading(false); }
         };
         fetchData();
@@ -112,116 +175,522 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
     // Status & Weather
     const { currentStatus, currentWeather } = useMemo(() => {
         if (!replayData?.events) return { currentStatus: 'GREEN', currentWeather: null };
-        const effectiveTime = raceTime + timeOffset;
+
+        // The flag events and lap data may use different time references.
+        // Calculate effective time in flag timeline
+        // Use direct session time offset (calculated from Lap 1 start) to align flags with race
+        const effectiveTimeInFlags = raceTime + timeOffset;
+
         let status = 'GREEN';
         let weather = replayData.events.find(e => e.status === 'WEATHER')?.weather || null;
+
         for (const ev of replayData.events) {
-            if (ev.time > effectiveTime) break;
+            if (ev.time > effectiveTimeInFlags) break;
             if (ev.status !== 'WEATHER') status = ev.status;
             if (ev.status === 'WEATHER') weather = ev.weather;
         }
+
         return { currentStatus: status, currentWeather: weather };
     }, [replayData, raceTime, timeOffset]);
 
     // Positions
     const currentPositions = useMemo(() => {
+        // For future races (2026+) without data, use placeholder grid
+        if (!replayData && year >= 2026) {
+            return F1_2026_GRID.map((d, i) => ({
+                driver: d.driver,
+                rank: i + 1,
+                interval: i === 0 ? null : null, // No intervals for placeholder
+                lap: 0,
+                tyre: 'M', // Default tyre
+                progress: 0,
+            }));
+        }
         if (!replayData) return [];
+
+        // At race start (Time <= 0), sort drivers by Grid Position
+        if (raceTime <= 0) {
+            const positions = [];
+            Object.entries(replayData.drivers).forEach(([code, meta]) => {
+                // Check if driver is retired/DNF even at start
+                const statusLower = (meta.status || '').toLowerCase();
+                const isRetired = statusLower.includes('retired') ||
+                    statusLower.includes('dnf') ||
+                    statusLower.includes('dns') ||
+                    statusLower.includes('accident') ||
+                    statusLower.includes('collision') ||
+                    statusLower.includes('disqualified') ||
+                    statusLower === 'nc' ||
+                    (statusLower !== '' && statusLower !== 'finished' && !statusLower.startsWith('+'));
+
+                if (isRetired) {
+                    positions.push({
+                        driver: code,
+                        rank: 99, // Will be sorted to bottom
+                        position: 99,
+                        progress: 0,
+                        isInPit: false,
+                        tyre: null,
+                        lap: 0,
+                        gap: 0,
+                        status: 'OUT',
+                        score: -10000 + ((meta.grid || 99) / 1000), // Retired at start
+                        interval: null
+                    });
+                } else {
+                    positions.push({
+                        driver: code,
+                        rank: meta.grid || 99,
+                        position: meta.grid || 99,
+                        progress: 0,
+                        isInPit: false,
+                        tyre: null,
+                        lap: 0,
+                        gap: 0,
+                        status: 'Active',
+                        score: 100 - (meta.grid || 99), // Higher grid = higher score for proper sorting
+                        interval: null
+                    });
+                }
+            });
+            return positions.sort((a, b) => (b.score - a.score) || a.driver.localeCompare(b.driver));
+        }
+
         const positions = [];
-        const drivers = replayData.data[1] ? replayData.data[1].map(d => d.driver) : [];
+        const drivers = Object.keys(replayData.drivers); // Use all drivers from metadata
         const effectiveTime = raceTime + timeOffset;
 
         drivers.forEach(driver => {
-            let currentLapData = null, prevLapTime = 0, lapNum = 1;
+            // EARLY EXIT: If driver is retired/DNF, immediately send to bottom
+            const driverMeta = replayData.drivers[driver];
+            const statusLower = (driverMeta?.status || '').toLowerCase();
 
+            // Check if driver has ANY valid lap data (time and position both present)
+            let hasValidLapData = false;
             for (let l = 1; l <= replayData.totalLaps; l++) {
-                const dData = replayData.data[l]?.find(d => d.driver === driver);
-                if (!dData) continue;
-                const finishTime = dData.cummulative, duration = dData.time, startTime = finishTime - duration;
-
-                if (effectiveTime <= finishTime) {
-                    if (effectiveTime >= startTime) { currentLapData = dData; prevLapTime = startTime; lapNum = l; }
-                    else if (l === 1) { currentLapData = dData; prevLapTime = startTime; lapNum = 1; }
+                const lapData = replayData.data[l]?.find(d => d.driver === driver);
+                if (lapData && lapData.time != null && lapData.position != null) {
+                    hasValidLapData = true;
                     break;
                 }
             }
 
-            if (!currentLapData) {
-                const lastData = replayData.data[replayData.totalLaps]?.find(d => d.driver === driver);
-                if (lastData && effectiveTime > lastData.cummulative) {
-                    currentLapData = lastData; prevLapTime = lastData.cummulative - lastData.time; lapNum = replayData.totalLaps;
+            // Drivers with NO valid lap data at all should be marked as OUT immediately
+            if (!hasValidLapData) {
+                positions.push({
+                    driver,
+                    tyre: 'M',
+                    progress: 0,
+                    lap: 0,
+                    score: -10000, // Bottom of standings
+                    status: 'OUT'
+                });
+                return; // Skip further processing
+            }
+
+            const isDriverRetired = statusLower.includes('retired') ||
+                statusLower.includes('dnf') ||
+                statusLower.includes('dns') ||
+                statusLower.includes('accident') ||
+                statusLower.includes('collision') ||
+                statusLower.includes('disqualified') ||
+                statusLower === 'nc' ||
+                (statusLower !== '' && statusLower !== 'finished' && !statusLower.startsWith('+') && statusLower !== 'finished');
+
+            // REMOVED EARLY EXIT: Mid-race DNFs should race until they stop.
+            // Only drivers with NO valid data (handled above) are skipped early.
+
+            // if (isDriverRetired) { ... } -> Removed logic to allow processing laps
+
+            let currentLapData = null, prevLapTime = 0, lapNum = 1;
+            let lastCompletedLap = null;
+
+            for (let l = 1; l <= replayData.totalLaps; l++) {
+                const dData = replayData.data[l]?.find(d => d.driver === driver);
+
+                // If no data for this lap, we can't project future. 
+                // However, we remember the last valid lap to show 'Finished' if needed.
+                if (!dData) {
+                    if (!lastCompletedLap && l === 1) {
+                        // Driver has no Lap 1 data (DNS/Formation Lap Crash?)
+                        // If everyone else has Lap 1, this driver is likely OUT.
+                        // But if NO ONE has Lap 1 (start of race), we shouldn't show OUT.
+                        // We'll handle 'Start of Race' via effectiveTime check outside.
+                    }
+                    continue;
                 }
+
+                // Handle incomplete lap data: if time or position is null, driver has bad data
+                // Skip this driver entirely - they're effectively OUT
+                if (dData.time == null && dData.position == null) {
+                    // Both missing = completely invalid record, skip entirely
+                    continue;
+                }
+
+                const finishTime = dData.cummulative;
+                // Use PREVIOUS lap's finish as THIS lap's start (or 0 for Lap 1)
+                // This covers the "Red Flag Gap" where Session Time >> Sum(LapTimes).
+                let startTime = 0;
+                if (l > 1) {
+                    const prevData = replayData.data[l - 1]?.find(d => d.driver === driver);
+                    if (prevData && prevData.cummulative) startTime = prevData.cummulative;
+                    else if (dData.time) startTime = finishTime - dData.time; // Fallback
+                    else startTime = finishTime; // Last resort: no lag
+                } else {
+                    // Lap 1: Start is finish - time (approx) or timeOffset
+                    startTime = dData.time ? (finishTime - dData.time) : timeOffset;
+                }
+
+                if (effectiveTime < startTime) {
+                    // We are before this lap starts.
+                    // If l > 1, we must be in the previous lap (handled by previous iteration).
+                    // If l === 1, we are at pre-race.
+                    break;
+                }
+
+                if (effectiveTime <= finishTime) {
+                    // We are IN this lap (or in the Red Flag gap leading up to it)
+                    currentLapData = dData;
+                    prevLapTime = startTime;
+                    lapNum = l;
+                    break;
+                }
+
+                // If we passed this lap, save it as last completed
+                lastCompletedLap = { ...dData, lap: l };
             }
 
             if (currentLapData) {
-                let progress = (effectiveTime - prevLapTime) / currentLapData.time;
+                const segmentDuration = currentLapData.cummulative - prevLapTime;
+                let progress = 0;
+                let isInPit = false;
+
+                // Red Flag & Massive Gap Handling
+                const isRedFlag = currentStatus === 'RED' || currentStatus === 'SUSPENDED';
+                const isGap = segmentDuration > 600; // 10 minutes gap implies stoppage
+
+                if (isRedFlag) {
+                    // Find when RED flag started
+                    let redFlagStartTime = effectiveTime;
+                    if (replayData?.events) {
+                        for (let i = replayData.events.length - 1; i >= 0; i--) {
+                            const ev = replayData.events[i];
+                            if (ev.time <= effectiveTime && (ev.status === 'RED' || ev.status === 'SUSPENDED')) {
+                                redFlagStartTime = ev.time;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Calculate driver's position at red flag start (what would their normal progress be?)
+                    let positionAtRedFlag = 0;
+                    if (segmentDuration > 0 && redFlagStartTime >= prevLapTime) {
+                        positionAtRedFlag = Math.min(1, (redFlagStartTime - prevLapTime) / Math.min(segmentDuration, 120));
+                    }
+
+                    // Time since red flag started
+                    const timeSinceRedFlag = effectiveTime - redFlagStartTime;
+                    const inLapDuration = 90; // ~90 seconds to drive to pit
+                    const pitProgress = 0.95; // Pit entry position on track
+
+
+
+                    if (timeSinceRedFlag < inLapDuration) {
+                        // Animate from position at red flag toward pit entry
+                        const animationProgress = timeSinceRedFlag / inLapDuration;
+                        progress = positionAtRedFlag + (pitProgress - positionAtRedFlag) * animationProgress;
+                        isInPit = false;
+                    } else {
+                        // Parked in pit
+                        progress = pitProgress;
+                        isInPit = true;
+                    }
+                } else if (isGap) {
+                    // Large gap but NOT Red Flag (after restart) - normal proportional racing
+                    progress = (effectiveTime - prevLapTime) / segmentDuration;
+                } else if (segmentDuration > 0) {
+                    // Normal Racing
+                    progress = (effectiveTime - prevLapTime) / segmentDuration;
+                }
+
                 progress = Math.max(0, Math.min(1, progress));
-                positions.push({ driver, tyre: currentLapData.tyre, progress, lap: lapNum, score: lapNum + progress });
+
+                positions.push({
+                    driver,
+                    tyre: currentLapData.tyre,
+                    progress,
+                    lap: lapNum,
+                    score: lapNum + progress,
+                    isInPit // Pass to renderer
+                });
+            } else if (lastCompletedLap) {
+                // finished all available laps or DNF after this point
+
+                // Use the robust statusLower check defined earlier
+                const isRetired = statusLower.includes('retired') ||
+                    statusLower.includes('dnf') ||
+                    statusLower.includes('dns') ||
+                    statusLower.includes('accident') ||
+                    statusLower.includes('collision') ||
+                    statusLower.includes('disqualified') ||
+                    statusLower === 'nc' ||
+                    (statusLower !== '' && statusLower !== 'finished' && !statusLower.startsWith('+') && statusLower !== 'finished');
+
+                // Fallback: If status fails (e.g. says "Finished" erroneously) but driver stopped early
+                const timeSinceLastLap = effectiveTime - lastCompletedLap.cummulative;
+                // If stopped for > 5 mins AND completed < 90% of race -> assume DNF
+                const isProbableDNF = (timeSinceLastLap > 300) && (lastCompletedLap.lap < replayData.totalLaps * 0.9);
+
+                if (isRetired || isProbableDNF) {
+                    // Drop to bottom immediately
+                    positions.push({
+                        driver,
+                        tyre: lastCompletedLap.tyre,
+                        progress: 1,
+                        lap: lastCompletedLap.lap,
+                        score: -10000 + (lastCompletedLap.lap / 1000), // Sort retired drivers by lap count at bottom (Desperate fix)
+                        status: 'OUT'
+                    });
+                } else {
+                    // Just finished (e.g. race winner awaiting others)
+                    positions.push({
+                        driver,
+                        tyre: lastCompletedLap.tyre,
+                        progress: 1,
+                        lap: lastCompletedLap.lap,
+                        score: lastCompletedLap.lap + 1
+                    });
+                }
+            } else {
+                // No data found at all (or Pre-Race)
+                // If raceTime is very small (start of race), show on grid (Lap 0)
+                // Use raceTime, not effectiveTime, since effectiveTime includes session offset
+                const driverInfo = replayData.drivers[driver];
+                const isRetired = driverInfo && (driverInfo.status === 'Retired' || driverInfo.status === 'DNF' || driverInfo.status === 'DNS');
+
+                if (raceTime < 60 && !isRetired) { // arbitrary buffer for start, if not already OUT
+                    positions.push({ driver, tyre: 'M', progress: 0, lap: 0, score: 0 });
+                } else {
+                    // Truly DNF/DNS
+                    // Truly DNF/DNS or Retired before race
+                    positions.push({ driver, tyre: 'M', progress: 0, lap: 0, score: -10000, status: 'OUT' });
+                }
             }
         });
 
-        positions.sort((a, b) => b.score - a.score);
+        positions.sort((a, b) => (b.score - a.score) || a.driver.localeCompare(b.driver));
         positions.forEach((p, i) => {
             p.rank = i + 1;
-            p.interval = i === 0 ? null : ((positions[i - 1].lap + positions[i - 1].progress) - (p.lap + p.progress)) * 85;
+
+            // OUT drivers should not have intervals calculated (they show "OUT" in UI)
+            if (p.status === 'OUT') {
+                p.interval = null;
+                return;
+            }
+
+            // For active drivers, find the last active (non-OUT) driver above them
+            if (i === 0) {
+                p.interval = null; // Leader
+            } else {
+                // Find the previous active driver (skip any OUT drivers)
+                let prevActiveDriver = null;
+                for (let j = i - 1; j >= 0; j--) {
+                    if (positions[j].status !== 'OUT') {
+                        prevActiveDriver = positions[j];
+                        break;
+                    }
+                }
+
+                if (prevActiveDriver) {
+                    p.interval = ((prevActiveDriver.lap + prevActiveDriver.progress) - (p.lap + p.progress)) * 85;
+                } else {
+                    // All drivers above are OUT, this driver is effectively the leader among active drivers
+                    p.interval = null;
+                }
+            }
         });
         return positions;
-    }, [replayData, raceTime, timeOffset]);
+    }, [replayData, raceTime, timeOffset, currentStatus]);
 
     // Detect overtakes using refs to avoid render loops
+    // --- PRE-CALCULATE ALL RACING EVENTS (Overtakes, Pits) ---
+    // This fixes the sync issue: Events are derived from data, not state accumulation.
+    const allRaceEvents = useMemo(() => {
+        if (!replayData || !replayData.data) return [];
+
+        const events = [];
+        const drivers = Object.keys(replayData.drivers);
+
+        // Helper to get lap data
+        const getLap = (d, n) => replayData.data[n]?.find(l => l.driver === d);
+
+        // 1. Pit Stops (Tyre Changes)
+        drivers.forEach(d => {
+            let lastTyre = null;
+            // Find all laps this driver did
+            for (let l = 1; l <= replayData.totalLaps; l++) {
+                const lapData = getLap(d, l);
+                if (!lapData) continue;
+
+                const currentTyre = lapData.tyre;
+                if (!lastTyre) {
+                    lastTyre = currentTyre;
+                    continue;
+                }
+
+                if (currentTyre && currentTyre !== lastTyre) {
+                    events.push({
+                        id: `${d}-pit-${l}`,
+                        type: 'PIT',
+                        time: lapData.cummulative - (lapData.time || 0) + 20, // Approx pit exit
+                        lap: l,
+                        driver: d,
+                        fromTyre: lastTyre,
+                        toTyre: currentTyre
+                    });
+                    lastTyre = currentTyre;
+                }
+            }
+        });
+
+        // 1b. Fast Pit Lookup for Overtake Filtering
+        const pittingMoves = new Set(); // "driver-lap"
+        events.filter(e => e.type === 'PIT').forEach(e => pittingMoves.add(`${e.driver}-${e.lap}`));
+
+        // 2. Overtakes (Gains only for simplicity based on user request "Overtakes")
+        for (let l = 1; l <= replayData.totalLaps; l++) {
+            const lapDrivers = replayData.data[l];
+            if (!lapDrivers) continue;
+
+            // Sort by position, filtering out entries with null/undefined position (drivers with no valid data)
+            const sorted = [...lapDrivers]
+                .filter(d => d.position != null && d.time != null)
+                .sort((a, b) => a.position - b.position);
+
+            // Create Map of Prev Lap Ranks to identify victims
+            // Who held Position X in Lap L-1?
+            const prevLapDrivers = replayData.data[l - 1] || [];
+            const prevRankMap = {}; // Position -> Driver
+            prevLapDrivers.forEach(d => { prevRankMap[d.position] = d.driver; });
+
+            // Grid as fallback for Lap 1
+            if (l === 1) {
+                // Approximate from grid if available
+                Object.entries(replayData.drivers).forEach(([d, meta]) => {
+                    if (meta.grid) prevRankMap[meta.grid] = d;
+                });
+            }
+
+            sorted.forEach((curr) => {
+                // Check previous lap position
+                const prevLap = getLap(curr.driver, l - 1);
+                // If lap 1, compare to Grid
+                const prevPos = prevLap ? prevLap.position : (replayData.drivers[curr.driver]?.grid || 99);
+                const currPos = curr.position;
+
+                if (prevPos && currPos < prevPos) {
+                    // GAINED POSITION (Overtake?)
+                    // Smart Filter: Did I pass someone who is PITTING or OUT?
+                    // We gained spots from currPos to prevPos-1.
+                    // The primary victim is the one who was exactly at 'currPos' in the previous lap.
+                    const victimDriver = prevRankMap[currPos];
+
+                    let isFakeOvertake = false;
+                    if (victimDriver) {
+                        const isVictimPitting = pittingMoves.has(`${victimDriver}-${l}`);
+                        const victimInfo = replayData.drivers[victimDriver];
+                        const isVictimDNF = victimInfo && (victimInfo.status === 'Retired' || victimInfo.status === 'DNF' || victimInfo.status === 'DNS');
+
+                        // Also check if victim has no valid lap data
+                        const victimLapData = replayData.data[l]?.find(d => d.driver === victimDriver);
+                        const victimHasNoData = !victimLapData || victimLapData.time == null || victimLapData.position == null;
+
+                        if (isVictimPitting || isVictimDNF || victimHasNoData) {
+                            isFakeOvertake = true;
+                        }
+                    }
+
+                    if (!isFakeOvertake) {
+                        events.push({
+                            id: `${curr.driver}-gain-${l}`,
+                            type: 'OVERTAKE',
+                            time: curr.cummulative - (curr.time / 2), // Mid-lap approx
+                            lap: l,
+                            driver: curr.driver,
+                            startPos: prevPos,
+                            endPos: currPos
+                        });
+                    }
+                } else if (prevPos && currPos > prevPos) {
+                    events.push({
+                        id: `${curr.driver}-lost-${l}`,
+                        type: 'LOST',
+                        time: curr.cummulative - (curr.time / 2),
+                        lap: l,
+                        driver: curr.driver,
+                        positions: currPos - prevPos
+                    });
+                }
+            });
+        }
+
+        // 3. Flags
+        if (replayData.events) {
+            replayData.events.forEach(ev => {
+                events.push({
+                    id: `flag-${ev.time}`,
+                    type: ev.status === 'SC' || ev.status === 'VSC' ? 'SC' : 'FLAG',
+                    flagType: ev.status,
+                    time: ev.time,
+                    message: ev.status
+                });
+            });
+        }
+
+        return events.sort((a, b) => a.time - b.time);
+    }, [replayData]);
+
+
+    // Derived Visible Events based on Time (Sync Fix)
+    const visibleEvents = useMemo(() => {
+        // For flag events, we need to use the flag timeline
+        // For driver events (overtakes, pits), we use the lap timeline
+        const firstGreenAfterStart = replayData?.events?.find(e =>
+            e.status === 'GREEN' && e.time > 0
+        );
+        const flagTimeOffset = firstGreenAfterStart?.time || 0;
+        const effectiveTimeForFlags = raceTime + flagTimeOffset;
+        const effectiveTimeForLaps = raceTime + timeOffset;
+
+        return allRaceEvents.filter(e => {
+            // Flag events use flag timeline
+            if (e.type === 'FLAG' || e.type === 'SC') {
+                return e.time <= effectiveTimeForFlags && e.time > 0;
+            }
+            // Driver events (OVERTAKE, PIT, LOST) use lap timeline
+            return e.time <= effectiveTimeForLaps && e.time > timeOffset;
+        });
+    }, [allRaceEvents, raceTime, timeOffset, replayData]);
+
+
+    // Smooth Position Interpolation Effect (Kept separate from events)
     useEffect(() => {
         if (currentPositions.length === 0) return;
-
         const newPosMap = {};
         currentPositions.forEach(p => { newPosMap[p.driver] = p.rank; });
 
-        let hasChanges = false;
         const newChanges = {};
+        let hasChanges = false;
 
         Object.entries(newPosMap).forEach(([driver, newRank]) => {
             const oldRank = prevPositionsRef.current[driver];
             if (oldRank && oldRank !== newRank) {
                 newChanges[driver] = oldRank - newRank;
                 hasChanges = true;
-
-                if (oldRank > newRank) {
-                    const overtaken = Object.entries(newPosMap).find(([d, r]) => prevPositionsRef.current[d] === newRank)?.[0];
-                    setRaceEvents(prev => [...prev, {
-                        type: 'OVERTAKE',
-                        lap: currentPositions.find(p => p.driver === driver)?.lap || 1,
-                        driver,
-                        overtaken,
-                        id: `${driver}-${Date.now()}`
-                    }]);
-                } else {
-                    // Position lost
-                    setRaceEvents(prev => [...prev, {
-                        type: 'LOST',
-                        lap: currentPositions.find(p => p.driver === driver)?.lap || 1,
-                        driver,
-                        positions: Math.abs(oldRank - newRank),
-                        id: `${driver}-lost-${Date.now()}`
-                    }]);
-                }
             }
         });
 
         prevPositionsRef.current = newPosMap;
-
-        // Detect pit stops by tyre changes
-        currentPositions.forEach(p => {
-            const prevTyre = prevTyresRef.current[p.driver];
-            if (prevTyre && prevTyre !== p.tyre) {
-                setRaceEvents(prev => [...prev, {
-                    type: 'PIT',
-                    lap: p.lap,
-                    driver: p.driver,
-                    fromTyre: prevTyre,
-                    toTyre: p.tyre,
-                    id: `${p.driver}-pit-${Date.now()}`
-                }]);
-            }
-            prevTyresRef.current[p.driver] = p.tyre;
-        });
 
         if (hasChanges) {
             positionChangesRef.current = newChanges;
@@ -233,12 +702,14 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
         }
     }, [currentPositions]);
 
-    // Auto-scroll feed to bottom
+
+    // Auto-scroll feed: Keep at TOP for reverse order (Latest first)
     useEffect(() => {
-        if (feedRef.current && raceEvents.length > 0) {
-            feedRef.current.scrollTop = feedRef.current.scrollHeight;
+        const el = feedRef.current;
+        if (el && visibleEvents.length > 0) {
+            el.scrollTop = 0;
         }
-    }, [raceEvents]);
+    }, [visibleEvents.length]);
 
     const currentRaceName = raceList.find(r => r.id === raceId)?.name || '';
     const activeDriverState = currentPositions.find(p => p.driver === activeDriver);
@@ -254,20 +725,30 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 {/* Row 1: Race Selector */}
                 <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3 flex-1">
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-f1-red animate-pulse" />
-                            <span className="text-[10px] font-bold text-f1-red uppercase">Live</span>
-                        </div>
+                        <select
+                            value={year}
+                            onChange={(e) => setYear(Number(e.target.value))}
+                            className="bg-[#0a0a0a] text-white font-medium text-xs border border-[#222] rounded-lg px-2 py-2.5 outline-none w-16"
+                        >
+                            {AVAILABLE_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
                         <select
                             value={raceId}
-                            onChange={(e) => { setRaceId(parseInt(e.target.value)); setRaceTime(0); }}
+                            onChange={(e) => {
+                                const newId = parseInt(e.target.value);
+                                setRaceId(newId);
+                                setReplayData(null);
+                                setRaceTime(0);
+
+                                prevPositionsRef.current = {};
+                            }}
                             className="flex-1 bg-[#0a0a0a] text-white font-medium text-sm border border-[#222] rounded-lg px-3 py-2.5 focus:outline-none focus:border-f1-red"
                         >
                             {raceList.map(r => <option key={r.id} value={r.id} className="bg-[#1A1A22]">{r.name}</option>)}
                         </select>
                     </div>
                     <div className={cn("ml-3 px-3 py-1.5 rounded text-[10px] font-bold uppercase shrink-0",
-                        currentStatus === 'GREEN' ? "bg-green-500 text-white" : currentStatus === 'YELLOW' ? "bg-yellow-500 text-black" : "bg-red-500 text-white")}>
+                        getStatusClasses(currentStatus))}>
                         {currentStatus}
                     </div>
                 </div>
@@ -279,8 +760,9 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                         <RotateCcw size={18} />
                     </button>
                     <button
-                        onClick={() => setIsPlaying(!isPlaying)}
-                        className="w-11 h-11 flex items-center justify-center bg-f1-red rounded-full text-white shrink-0"
+                        disabled={!!error}
+                        onClick={() => !error && setIsPlaying(!isPlaying)}
+                        className={cn("w-11 h-11 flex items-center justify-center bg-f1-red rounded-full text-white shrink-0", !!error && "opacity-50 cursor-not-allowed")}
                     >
                         {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
                     </button>
@@ -293,8 +775,14 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                             max={maxTime}
                             step="1"
                             value={raceTime}
-                            onChange={(e) => { setRaceTime(parseFloat(e.target.value)); setIsPlaying(false); }}
-                            className="flex-1 accent-f1-red h-2 bg-[#222] rounded-full appearance-none cursor-pointer"
+                            disabled={!!error}
+                            onChange={(e) => {
+                                setRaceTime(parseFloat(e.target.value));
+                                setIsPlaying(false);
+                                setRaceEvents([]);
+                                prevPositionsRef.current = {};
+                            }}
+                            className={cn("flex-1 accent-f1-red h-2 bg-[#222] rounded-full appearance-none cursor-pointer", !!error && "opacity-50 cursor-not-allowed")}
                         />
                     </div>
 
@@ -332,16 +820,22 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
             {/* ===== DESKTOP TOP BAR ===== */}
             <div className="hidden md:flex flex-wrap items-center justify-between gap-2 bg-[#15151E] border-b border-[#2A2A30] px-3 md:px-4 py-2 shrink-0">
                 <div className="flex items-center gap-2 md:gap-3">
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-f1-red animate-pulse" />
-                        <span className="text-xs font-bold text-white uppercase">Live</span>
-                    </div>
-                    <select value={raceId} onChange={(e) => { setRaceId(parseInt(e.target.value)); setRaceTime(0); }}
+                    <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="bg-transparent text-gray-500 font-bold text-xs focus:outline-none cursor-pointer border-none">
+                        {AVAILABLE_YEARS.map(y => <option key={y} value={y} className="bg-[#1A1A22]">{y}</option>)}
+                    </select>
+                    <select value={raceId} onChange={(e) => {
+                        const newId = parseInt(e.target.value);
+                        setRaceId(newId);
+                        setReplayData(null);
+                        setRaceTime(0);
+
+                        prevPositionsRef.current = {};
+                    }}
                         className="bg-transparent text-white font-bold text-xs md:text-sm focus:outline-none cursor-pointer border-none max-w-[120px] md:max-w-none truncate">
                         {raceList.map(r => <option key={r.id} value={r.id} className="bg-[#1A1A22]">{r.name}</option>)}
                     </select>
                     <div className={cn("px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                        currentStatus === 'GREEN' ? "bg-green-500" : currentStatus === 'YELLOW' ? "bg-yellow-500 text-black" : "bg-red-500")}>
+                        getStatusClasses(currentStatus))}>
                         {currentStatus}
                     </div>
                 </div>
@@ -361,11 +855,24 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                             <button key={s} onClick={() => setSpeed(s)} className={cn("px-1.5 py-0.5 text-[9px] font-bold rounded", speed === s ? "bg-white text-black" : "text-gray-500")}>{s}x</button>
                         ))}
                     </div>
-                    <button onClick={() => setIsPlaying(!isPlaying)} className="w-7 h-7 flex items-center justify-center bg-f1-red rounded text-white">
+                    <button disabled={!!error} onClick={() => !error && setIsPlaying(!isPlaying)} className={cn("w-7 h-7 flex items-center justify-center bg-f1-red rounded text-white", !!error && "opacity-50 cursor-not-allowed")}>
                         {isPlaying ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" className="ml-0.5" />}
                     </button>
-                    <input type="range" min="0" max={maxTime} step="1" value={raceTime} onChange={(e) => { setRaceTime(parseFloat(e.target.value)); setIsPlaying(false); }}
-                        className="w-16 sm:w-24 accent-f1-red h-1 bg-[#2A2A30] rounded appearance-none cursor-pointer" />
+                    <input
+                        type="range"
+                        min="0"
+                        max={maxTime}
+                        step="1"
+                        value={raceTime}
+                        disabled={!!error}
+                        onChange={(e) => {
+                            setRaceTime(parseFloat(e.target.value));
+                            setIsPlaying(false);
+                            // Clear position history on scrub to prevent artifacts
+                            prevPositionsRef.current = {};
+                        }}
+                        className={cn("w-16 sm:w-24 accent-f1-red h-1 bg-[#2A2A30] rounded appearance-none cursor-pointer", !!error && "opacity-50 cursor-not-allowed")}
+                    />
                     <span className="text-[10px] text-gray-400 font-mono w-14 hidden sm:inline">{new Date(raceTime * 1000).toISOString().substr(11, 8)}</span>
                 </div>
             </div>
@@ -421,7 +928,14 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                     </AnimatePresence>
 
                     {/* The Map */}
-                    {replayData?.map ? (
+                    {error ? (
+                        <div className="h-full flex items-center justify-center flex-col p-8 text-center text-gray-500">
+                            <AlertTriangle size={32} className="mb-2 text-yellow-500" />
+                            <div className="font-bold text-white">Data Unavailable</div>
+                            <div className="text-xs">{error}</div>
+                            <p className="text-[10px] mt-2 max-w-[200px]">Historical replay data is limited to specific featured races.</p>
+                        </div>
+                    ) : replayData?.map ? (
                         <SVGTrackMap
                             map={replayData.map}
                             positions={currentPositions}
@@ -500,34 +1014,41 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
             </div>
 
             {/* ===== DESKTOP LAYOUT ===== */}
-            <div className="hidden md:flex flex-1" style={{ overflow: 'hidden', minHeight: 0 }}>
+            <div className="hidden md:flex flex-1" style={{ overflow: 'hidden', minHeight: '400px' }}>
                 {/* LEFT: LEADERBOARD */}
                 <div className="w-56 bg-[#12121A] border-r border-[#2A2A30] flex flex-col min-h-0">
                     <div className="p-2 border-b border-[#2A2A30] text-[9px] font-bold uppercase text-gray-500 shrink-0">Standings</div>
                     <div className="flex-1 overflow-y-auto min-h-0">
-                        <AnimatePresence>
-                            {currentPositions.map((d) => {
-                                const meta = replayData?.drivers?.[d.driver];
-                                const posChange = positionChangesRef.current[d.driver];
-                                return (
-                                    <motion.div key={d.driver} layout transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                                        onClick={() => setActiveDriver(d.driver)}
-                                        className={cn("flex items-center gap-2 px-2 py-1 cursor-pointer border-l-[3px]",
-                                            activeDriver === d.driver ? "bg-white/10" : "hover:bg-white/5")}
-                                        style={{ borderLeftColor: meta?.color || '#444' }}>
-                                        <div className="w-4 text-center relative">
-                                            <span className={cn("font-black text-xs", d.rank === 1 ? "text-f1-red" : d.rank <= 3 ? "text-white" : "text-gray-500")}>{d.rank}</span>
-                                            {posChange && <span className={cn("absolute -top-1 -right-1 text-[7px] font-bold", posChange > 0 ? "text-green-400" : "text-red-400")}>{posChange > 0 ? '▲' : '▼'}</span>}
-                                        </div>
-                                        <span className={cn("flex-1 font-bold text-[10px]", activeDriver === d.driver ? "text-white" : "text-gray-300")}>{d.driver}</span>
-                                        <span className={cn("text-[9px] font-mono w-10 text-right", d.interval && d.interval < 1 ? "text-orange-400" : "text-gray-500")}>
-                                            {d.interval ? `+${d.interval.toFixed(1)}` : '—'}
-                                        </span>
-                                        <TyreIcon compound={d.tyre} />
-                                    </motion.div>
-                                )
-                            })}
-                        </AnimatePresence>
+                        {currentPositions.length === 0 ? (
+                            <div className="p-4 text-center text-gray-600 text-xs">
+                                <div className="text-gray-500 mb-1">No position data</div>
+                                <div className="text-[10px]">Select a race with telemetry</div>
+                            </div>
+                        ) : (
+                            <AnimatePresence>
+                                {currentPositions.map((d) => {
+                                    const meta = replayData?.drivers?.[d.driver] || F1_2026_GRID.find(g => g.driver === d.driver);
+                                    const posChange = positionChangesRef.current[d.driver];
+                                    return (
+                                        <motion.div key={d.driver} layout transition={{ type: "spring", stiffness: 200, damping: 25 }}
+                                            onClick={() => setActiveDriver(d.driver)}
+                                            className={cn("flex items-center gap-2 px-2 py-1 cursor-pointer border-l-[3px]",
+                                                activeDriver === d.driver ? "bg-white/10" : "hover:bg-white/5")}
+                                            style={{ borderLeftColor: meta?.color || '#444' }}>
+                                            <div className="w-4 text-center relative">
+                                                <span className={cn("font-black text-xs", d.rank === 1 ? "text-f1-red" : d.rank <= 3 ? "text-white" : "text-gray-500")}>{d.rank}</span>
+                                                {posChange && <span className={cn("absolute -top-1 -right-1 text-[7px] font-bold", posChange > 0 ? "text-green-400" : "text-red-400")}>{posChange > 0 ? '▲' : '▼'}</span>}
+                                            </div>
+                                            <span className={cn("flex-1 font-bold text-[10px]", activeDriver === d.driver ? "text-white" : "text-gray-300")}>{d.driver}</span>
+                                            <span className={cn("text-[9px] font-mono w-10 text-right", (d.status === 'DNF' || d.status === 'OUT') ? "text-red-500" : d.interval && d.interval < 1 ? "text-orange-400" : "text-gray-500")}>
+                                                {(d.status === 'DNF' || d.status === 'OUT') ? 'OUT' : d.interval ? `+${d.interval.toFixed(1)}` : '—'}
+                                            </span>
+                                            <TyreIcon compound={d.tyre} />
+                                        </motion.div>
+                                    )
+                                })}
+                            </AnimatePresence>
+                        )}
                     </div>
                 </div>
 
@@ -538,13 +1059,32 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                         <div className="text-xs text-gray-500 mt-0.5">Lap {activeDriverState?.lap || 1} / {replayData?.totalLaps || '—'}</div>
                     </div>
 
-                    {replayData?.map && (
+                    {error ? (
+                        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center flex-col text-center z-50 bg-[#1a1a1a]">
+                            {/* Grid pattern background */}
+                            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+                            <div className="relative z-10">
+                                <AlertTriangle size={64} className="mb-4 text-yellow-500 mx-auto" />
+                                <h3 className="text-2xl font-bold text-white mb-3">REPLAY UNAVAILABLE</h3>
+                                <p className="text-gray-300 max-w-md text-lg">{error}</p>
+                                {year < 2026 && <p className="text-sm text-gray-500 mt-4">We are gradually adding historical telemetry data.</p>}
+                            </div>
+                        </div>
+                    ) : replayData?.map ? (
                         <SVGTrackMap
                             map={replayData.map}
                             positions={currentPositions}
                             activeDriver={activeDriver}
                             drivers={replayData.drivers}
                         />
+                    ) : (
+                        <div className="absolute inset-0 flex items-center justify-center flex-col text-center">
+                            {/* Placeholder track visual */}
+                            <svg width="300" height="200" viewBox="0 0 300 200" className="opacity-20 mb-4">
+                                <ellipse cx="150" cy="100" rx="130" ry="80" fill="none" stroke="#333" strokeWidth="20" strokeDasharray="10,5" />
+                            </svg>
+                            <p className="text-gray-600 text-sm">Track map loading...</p>
+                        </div>
                     )}
                 </div>
 
@@ -609,50 +1149,79 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                             <div className="p-2 text-[9px] font-bold uppercase text-gray-500 flex items-center justify-between shrink-0 border-b border-[#2A2A30]">
                                 <span className="flex items-center gap-1"><Timer size={10} /> Race Feed</span>
-                                <span className="text-[8px] font-mono text-gray-600">{raceEvents.length} events</span>
+                                <span className="text-[8px] font-mono text-gray-600">{visibleEvents.length} events</span>
                             </div>
-                            <div ref={feedRef} className="flex-1 overflow-y-auto px-2 py-2 min-h-0 scroll-smooth">
+                            <div ref={feedRef} className="flex-1 overflow-y-auto px-2 pt-2 pb-4 min-h-0 scroll-smooth">
                                 <div className="space-y-1">
-                                    {raceEvents.map((e) => (
+
+                                    {visibleEvents.filter(e => ['OVERTAKE', 'LOST', 'PIT'].includes(e.type)).reverse().map((e) => (
                                         <motion.div key={e.id} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                                             className={cn(
                                                 "flex items-center gap-2 rounded px-2 py-1.5 border",
                                                 e.type === 'OVERTAKE' && "bg-green-500/10 border-green-500/20",
                                                 e.type === 'LOST' && "bg-red-500/10 border-red-500/20",
-                                                e.type === 'PIT' && "bg-yellow-500/10 border-yellow-500/20"
+                                                e.type === 'PIT' && "bg-[#1E1E24] border-gray-700/50", // Premium dark for pit
+                                                e.type === 'SC' && "bg-yellow-500/20 border-yellow-500/50",
+                                                (e.type === 'FLAG' && e.flagType === 'RED') && "bg-red-600/20 border-red-500",
+                                                (e.type === 'FLAG' && e.flagType === 'GREEN') && "bg-green-500/10 border-green-500/20",
+                                                (e.type === 'FLAG' && e.flagType === 'YELLOW') && "bg-yellow-500/10 border-yellow-500/20"
                                             )}>
                                             {e.type === 'OVERTAKE' && <ArrowUp size={10} className="text-green-400 shrink-0" />}
                                             {e.type === 'LOST' && <ArrowDown size={10} className="text-red-400 shrink-0" />}
-                                            {e.type === 'PIT' && <Wrench size={10} className="text-yellow-400 shrink-0" />}
+                                            {e.type === 'PIT' && <Wrench size={10} className="text-blue-400 shrink-0" />}
+                                            {e.type === 'SC' && <AlertTriangle size={10} className="text-yellow-400 shrink-0" />}
+                                            {(e.type === 'FLAG' && e.flagType === 'GREEN') && <Flag size={10} className="text-green-400 shrink-0" />}
+                                            {(e.type === 'FLAG' && e.flagType === 'YELLOW') && <Flag size={10} className="text-yellow-400 shrink-0" />}
 
                                             <div className="flex-1 text-[9px]">
                                                 {e.type === 'OVERTAKE' && (
                                                     <>
                                                         <span className="font-bold text-green-400">{e.driver}</span>
-                                                        <span className="text-gray-400"> passes </span>
-                                                        <span className="text-gray-300">{e.overtaken}</span>
+                                                        <span className="text-gray-400"> moves up to P{e.endPos}</span>
                                                     </>
                                                 )}
                                                 {e.type === 'LOST' && (
                                                     <>
                                                         <span className="font-bold text-red-400">{e.driver}</span>
-                                                        <span className="text-gray-400"> loses P{e.positions}</span>
+                                                        <span className="text-gray-400"> drops {e.positions} pos</span>
                                                     </>
                                                 )}
                                                 {e.type === 'PIT' && (
-                                                    <>
-                                                        <span className="font-bold text-yellow-400">{e.driver}</span>
-                                                        <span className="text-gray-400"> pits </span>
-                                                        <TyreIcon compound={e.fromTyre} />
-                                                        <span className="text-gray-500 mx-0.5">→</span>
-                                                        <TyreIcon compound={e.toTyre} />
-                                                    </>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-bold text-white tracking-wider">{e.driver}</span>
+                                                            <span className="text-[8px] text-gray-500 uppercase tracking-widest">PIT STOP</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 bg-black/40 rounded px-1.5 py-1 mt-0.5 border border-white/5">
+                                                            <div className="flex items-center gap-1">
+                                                                <TyreIcon compound={e.fromTyre} size="sm" />
+                                                                <ArrowRight size={8} className="text-gray-600" />
+                                                                <TyreIcon compound={e.toTyre} size="sm" />
+                                                            </div>
+                                                            {/* Optional: Add pit duration if available in generic data */}
+                                                        </div>
+                                                    </div>
                                                 )}
+                                                {e.type === 'SC' && (
+                                                    <span className="font-bold text-yellow-400 tracking-wider">
+                                                        {e.message === 'VSC' ? 'VIRTUAL SAFETY CAR' : 'SAFETY CAR DEPLOYED'}
+                                                    </span>
+                                                )}
+                                                {(e.type === 'FLAG' && e.flagType === 'RED') && (
+                                                    <span className="font-bold text-red-500 tracking-wider">RED FLAG</span>
+                                                )}
+                                                {(e.type === 'FLAG' && e.flagType === 'GREEN') && (
+                                                    <span className="font-bold text-green-500 tracking-wider">GREEN FLAG</span>
+                                                )}
+                                                {(e.type === 'FLAG' && e.flagType === 'YELLOW') && (
+                                                    <span className="font-bold text-yellow-500 tracking-wider">YELLOW FLAG</span>
+                                                )}
+
                                             </div>
-                                            <span className="text-[8px] text-gray-500 shrink-0 bg-black/30 px-1.5 py-0.5 rounded">L{e.lap}</span>
+                                            {(e.type !== 'PIT' && e.lap) && <span className="text-[8px] text-gray-500 shrink-0 bg-black/30 px-1.5 py-0.5 rounded">L{e.lap}</span>}
                                         </motion.div>
                                     ))}
-                                    {raceEvents.length === 0 && (
+                                    {visibleEvents.length === 0 && (
                                         <div className="text-[9px] text-gray-600 italic text-center py-4">Events will appear here...</div>
                                     )}
                                 </div>
@@ -706,7 +1275,7 @@ function SVGTrackMap({ map, positions, activeDriver, drivers, showAllLabels = fa
         return map.x.map((x, i) => {
             const p = toScreen(x, map.y[i]);
             return `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`;
-        }).join(' ');
+        }).join(' ') + " Z";
     }, [map, dims, bounds, scale, offsetX, offsetY]);
 
     return (
@@ -717,20 +1286,41 @@ function SVGTrackMap({ map, positions, activeDriver, drivers, showAllLabels = fa
                 <path d={trackPath} fill="none" stroke="#2A2A30" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
                 <path d={trackPath} fill="none" stroke="#3A3A40" strokeWidth="1" strokeDasharray="4 4" />
 
+                {/* Start/Finish Line & Pit Label */}
+                {(() => {
+                    if (map.x.length < 2) return null;
+                    const sp = toScreen(map.x[0], map.y[0]);
+                    const dx = map.x[1] - map.x[0], dy = map.y[1] - map.y[0];
+                    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+                    return (
+                        <g transform={`translate(${sp.x}, ${sp.y}) rotate(${angle})`}>
+                            <line x1={0} y1={-8} x2={0} y2={8} stroke="white" strokeWidth="2" />
+                            <text x={4} y={-10} fill="white" fontSize="8" fontWeight="bold" transform={`rotate(${-angle})`}>PIT / START</text>
+                        </g>
+                    );
+                })()}
+
                 {/* Cars - using native SVG transform attribute */}
                 {positions.map(p => {
                     const rawIdx = p.progress * (map.x.length - 1);
                     const idx = Math.floor(rawIdx);
-                    const nextIdx = Math.min(idx + 1, map.x.length - 1);
-                    const ratio = rawIdx - idx;
+                    // Ensure we don't go out of bounds
+                    const safeIdx = Math.min(idx, map.x.length - 2);
+                    const nextIdx = safeIdx + 1;
+                    const ratio = rawIdx - safeIdx;
 
-                    const gx = map.x[idx] + (map.x[nextIdx] - map.x[idx]) * ratio;
-                    const gy = map.y[idx] + (map.y[nextIdx] - map.y[idx]) * ratio;
+                    const gx = map.x[safeIdx] + (map.x[nextIdx] - map.x[safeIdx]) * ratio;
+                    const gy = map.y[safeIdx] + (map.y[nextIdx] - map.y[safeIdx]) * ratio;
                     const pos = toScreen(gx, gy);
 
-                    const dx = map.x[nextIdx] - map.x[idx];
-                    const dy = map.y[nextIdx] - map.y[idx];
+                    const dx = map.x[nextIdx] - map.x[safeIdx];
+                    const dy = map.y[nextIdx] - map.y[safeIdx];
                     const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+                    // Pit Lane Offset Logic:
+                    // Use explicit flag from logic
+                    const isPit = p.isInPit;
+                    const yOffset = isPit ? 12 : 0; // Shift 'down' (right relative to track) significantly for pit lane
 
                     const meta = drivers?.[p.driver];
                     const color = meta?.color || '#666';
@@ -741,24 +1331,25 @@ function SVGTrackMap({ map, positions, activeDriver, drivers, showAllLabels = fa
                     const h = isActive ? 6 : 4;
 
                     return (
-                        <g key={p.driver} transform={`translate(${pos.x}, ${pos.y}) rotate(${angle})`}>
-                            {isActive && <ellipse cx={0} cy={0} rx={12} ry={8} fill={color} opacity={0.3} />}
-                            <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={2} fill={color} />
-                            {showLabel && (
-                                <text
-                                    x={14}
-                                    y={4}
-                                    fill="white"
-                                    fontSize={isActive ? "10" : "8"}
-                                    fontWeight="bold"
-                                    transform={`rotate(${-angle})`}
-                                    style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
-                                >
-                                    {p.driver}
-                                </text>
-                            )}
-                        </g>
-                    );
+                        (p.status !== 'DNF' && p.status !== 'OUT' && !(p.lap === 0 && p.isInPit)) && ( // Hide if DNF or DNS (lap 0 in pit)
+                            <g key={p.driver} transform={`translate(${pos.x}, ${pos.y}) rotate(${angle}) translate(0, ${yOffset})`}>
+                                {isActive && <ellipse cx={0} cy={0} rx={12} ry={8} fill={color} opacity={0.3} />}
+                                <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={2} fill={color} stroke={isPit ? 'white' : 'none'} strokeWidth={isPit ? 1.5 : 0} />
+                                {showLabel && (
+                                    <text
+                                        x={14}
+                                        y={4}
+                                        fill="white"
+                                        fontSize={isActive ? "10" : "8"}
+                                        fontWeight="bold"
+                                        transform={`rotate(${-angle})`}
+                                        style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
+                                    >
+                                        {p.driver}
+                                    </text>
+                                )}
+                            </g>
+                        ));
                 })}
             </svg>
         </div>

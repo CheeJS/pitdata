@@ -14,11 +14,13 @@ export default function Simulations() {
     const [activeTab, setActiveTab] = useState('simulator');
     const [races, setRaces] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [year, setYear] = useState(2026);
+    const availableYears = [2026, 2025, 2024];
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const racesRes = await axios.get('http://localhost:5000/api/races?year=2025');
+                const racesRes = await axios.get(`http://localhost:5000/api/races?year=${year}`);
                 setRaces(racesRes.data);
             } catch (e) {
                 console.error("Sim Error", e);
@@ -27,7 +29,7 @@ export default function Simulations() {
             }
         };
         fetchData();
-    }, []);
+    }, [year]);
 
     if (loading) return <div className="p-8 text-white animate-pulse">Loading...</div>;
 
@@ -37,8 +39,18 @@ export default function Simulations() {
             {/* ===== MOBILE LAYOUT ===== */}
             <div className="md:hidden flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
+                {/* Header */}
                 <div className="p-4 space-y-3 shrink-0">
-                    <h1 className="text-lg font-bold text-white">Simulations</h1>
+                    <div className="flex items-center justify-between">
+                        <h1 className="text-lg font-bold text-white">Simulations</h1>
+                        <select
+                            value={year}
+                            onChange={(e) => setYear(Number(e.target.value))}
+                            className="bg-[#111] border border-[#222] text-white text-xs rounded-lg px-2 py-1 outline-none"
+                        >
+                            {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                    </div>
 
                     {/* Tabs */}
                     <div className="flex bg-[#111] p-1 rounded-lg border border-[#222]">
@@ -57,7 +69,7 @@ export default function Simulations() {
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto px-4 pb-20">
-                    {activeTab === 'simulator' && <RaceSimulator races={races} />}
+                    {activeTab === 'simulator' && <RaceSimulator races={races} year={year} />}
                     {activeTab === 'strategy' && <StrategyView races={races} />}
                 </div>
             </div>
@@ -67,7 +79,23 @@ export default function Simulations() {
                 {/* Header */}
                 <div className="flex justify-between items-end border-b border-[#222] pb-6 shrink-0">
                     <div>
-                        <h1 className="text-2xl font-bold text-white">Simulation Hub</h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-2xl font-bold text-white">Simulation Hub</h1>
+                            <div className="flex bg-[#111] rounded-lg p-0.5 border border-[#222]">
+                                {availableYears.map(y => (
+                                    <button
+                                        key={y}
+                                        onClick={() => setYear(y)}
+                                        className={cn(
+                                            "px-3 py-1 text-xs font-medium rounded-md transition-all",
+                                            year === y ? "bg-f1-red text-white shadow-sm" : "text-gray-500 hover:text-white"
+                                        )}
+                                    >
+                                        {y}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                         <p className="text-gray-500 text-xs mt-1">Monte Carlo race prediction engine</p>
                     </div>
 
@@ -87,7 +115,7 @@ export default function Simulations() {
 
                 {/* Content */}
                 <div className="flex-1 overflow-hidden">
-                    {activeTab === 'simulator' && <RaceSimulator races={races} />}
+                    {activeTab === 'simulator' && <RaceSimulator races={races} year={year} />}
                     {activeTab === 'strategy' && <StrategyView races={races} />}
                 </div>
             </div>
@@ -254,7 +282,7 @@ function CountdownTimer({ targetDate }) {
 // ============================================================
 // RACE SIMULATOR (Monte Carlo)
 // ============================================================
-function RaceSimulator({ races }) {
+function RaceSimulator({ races, year }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [chaos, setChaos] = useState(1.0);
@@ -275,7 +303,7 @@ function RaceSimulator({ races }) {
     const runSimulation = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`http://localhost:5000/api/simulations/race-monte-carlo?race=${selectedRace}&sims=${numSims}&chaos=${chaos}`);
+            const res = await axios.get(`http://localhost:5000/api/simulations/race-monte-carlo?race=${selectedRace}&sims=${numSims}&chaos=${chaos}&year=${year}`);
             setData(res.data);
             // Save to localStorage
             localStorage.setItem('f1_last_simulation', JSON.stringify({
@@ -706,7 +734,7 @@ function StrategyView({ races }) {
                 </div>
 
                 {/* CHART */}
-                <div className="flex-1 min-h-[300px]">
+                <div className="h-[400px] shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={chartData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#2A2A30" vertical={false} />

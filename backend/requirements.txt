@@ -1,6 +1,8 @@
 flask
 flask-cors
-fastf1
 pandas
-numpy
+sqlalchemy
+fastf1
+requests
 gunicorn
+psycopg2-binary

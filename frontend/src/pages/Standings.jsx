@@ -7,11 +7,14 @@ import { motion } from 'framer-motion';
 export default function Standings() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [year, setYear] = useState(2025);
+    const availableYears = [2026, 2025, 2024];
 
     useEffect(() => {
         const fetchStandings = async () => {
+            setLoading(true);
             try {
-                const res = await axios.get('http://localhost:5000/api/standings?year=2025');
+                const res = await axios.get(`http://localhost:5000/api/standings?year=${year}`);
                 if (res.data.error) throw new Error(res.data.error);
                 setData(res.data);
             } catch (e) {
@@ -21,16 +24,17 @@ export default function Standings() {
             }
         };
         fetchStandings();
-    }, []);
+    }, [year]);
 
     if (loading) return <div className="p-8 text-white animate-pulse">Loading standings...</div>;
     if (!data) return <div className="p-8 text-red-500">Failed to load standings data</div>;
+    if (!data.drivers || data.drivers.length === 0) return <div className="p-8 text-gray-500">No standings data available for this year.</div>;
 
-    const totalRounds = data.total_rounds;
-    const completedRounds = data.completed_rounds;
+    const totalRounds = data.total_rounds || 24;
+    const completedRounds = data.completed_rounds || 0;
     const remainingRounds = totalRounds - completedRounds;
     const maxPointsRemaining = remainingRounds * 26;
-    const leaderPoints = data.drivers[0].points;
+    const leaderPoints = data.drivers[0]?.points || 0;
 
     const getTeamColor = (team) => {
         const colors = {
@@ -49,8 +53,18 @@ export default function Standings() {
             <div className="md:hidden flex-1 overflow-y-auto space-y-4 p-4 pb-20">
 
                 {/* Header */}
-                <div className="space-y-2">
-                    <h1 className="text-lg font-bold text-white">Standings</h1>
+                {/* Header */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h1 className="text-lg font-bold text-white">Standings</h1>
+                        <select
+                            value={year}
+                            onChange={(e) => setYear(Number(e.target.value))}
+                            className="bg-[#222] border border-[#333] text-white text-xs rounded-lg px-2 py-1 outline-none focus:border-f1-red"
+                        >
+                            {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                    </div>
                     <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-500">{completedRounds}/{totalRounds} rounds</span>
                         <div className="h-1 w-20 bg-[#222] rounded-full overflow-hidden">
@@ -118,7 +132,16 @@ export default function Standings() {
                 {/* Header */}
                 <div className="flex justify-between items-end border-b border-[#222] pb-6 shrink-0">
                     <div>
-                        <h1 className="text-2xl font-bold text-white">Season Standings</h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-2xl font-bold text-white">Season Standings</h1>
+                            <select
+                                value={year}
+                                onChange={(e) => setYear(Number(e.target.value))}
+                                className="bg-[#222] border border-[#333] text-white text-sm font-medium rounded-lg px-3 py-1.5 outline-none focus:border-f1-red cursor-pointer"
+                            >
+                                {availableYears.map(y => <option key={y} value={y}>{y} Season</option>)}
+                            </select>
+                        </div>
                         <div className="flex items-center gap-3 mt-2">
                             <span className="text-xs text-gray-500">{completedRounds}/{totalRounds} rounds completed</span>
                             <div className="h-1 w-24 bg-[#222] rounded-full overflow-hidden">
@@ -126,9 +149,16 @@ export default function Standings() {
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 bg-[#111] px-3 py-1.5 rounded-lg border border-[#222]">
-                        <Trophy size={16} className="text-yellow-500" />
-                        <span className="text-white font-medium text-sm">Leader: {data.drivers[0].name} ({leaderPoints} pts)</span>
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 bg-[#111] px-3 py-1.5 rounded-lg border border-[#222]">
+                            <Trophy size={16} className="text-yellow-500" />
+                            <span className="text-white font-medium text-sm">Leader: {data.drivers[0].name} ({leaderPoints} pts)</span>
+                        </div>
+                        {maxPointsRemaining > 0 && (
+                            <div className="text-xs text-gray-500">
+                                <span className="text-f1-red font-bold">{maxPointsRemaining}</span> pts remaining
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -168,7 +198,19 @@ export default function Standings() {
                                                     </div>
                                                 </td>
                                                 <td className="p-3 text-right text-sm font-mono text-white">{d.points}</td>
-                                                <td className="p-3 text-right text-sm font-mono text-gray-500">{i > 0 ? `-${gap}` : '—'}</td>
+                                                <td className="p-3 text-right text-sm font-mono text-gray-500">
+                                                    {i > 0 ? (
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <span>-{gap}</span>
+                                                            {eliminated && (
+                                                                <span className="inline-flex items-center gap-1 text-[9px] text-gray-500 border border-gray-700 px-1.5 py-0.5 rounded">
+                                                                    <span className="w-1.5 h-1.5 bg-gray-500 rounded-full"></span>
+                                                                    ELIMINATED
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    ) : '—'}
+                                                </td>
                                             </tr>
                                         );
                                     })}

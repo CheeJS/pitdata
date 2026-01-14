@@ -11,7 +11,12 @@ const CODE_TO_ISO = {
     'can': 'ca', 'esp': 'es', 'aut': 'at', 'gbr': 'gb',
     'hun': 'hu', 'bel': 'be', 'ned': 'nl', 'ita': 'it',
     'azb': 'az', 'sin': 'sg', 'usa': 'us', 'mex': 'mx',
-    'bra': 'br', 'lvg': 'us', 'qat': 'qa', 'abu': 'ae'
+    'bra': 'br', 'lvg': 'us', 'qat': 'qa', 'abu': 'ae',
+    'mad': 'es', // Madrid 2026
+    // Historical Additions (2020-2022)
+    'fra': 'fr', 'tur': 'tr', 'rus': 'ru', 'por': 'pt',
+    'sty': 'at', '70a': 'gb', 'eif': 'de', 'tus': 'it',
+    'sak': 'bh', 'bah': 'bh'
 };
 
 const getFlagUrl = (code) => {
@@ -19,11 +24,11 @@ const getFlagUrl = (code) => {
     return `https://flagcdn.com/w80/${iso}.png`;
 };
 
-const AVAILABLE_YEARS = [2025, 2024, 2023, 2022, 2021, 2020];
+const AVAILABLE_YEARS = [2026, 2025, 2024];
 
 export default function History() {
     const [view, setView] = useState('list');
-    const [selectedYear, setSelectedYear] = useState(2025);
+    const [selectedYear, setSelectedYear] = useState(2026);
     const [races, setRaces] = useState([]);
     const [selectedRaceId, setSelectedRaceId] = useState(null);
     const [raceDetails, setRaceDetails] = useState(null);
@@ -135,6 +140,12 @@ export default function History() {
                                                                     <div className="text-lg font-bold text-white">{new Date(race.date).getDate()}</div>
                                                                     <div className="text-[9px] text-gray-500 uppercase">{new Date(race.date).toLocaleDateString('en-US', { month: 'short' })}</div>
                                                                 </div>
+
+                                                                {/* Mobile Flag */}
+                                                                <div className="flex-shrink-0 w-8 h-6 rounded overflow-hidden shadow-sm border border-white/10">
+                                                                    <img src={getFlagUrl(race.code)} alt={race.code} className="w-full h-full object-cover" loading="lazy" />
+                                                                </div>
+
                                                                 <div>
                                                                     <div className="text-sm font-medium text-white">{race.name}</div>
                                                                     <div className="text-[10px] text-gray-500">{race.circuit}</div>

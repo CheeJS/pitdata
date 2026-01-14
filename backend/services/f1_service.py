@@ -18,7 +18,15 @@ class Race(Base):
     round = Column(Integer)
     circuit_name = Column(String)
     race_name = Column(String)
-    date = Column(DateTime)
+    date = Column(DateTime) # Race Date (Sunday)
+    # Weekend Timeline Sessions
+    fp1_date = Column(DateTime)
+    fp2_date = Column(DateTime)
+    fp3_date = Column(DateTime)
+    qualifying_date = Column(DateTime)
+    sprint_date = Column(DateTime)
+    sprint_qualifying_date = Column(DateTime) # For new Sprint formats if needed
+    
     results = relationship("Result", back_populates="race")
     laps = relationship("Lap", back_populates="race")
     circuit_data = relationship("Circuit", back_populates="race", uselist=False)
@@ -85,11 +93,15 @@ class RaceStatus(Base):
 
 
 # DB Connection
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data_pipeline', 'f1_data.db')
-DB_URL = f"sqlite:///{DB_PATH}"
+# DB Connection
+# Default to local sqlite for development, override with DATABASE_URL env var for production
+DB_URL = os.getenv("DATABASE_URL", "sqlite:///f1_data.db")
+
+def get_db_engine():
+    return create_engine(DB_URL)
 
 def get_db_session():
-    engine = create_engine(DB_URL)
+    engine = get_db_engine()
     Session = sessionmaker(bind=engine)
     return Session()
 
@@ -145,6 +157,14 @@ def get_race_results_by_id(race_id):
             "raceName": race.race_name,
             "circuit": race.circuit_name,
             "date": race.date.strftime("%d %b %Y"),
+            "sessions": {
+                "fp1": race.fp1_date.isoformat() if race.fp1_date else None,
+                "fp2": race.fp2_date.isoformat() if race.fp2_date else None,
+                "fp3": race.fp3_date.isoformat() if race.fp3_date else None,
+                "qualifying": race.qualifying_date.isoformat() if race.qualifying_date else None,
+                "sprint": race.sprint_date.isoformat() if race.sprint_date else None,
+                "sprintQuali": race.sprint_qualifying_date.isoformat() if race.sprint_qualifying_date else None,
+            },
             "results": grouped_results,
             "fastestLap": fl_data,
             "winner": "N/A",
@@ -172,8 +192,17 @@ def get_race_results_by_id(race_id):
 def get_latest_race_results():
     session = get_db_session()
     try:
+        # 1. Try to find the latest race that HAS results
         latest_race = session.query(Race).join(Result).order_by(Race.date.desc()).first()
-        if not latest_race: return None
+        
+        # 2. If no race with results (e.g. start of season), find the NEXT upcoming race
+        if not latest_race:
+            latest_race = session.query(Race).filter(Race.date >= datetime.utcnow()).order_by(Race.date.asc()).first()
+            
+        if not latest_race:
+            # Fallback for completely empty DB or end of time
+            return None
+            
         return get_race_results_by_id(latest_race.id)
     except Exception as e:
         print(f"Error fetching latest results: {e}")
@@ -214,11 +243,24 @@ def get_races_list(year=None):
             if "azerbaijan" in n or "baku" in n: return "azb"
             if "singapore" in n or "marina bay" in n: return "sin"
             if "united states" in n or "usa" in n or "austin" in n or "cota" in n: return "usa"
+            if "miami" in n: return "mia"
+            if "las vegas" in n or "vegas" in n: return "lvg"
             if "mexico" in n or "mexican" in n: return "mex"
+            if "madrid" in n: return "mad" # New for 2026
             if "brazil" in n or "são paulo" in n or "sao paulo" in n or "interlagos" in n: return "bra"
             if "vegas" in n: return "lvg"
             if "qatar" in n or "lusail" in n: return "qat"
             if "abu dhabi" in n or "yas marina" in n: return "abu"
+            # Historical 2020-2022
+            if "french" in n or "france" in n: return "fra"
+            if "turkish" in n or "turkey" in n: return "tur"
+            if "russian" in n or "russia" in n or "sochi" in n: return "rus"
+            if "portuguese" in n or "portugal" in n or "algarve" in n: return "por"
+            if "styrian" in n: return "sty"
+            if "70th" in n: return "70a"
+            if "eifel" in n: return "eif"
+            if "tuscan" in n: return "tus"
+            if "sakhir" in n: return "sak"
             # Fallback: Use first 3 chars + ID to ensure uniqueness
             return f"unk_{r.id}"
 
@@ -320,8 +362,11 @@ def get_race_replay(race_id):
             driver_meta[r.driver_code] = {
                 "name": r.driver_name,
                 "team": r.team_name,
-                "color": color
+                "color": color,
+                "grid": r.grid_position,
+                "status": r.status
             }
+
 
         result = {
             "raceId": race_id,
@@ -615,7 +660,7 @@ def get_race_control_messages(race_id):
     db_session = get_db_session()
     try:
         race = db_session.query(Race).filter_by(id=race_id).first()
-        if not race: return {"error": "Race not found"}
+        if not race: return {"messages": []}
 
         # Cache Setup
         cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data_pipeline', 'f1_cache')
@@ -681,7 +726,8 @@ def get_race_control_messages(race_id):
 
     except Exception as e:
         print(f"Error fetching race control messages: {e}")
-        return {"error": str(e)}
+        # Return empty list for future races instead of crashing
+        return {"messages": []}
     finally:
         db_session.close()
 
@@ -741,7 +787,8 @@ def get_season_standings(year=2024):
         results = db_session.query(Result, Race).join(Race).filter(Race.year == year).all()
         
         if not results:
-            return {"error": f"No data for {year}"}
+            # Return empty structure for future/empty seasons instead of 404 error
+            return {"drivers": [], "constructors": [], "races": []}
 
         # Structure:
         # {

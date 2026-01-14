@@ -18,10 +18,10 @@ class Prediction(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
 # dedicated DB for votes to separate from ETL data
-if os.path.exists("votes.db"):
-    DB_URL = "sqlite:///votes.db"
-else:
-    DB_URL = "sqlite:///votes.db"
+# dedicated DB for votes to separate from ETL data
+# In production, we use the same DATABASE_URL for simplicity (Postgres schema or tables)
+FALLBACK_DB_URL = "sqlite:///votes.db"
+DB_URL = os.getenv("DATABASE_URL", FALLBACK_DB_URL)
 
 engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

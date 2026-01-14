@@ -33,7 +33,8 @@ def race_replay(race_id):
     if data:
         return jsonify(data)
     else:
-        return jsonify({"error": "Failed to fetch replay data"}), 404
+        # Return 200 with error code to prevent browser console generated 404 errors for expected missing data
+        return jsonify({"error": "Failed to fetch replay data", "code": "NO_DATA"}), 200
 
 @app.route('/api/telemetry/<int:race_id>')
 def race_telemetry(race_id):

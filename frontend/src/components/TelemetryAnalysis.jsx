@@ -6,8 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Legend, AreaChart, Area, CartesianGrid, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
 export default function TelemetryAnalysis({ raceId: initialRaceId }) {
-    // --- STATE ---
     const [raceId, setRaceId] = useState(initialRaceId || 0);
+    const [year, setYear] = useState(2025);
+    const AVAILABLE_YEARS = [2025, 2024];
     const [raceList, setRaceList] = useState([]);
     const [activeDriver, setActiveDriver] = useState('');
     const [compareDriver, setCompareDriver] = useState('');
@@ -103,14 +104,14 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
     useEffect(() => {
         const init = async () => {
             try {
-                const res = await axios.get('http://localhost:5000/api/races');
+                const res = await axios.get(`http://localhost:5000/api/races?year=${year}`);
                 setRaceList(res.data);
-                if (!raceId && res.data.length > 0) setRaceId(res.data[0].id);
-                else if (initialRaceId) setRaceId(initialRaceId);
+                // Reset raceId when year changes
+                if (res.data.length > 0) setRaceId(res.data[0].id);
             } catch (e) { console.error("Failed to fetch races", e); }
         };
         init();
-    }, [initialRaceId]);
+    }, [year]);
 
     // Fetch Replay Data (for Track Map & Driver List)
     useEffect(() => {
@@ -196,9 +197,24 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                 <div className="p-4 border-b border-[#222] shrink-0 space-y-3">
                     <div className="flex items-center justify-between">
                         <h1 className="text-lg font-bold text-white">Analysis</h1>
-                        <span className="bg-f1-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded">TELEMETRY</span>
+                        <div className="flex items-center gap-2">
+                            <select
+                                value={year}
+                                onChange={(e) => setYear(Number(e.target.value))}
+                                className="bg-[#222] border border-[#333] text-white text-xs rounded-lg px-2 py-1 outline-none"
+                            >
+                                {AVAILABLE_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                            </select>
+                            <span className="bg-f1-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded">TELEMETRY</span>
+                        </div>
                     </div>
-                    <p className="text-xs text-gray-500">{raceList.find(r => r.id === raceId)?.name}</p>
+                    <select
+                        value={raceId}
+                        onChange={(e) => setRaceId(Number(e.target.value))}
+                        className="w-full bg-[#111] border border-[#222] rounded-lg px-3 py-2 text-sm text-white"
+                    >
+                        {raceList.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    </select>
                 </div>
 
                 {/* Driver Selection */}
@@ -418,9 +434,31 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                 {/* HEADER */}
                 <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 border-b border-[#222] pb-6 shrink-0">
                     <div className="flex-1 space-y-2">
-                        <h2 className="text-2xl font-bold text-white">Deep Dive Analysis</h2>
+                        <div className="flex items-center gap-4">
+                            <h2 className="text-2xl font-bold text-white">Deep Dive Analysis</h2>
+                            <div className="flex bg-[#222] rounded-lg p-0.5 border border-[#333]">
+                                {AVAILABLE_YEARS.map(y => (
+                                    <button
+                                        key={y}
+                                        onClick={() => setYear(y)}
+                                        className={cn(
+                                            "px-3 py-1 text-xs font-medium rounded-md transition-all",
+                                            year === y ? "bg-f1-red text-white shadow-sm" : "text-gray-500 hover:text-white"
+                                        )}
+                                    >
+                                        {y}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                         <div className="flex items-center gap-3">
-                            <span className="text-xs text-gray-500">{raceList.find(r => r.id === raceId)?.name}</span>
+                            <select
+                                value={raceId}
+                                onChange={(e) => setRaceId(Number(e.target.value))}
+                                className="bg-[#111] border border-[#222] text-white text-sm px-3 py-1.5 rounded-lg outline-none focus:border-f1-red"
+                            >
+                                {raceList.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                            </select>
                             <span className="bg-f1-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded">TELEMETRY ENGINE</span>
                         </div>
                     </div>
@@ -579,7 +617,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                 <div className="flex flex-row gap-4 flex-1 min-h-0 overflow-hidden">
 
                     {/* LEFT: TIME DELTA CHART */}
-                    <div className="flex-1 min-w-0 bg-[#15151E] rounded-3xl border border-[#2A2A30] p-5 flex flex-col">
+                    <div className="flex-1 min-w-0 h-[500px] bg-[#15151E] rounded-3xl border border-[#2A2A30] p-5 flex flex-col">
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-base font-bold uppercase tracking-wider text-white flex items-center gap-2">
                                 {deltaMode === 'time' && <TrendingUp size={16} className="text-f1-red" />}

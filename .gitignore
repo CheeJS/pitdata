@@ -1,38 +1,65 @@
-
 # Python
 __pycache__/
+cache/
 *.py[cod]
 *$py.class
 venv/
+env/
 .env
+.current_env_file
+instance/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
 
 # NodeJS
 node_modules/
 dist/
 build/
 .npm/
-
-# Database
-*.sqlite3
-# Keeping f1_data.db and votes.db for demo purposes unless they get too big
-# *.db 
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database & Data
+*.sqlite3
+*.db
+backend/cache/
+data_pipeline/raw/
+backend_error.txt
+standings_debug.json
+debug_db.dump
+
+# Data Pipeline
+data_pipeline/f1_cache/
+data_pipeline/cache/
+data_pipeline/*.db
+data_pipeline/raw/
+
+# Helper Scripts
+check_*.py
+debug_*.py
+inspect_*.py
+test_*.py
 
 # Cache
 cache/
 
-# Debug & Temp
-standings_debug.json
-backend_error.txt
-*.log
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
