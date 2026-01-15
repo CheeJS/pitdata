@@ -1,8 +1,29 @@
 from flask import Flask, jsonify, request
+from flask.json.provider import DefaultJSONProvider
 from flask_cors import CORS
 from services.f1_service import get_latest_race_results, run_monte_carlo_simulation, simulate_race_strategy
+import json
+import math
+
+# Custom JSON Provider to handle NaN/Infinity (which are invalid in JSON spec)
+class SafeJSONProvider(DefaultJSONProvider):
+    def dumps(self, obj, **kwargs):
+        return json.dumps(self._sanitize(obj), **kwargs)
+    
+    def _sanitize(self, obj):
+        if isinstance(obj, float):
+            if math.isnan(obj) or math.isinf(obj):
+                return None
+            return obj
+        elif isinstance(obj, dict):
+            return {k: self._sanitize(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._sanitize(item) for item in obj]
+        return obj
 
 app = Flask(__name__)
+app.json_provider_class = SafeJSONProvider
+app.json = SafeJSONProvider(app)
 CORS(app)
 
 @app.route('/api/health')

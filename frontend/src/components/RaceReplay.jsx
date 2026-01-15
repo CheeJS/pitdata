@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
-import { Play, Pause, Zap, TrendingUp, ChevronDown, ChevronUp, Flag, Thermometer, Droplets, RotateCcw, ArrowUp, ArrowDown, ArrowRight, Timer, Circle, Wrench, AlertTriangle, List } from 'lucide-react';
+import { Play, Pause, Square, FastForward, Rewind, Map as MapIcon, RotateCcw, ChevronDown, ChevronRight, ChevronUp, Timer, Flag, AlertTriangle, Info as InfoIcon, AlertCircle, X, Thermometer, Droplets, Clock, List, Circle, Zap, ArrowUp, ArrowDown, Wrench, ArrowRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -29,15 +29,14 @@ const F1_2026_GRID = [
 ];
 
 const getStatusClasses = (status) => {
-    switch (status) {
-        case 'GREEN': return "bg-green-500 text-white";
-        case 'YELLOW': return "bg-yellow-400 text-black";
-        case 'RED': return "bg-red-600 text-white";
-        case 'SC': return "bg-orange-500 text-white";
-        case 'VSC': return "bg-orange-400 text-black";
-        case 'CHEQUERED': return "bg-white text-black border border-gray-300";
-        default: return "bg-gray-500 text-white";
-    }
+    const s = (status || "").toUpperCase();
+    if (s === 'GREEN') return 'bg-green-500/20 text-green-500 border border-green-500/30';
+    if (s === 'YELLOW') return 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30';
+    if (s === 'RED' || s === 'SUSPENDED') return 'bg-red-500/20 text-red-500 border border-red-500/30';
+    if (s === 'SC' || s === 'VSC' || s === 'ABORTED' || s === 'DELAYED') return 'bg-orange-500/20 text-orange-500 border border-orange-500/30';
+    if (s === 'FORMATION') return 'bg-blue-500/20 text-blue-500 border border-blue-500/30';
+    if (s === 'CHEQUERED') return 'bg-white/10 text-white border border-white/30';
+    return 'bg-gray-500/20 text-gray-500 border border-gray-500/30';
 };
 
 export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
@@ -56,6 +55,18 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
     const [year, setYear] = useState(2026);
     const [error, setError] = useState(null);
     const AVAILABLE_YEARS = [2026, 2025, 2024];
+
+    // Calculate Local Time
+    const localTime = useMemo(() => {
+        if (!replayData?.startTime) return null;
+        try {
+            const start = new Date(replayData.startTime);
+            // Add timeOffset to align with the actual lap data, + raceTime for playback progress
+            return new Date(start.getTime() + ((timeOffset + raceTime) * 1000));
+        } catch (e) { return null; }
+    }, [replayData, raceTime, timeOffset]);
+
+
 
     // Use refs to avoid re-render loops (still needed for map/interpolation but not for events)
     const prevPositionsRef = useRef({});
@@ -112,7 +123,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 setReplayData(repRes.data);
 
                 let minStart = Infinity;
-                if (repRes.data.data[1]) {
+                if (repRes.data?.data?.[1]) {
                     repRes.data.data[1].forEach(d => {
                         if (d.cummulative && d.time) {
                             const start = d.cummulative - d.time;
@@ -124,14 +135,15 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 setTimeOffset(minStart);
 
                 let max = 0;
-                const lastLapData = repRes.data.data[repRes.data.totalLaps];
+                const totalLaps = repRes.data?.totalLaps;
+                const lastLapData = totalLaps && repRes.data?.data ? repRes.data.data[totalLaps] : null;
                 if (lastLapData) {
                     const lastFinish = Math.max(...lastLapData.map(d => d.cummulative || 0));
                     max = lastFinish - minStart;
                 }
                 setMaxTime(max || 7200);
 
-                if (repRes.data.data[1]?.[0]) setActiveDriver(repRes.data.data[1][0].driver);
+                if (repRes.data?.data?.[1]?.[0]) setActiveDriver(repRes.data.data[1][0].driver);
             } catch (error) {
                 // Only log unexpected errors
                 if (error.response?.status !== 404) {
@@ -177,16 +189,44 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
         if (!replayData?.events) return { currentStatus: 'GREEN', currentWeather: null };
 
         // The flag events and lap data may use different time references.
-        // Calculate effective time in flag timeline
-        // Use direct session time offset (calculated from Lap 1 start) to align flags with race
+        // Calculate effective time in flag timeline.
         const effectiveTimeInFlags = raceTime + timeOffset;
 
         let status = 'GREEN';
         let weather = replayData.events.find(e => e.status === 'WEATHER')?.weather || null;
 
-        for (const ev of replayData.events) {
+        // Sort events by time just in case
+        const sortedEvents = [...replayData.events];
+
+        // Inject synthetic GREEN flag at the start of the replay (timeOffset)
+        // This ensures pre-race states (Aborted/Formation) are cleared when the race actually starts (Lap 1)
+        sortedEvents.push({ time: timeOffset, status: 'GREEN', category: 'FLAG' });
+
+
+
+        sortedEvents.sort((a, b) => a.time - b.time);
+
+        for (const ev of sortedEvents) {
             if (ev.time > effectiveTimeInFlags) break;
-            if (ev.status !== 'WEATHER') status = ev.status;
+
+            // 1. Critical Message Overrides (Aborted, Delayed, etc)
+            // Check raw message content for keywords
+            if (ev.category === 'MESSAGE') {
+                const msg = (ev.status || "").toUpperCase();
+                if (msg.includes('ABORTED START')) status = 'ABORTED';
+                else if (msg.includes('FORMATION LAP')) status = 'FORMATION';
+                else if (msg.includes('DELAYED')) status = 'DELAYED';
+                else if (msg.includes('SUSPENDED')) status = 'SUSPENDED';
+            }
+
+            // 2. Official Flags (Override everything if newer)
+            if (ev.category === 'FLAG') {
+                status = ev.status;
+            } else if (!ev.category && (ev.status === 'SC' || ev.status === 'VSC' || ev.status === 'RED' || ev.status === 'YELLOW' || ev.status === 'GREEN')) {
+                // Legacy fallback
+                status = ev.status;
+            }
+
             if (ev.status === 'WEATHER') weather = ev.weather;
         }
 
@@ -211,7 +251,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
         // At race start (Time <= 0), sort drivers by Grid Position
         if (raceTime <= 0) {
             const positions = [];
-            Object.entries(replayData.drivers).forEach(([code, meta]) => {
+            Object.entries(replayData.drivers || {}).forEach(([code, meta]) => {
                 // Check if driver is retired/DNF even at start
                 const statusLower = (meta.status || '').toLowerCase();
                 const isRetired = statusLower.includes('retired') ||
@@ -636,13 +676,14 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
 
         // 3. Flags
         if (replayData.events) {
-            replayData.events.forEach(ev => {
+            replayData.events.forEach((ev, i) => {
                 events.push({
-                    id: `flag-${ev.time}`,
+                    id: `flag-${ev.id || ev.time}-${i}`, // Use DB ID or fall back to time+index
                     type: ev.status === 'SC' || ev.status === 'VSC' ? 'SC' : 'FLAG',
                     flagType: ev.status,
                     time: ev.time,
-                    message: ev.status
+                    message: ev.status,
+                    category: ev.category // Pass category
                 });
             });
         }
@@ -653,24 +694,20 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
 
     // Derived Visible Events based on Time (Sync Fix)
     const visibleEvents = useMemo(() => {
-        // For flag events, we need to use the flag timeline
-        // For driver events (overtakes, pits), we use the lap timeline
-        const firstGreenAfterStart = replayData?.events?.find(e =>
-            e.status === 'GREEN' && e.time > 0
-        );
-        const flagTimeOffset = firstGreenAfterStart?.time || 0;
-        const effectiveTimeForFlags = raceTime + flagTimeOffset;
-        const effectiveTimeForLaps = raceTime + timeOffset;
+        // Unified Time Reference:
+        // All events (Flags and Laps) are now aligned to Session Time.
+        // raceTime = Time elapsed since Race Start (Lap 1).
+        // timeOffset = Session Time at Race Start.
+        const effectiveTime = raceTime + timeOffset;
 
         return allRaceEvents.filter(e => {
-            // Flag events use flag timeline
-            if (e.type === 'FLAG' || e.type === 'SC') {
-                return e.time <= effectiveTimeForFlags && e.time > 0;
-            }
-            // Driver events (OVERTAKE, PIT, LOST) use lap timeline
-            return e.time <= effectiveTimeForLaps && e.time > timeOffset;
+            // Show all events in feed that have happened by this time
+            return e.time <= effectiveTime && e.time > (effectiveTime - 300); // 5 min window for relevance? Or just all history?
+            // Actually, for a "Feed", we usually want all history up to this point, reverse sorted.
+            // Let's keep it simple: Show everything up to current time.
+            return e.time <= effectiveTime;
         });
-    }, [allRaceEvents, raceTime, timeOffset, replayData]);
+    }, [allRaceEvents, raceTime, timeOffset]);
 
 
     // Smooth Position Interpolation Effect (Kept separate from events)
@@ -840,6 +877,54 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                     </div>
                 </div>
 
+                {/* CENTRAL TICKER: Race Control Messages */}
+                <div className="flex-1 flex items-center justify-center mx-4 min-h-[32px] overflow-hidden">
+                    <AnimatePresence mode="popLayout">
+                        {visibleEvents.filter(e => {
+                            // 1. ALWAYS SHOW: Safety Cars, Red Flags, VSC
+                            if (e.type === 'SC' || (e.type === 'FLAG' && ['RED', 'SC', 'VSC'].includes(e.flagType))) return true;
+
+                            // 2. NEVER SHOW: Routine Green/Yellow Flags in ticker (noisy)
+                            if (e.type === 'FLAG' && ['GREEN', 'YELLOW'].includes(e.flagType)) return false;
+
+                            // 3. SHOW ALL GENERIC MESSAGES (Penalties, Investigations, Notes, etc.)
+                            // This ensures we don't accidentally hide important info by over-filtering
+                            return e.category === 'MESSAGE' || (e.type !== 'FLAG' && e.type !== 'SC' && !['OVERTAKE', 'PIT', 'LOST'].includes(e.type));
+                        }).slice(-1).map((e) => (
+                            <motion.div
+                                key={e.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 text-center md:text-left"
+                            >
+                                {e.type === 'SC' ? <AlertTriangle size={12} className="text-orange-400 shrink-0" /> :
+                                    (e.type === 'FLAG' && e.flagType === 'RED') ? <Flag size={12} className="text-red-500 fill-red-500 shrink-0" /> :
+                                        (e.type === 'FLAG' && e.flagType === 'YELLOW') ? <Flag size={12} className="text-yellow-400 fill-yellow-400 shrink-0" /> :
+                                            (e.category === 'Penalty') ? <AlertCircle size={12} className="text-red-400 shrink-0" /> :
+                                                <InfoIcon size={12} className="text-gray-400 shrink-0" />}
+
+                                <span className={cn(
+                                    "text-xs font-bold uppercase shrink-0",
+                                    (e.type === 'SC' || e.category === 'SafetyCar') ? "text-orange-400" :
+                                        (e.type === 'FLAG' && e.flagType === 'RED') ? "text-red-500" :
+                                            (e.type === 'FLAG' && e.flagType === 'YELLOW') ? "text-yellow-400" :
+                                                (e.category === 'Penalty') ? "text-red-400" : "text-gray-300",
+                                    (e.message && e.message.length > 80) ? "hidden lg:block" : ""
+                                )}>
+                                    {e.type === 'SC' ? 'SAFETY CAR' :
+                                        (e.type === 'FLAG' && ['RED', 'GREEN', 'YELLOW'].includes(e.flagType)) ? `${e.flagType} FLAG` :
+                                            (e.type === 'FLAG') ? 'RACE CONTROL' :
+                                                (e.category || 'INFO')}
+                                </span>
+                                <span className="text-xs text-gray-400 whitespace-normal leading-tight max-w-[280px] md:max-w-[500px] line-clamp-2">
+                                    {e.message || e.status}
+                                </span>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                </div>
+
                 {currentWeather && (
                     <div className="flex items-center gap-3 text-[10px] text-gray-400">
                         <span><Thermometer size={10} className="inline mr-1" />{currentWeather.temp}°C</span>
@@ -848,6 +933,14 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 )}
 
                 <div className="flex items-center gap-1 md:gap-2">
+                    {/* Local Race Time Clock */}
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-black/40 rounded border border-white/10 mx-2">
+                        <Clock size={12} className="text-gray-400" />
+                        <span className="text-[10px] font-mono font-bold text-gray-200">
+                            {localTime ? localTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'}
+                        </span>
+                    </div>
+
                     <span className="text-[10px] text-gray-400 font-mono hidden sm:inline">L{activeDriverState?.lap || 1}/{replayData?.totalLaps || '—'}</span>
                     <button onClick={() => setRaceTime(0)} className="p-1 text-gray-500 hover:text-white"><RotateCcw size={12} /></button>
                     <div className="hidden sm:flex bg-black/30 rounded p-0.5">
@@ -1154,7 +1247,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                             <div ref={feedRef} className="flex-1 overflow-y-auto px-2 pt-2 pb-4 min-h-0 scroll-smooth">
                                 <div className="space-y-1">
 
-                                    {visibleEvents.filter(e => ['OVERTAKE', 'LOST', 'PIT'].includes(e.type)).reverse().map((e) => (
+                                    {visibleEvents.filter(e => ['OVERTAKE', 'LOST', 'PIT', 'SC', 'FLAG'].includes(e.type)).reverse().map((e) => (
                                         <motion.div key={e.id} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                                             className={cn(
                                                 "flex items-center gap-2 rounded px-2 py-1.5 border",
@@ -1164,7 +1257,8 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                                 e.type === 'SC' && "bg-yellow-500/20 border-yellow-500/50",
                                                 (e.type === 'FLAG' && e.flagType === 'RED') && "bg-red-600/20 border-red-500",
                                                 (e.type === 'FLAG' && e.flagType === 'GREEN') && "bg-green-500/10 border-green-500/20",
-                                                (e.type === 'FLAG' && e.flagType === 'YELLOW') && "bg-yellow-500/10 border-yellow-500/20"
+                                                (e.type === 'FLAG' && e.flagType === 'YELLOW') && "bg-yellow-500/10 border-yellow-500/20",
+                                                (e.type === 'FLAG' && !['RED', 'GREEN', 'YELLOW'].includes(e.flagType)) && "bg-[#1E1E24] border-gray-700/50" // Generic
                                             )}>
                                             {e.type === 'OVERTAKE' && <ArrowUp size={10} className="text-green-400 shrink-0" />}
                                             {e.type === 'LOST' && <ArrowDown size={10} className="text-red-400 shrink-0" />}
@@ -1172,6 +1266,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                             {e.type === 'SC' && <AlertTriangle size={10} className="text-yellow-400 shrink-0" />}
                                             {(e.type === 'FLAG' && e.flagType === 'GREEN') && <Flag size={10} className="text-green-400 shrink-0" />}
                                             {(e.type === 'FLAG' && e.flagType === 'YELLOW') && <Flag size={10} className="text-yellow-400 shrink-0" />}
+                                            {(e.type === 'FLAG' && !['RED', 'GREEN', 'YELLOW'].includes(e.flagType)) && <Zap size={10} className="text-gray-400 shrink-0" />}
 
                                             <div className="flex-1 text-[9px]">
                                                 {e.type === 'OVERTAKE' && (
@@ -1215,6 +1310,9 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                                 )}
                                                 {(e.type === 'FLAG' && e.flagType === 'YELLOW') && (
                                                     <span className="font-bold text-yellow-500 tracking-wider">YELLOW FLAG</span>
+                                                )}
+                                                {(e.type === 'FLAG' && !['RED', 'GREEN', 'YELLOW'].includes(e.flagType)) && (
+                                                    <span className="font-bold text-gray-300 tracking-wider">{e.message}</span>
                                                 )}
 
                                             </div>
@@ -1300,6 +1398,27 @@ function SVGTrackMap({ map, positions, activeDriver, drivers, showAllLabels = fa
                     );
                 })()}
 
+                {/* Corner Numbers */}
+                {map.corners && map.corners.map((corner, i) => {
+                    if (!corner.x || !corner.y) return null;
+                    const pos = toScreen(corner.x, corner.y);
+                    return (
+                        <g key={`corner-${i}`} transform={`translate(${pos.x}, ${pos.y})`}>
+                            <circle r={8} fill="#333" stroke="#555" strokeWidth={1} />
+                            <text
+                                x={0}
+                                y={3}
+                                fill="#f1f1f1"
+                                fontSize="7"
+                                fontWeight="bold"
+                                textAnchor="middle"
+                            >
+                                {corner.number}
+                            </text>
+                        </g>
+                    );
+                })}
+
                 {/* Cars - using native SVG transform attribute */}
                 {positions.map(p => {
                     const rawIdx = p.progress * (map.x.length - 1);
@@ -1355,7 +1474,7 @@ function SVGTrackMap({ map, positions, activeDriver, drivers, showAllLabels = fa
         </div>
     );
 }
-
+// InfoIcon replaced with lucide-react import
 function TyreIcon({ compound, size = 'sm' }) {
     if (!compound) return null;
     let color = '#888', letter = '?';

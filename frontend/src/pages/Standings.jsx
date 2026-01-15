@@ -203,8 +203,8 @@ export default function Standings() {
                                                         <div className="flex items-center justify-end gap-2">
                                                             <span>-{gap}</span>
                                                             {eliminated && (
-                                                                <span className="inline-flex items-center gap-1 text-[9px] text-gray-500 border border-gray-700 px-1.5 py-0.5 rounded">
-                                                                    <span className="w-1.5 h-1.5 bg-gray-500 rounded-full"></span>
+                                                                <span className="inline-flex items-center gap-1 text-[9px] text-f1-red border border-f1-red/30 bg-f1-red/10 px-1.5 py-0.5 rounded">
+                                                                    <span className="w-1.5 h-1.5 bg-f1-red rounded-full"></span>
                                                                     ELIMINATED
                                                                 </span>
                                                             )}

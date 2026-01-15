@@ -32,7 +32,7 @@ def seed_full_race_data(year, race_round, race_id, session_db):
     try:
         print(f"    Loading full session data...")
         ff1_session = fastf1.get_session(year, race_round, 'R')
-        ff1_session.load(telemetry=True, weather=True, messages=False)
+        ff1_session.load(telemetry=True, weather=True, messages=True)
         
         # --- LAP DATA ---
         print(f"    Processing lap data...")
@@ -61,7 +61,11 @@ def seed_full_race_data(year, race_round, race_id, session_db):
                     position=int(lap['Position']) if pd.notna(lap['Position']) else None,
                     lap_time=lap_time_sec,
                     cumulative_time=cum_time,
-                    tyre_compound=lap['Compound'] if pd.notna(lap['Compound']) else None
+                    tyre_compound=lap['Compound'] if pd.notna(lap['Compound']) else None,
+                    sector1_time=lap['Sector1Time'].total_seconds() if pd.notna(lap['Sector1Time']) else None,
+                    sector2_time=lap['Sector2Time'].total_seconds() if pd.notna(lap['Sector2Time']) else None,
+                    sector3_time=lap['Sector3Time'].total_seconds() if pd.notna(lap['Sector3Time']) else None,
+                    stint=int(lap['Stint']) if pd.notna(lap['Stint']) else None
                 )
                 session_db.add(lap_obj)
                 lap_count += 1
@@ -139,7 +143,8 @@ def seed_full_race_data(year, race_round, race_id, session_db):
                         throttle_json=json.dumps(tel['Throttle'].tolist()[::step]),
                         brake_json=json.dumps([int(b) for b in tel['Brake'].tolist()[::step]]),
                         gear_json=json.dumps([int(g) for g in tel['nGear'].tolist()[::step]]),
-                        rpm_json=json.dumps(tel['RPM'].tolist()[::step]) if 'RPM' in tel.columns else None
+                        rpm_json=json.dumps(tel['RPM'].tolist()[::step]) if 'RPM' in tel.columns else None,
+                        time_json=json.dumps(tel['Time'].dt.total_seconds().tolist()[::step]) if 'Time' in tel.columns else None
                     )
                     session_db.add(tel_obj)
                     tel_count += 1
@@ -175,17 +180,36 @@ def seed_full_race_data(year, race_round, race_id, session_db):
                      elif "GREEN FLAG" in msg_upper or (flag == "Green" and "FLAG" in cat_upper): status_val = "GREEN"
                      elif "CHEQUERED" in msg_upper or "CHECKERED" in msg_upper: status_val = "CHEQUERED"
                      
+                     # Logic from fix_track_status.py:
+                     # If it's a pure flag, let it be categorized as such (or skip if we want authoritative TrackStatus, 
+                     # but here we are in the main seeder which might not be using TrackStatus API property directly like the fix script).
+                     # For safety, let's include EVERYTHING but attempt to categorize.
+                     
+                     category_val = "MESSAGE"
+                     if status_val:
+                         category_val = "FLAG"
+                     else:
+                         # Copy raw message to status if it's not a standard flag status
+                         status_val = msg
+                     
                      if status_val:
                          time_val = None
                          raw_time = row['Time']
                          if pd.notna(raw_time):
                              if hasattr(raw_time, 'total_seconds'): time_val = raw_time.total_seconds()
+                             elif isinstance(raw_time, pd.Timedelta): time_val = raw_time.total_seconds()
                              elif isinstance(raw_time, (pd.Timestamp, datetime)):
                                  try: time_val = (raw_time - ff1_session.date).total_seconds()
                                  except: pass
                          
                          if time_val is not None:
-                             rs = RaceStatus(race_id=race_id, time=time_val, status=status_val, weather=None)
+                             rs = RaceStatus(
+                                 race_id=race_id, 
+                                 time=time_val, 
+                                 status=status_val, 
+                                 weather=None,
+                                 category=category_val
+                            )
                              session_db.add(rs)
                              count_ev += 1
                  print(f"    Added {count_ev} status events")

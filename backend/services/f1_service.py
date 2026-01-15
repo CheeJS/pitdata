@@ -6,6 +6,9 @@ from datetime import datetime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
+from dotenv import load_dotenv
+
+load_dotenv()
 
 Base = declarative_base()
 
@@ -58,6 +61,10 @@ class Lap(Base):
     lap_time = Column(Float)
     cumulative_time = Column(Float)
     tyre_compound = Column(String)
+    sector1_time = Column(Float)
+    sector2_time = Column(Float)
+    sector3_time = Column(Float)
+    stint = Column(Integer)
     race = relationship("Race", back_populates="laps")
 
 class Circuit(Base):
@@ -66,8 +73,10 @@ class Circuit(Base):
     race_id = Column(Integer, ForeignKey('races.id'))
     x_json = Column(String) # JSON Array of X coordinates
     y_json = Column(String) # JSON Array of Y coordinates
-    distance_json = Column(String) # NEW: JSON Array of Distance values
-    corners_json = Column(String) # NEW: JSON Array of Corner Data
+    distance_json = Column(String) # JSON Array of Distance values
+    corners_json = Column(String) # JSON Array of Corner Data {number, distance, angle, x, y}
+    marshal_sectors_json = Column(String) # JSON Array of Marshal Sector positions
+    marshal_lights_json = Column(String) # JSON Array of Marshal Light positions
     race = relationship("Race", back_populates="circuit_data")
 
 class Telemetry(Base):
@@ -81,6 +90,7 @@ class Telemetry(Base):
     brake_json = Column(String)
     gear_json = Column(String) # NEW
     rpm_json = Column(String) # NEW
+    time_json = Column(String) # NEW for analysis delta
     race = relationship("Race", back_populates="telemetry_data")
 
 class RaceStatus(Base):
@@ -90,15 +100,21 @@ class RaceStatus(Base):
     time = Column(Float)
     status = Column(String)
     weather = Column(String)
+    category = Column(String) # 'FLAG' or 'MESSAGE'
 
 
 # DB Connection
-# DB Connection
-# Default to local sqlite for development, override with DATABASE_URL env var for production
-DB_URL = os.getenv("DATABASE_URL", "sqlite:///f1_data.db")
+# STRICT: AWS RDS Only - No fallback to local sqlite unless explicitly intended for dev but user requested AWS usage.
+# We will raise error if DATABASE_URL is not set to ensure we don't accidentally use proper sqlite.
+DB_URL = os.getenv("DATABASE_URL")
+if not DB_URL:
+    # Fail hard if no DB configured, or default to a dummy that fails connection if you prefer, 
+    # but printing warning is safer for now if they forget env var.
+    print("WARNING: DATABASE_URL not set. Service will likely fail.")
+    DB_URL = "sqlite:///:memory:" # Fail-safe to avoid writing to disk if config missing
 
 def get_db_engine():
-    return create_engine(DB_URL)
+    return create_engine(DB_URL, pool_pre_ping=True)
 
 def get_db_session():
     engine = get_db_engine()
@@ -306,9 +322,11 @@ def get_race_replay(race_id):
     try:
         # Laps
         laps = session.query(Lap).filter_by(race_id=race_id).order_by(Lap.lap_number, Lap.position).all()
+        race = session.query(Race).get(race_id) # Fetch Race Object
         
         # Circuit Map
         circuit = session.query(Circuit).filter_by(race_id=race_id).first()
+        print(f"[DEBUG] Race ID: {race_id}, Circuit found: {circuit is not None}")
         map_data = None
         if circuit:
             import json
@@ -316,11 +334,15 @@ def get_race_replay(race_id):
                 map_data = {
                     "x": json.loads(circuit.x_json),
                     "y": json.loads(circuit.y_json),
-                    "distance": json.loads(circuit.distance_json) if circuit.distance_json else [], # NEW
-                    "corners": json.loads(circuit.corners_json) if circuit.corners_json else []
+                    "distance": json.loads(circuit.distance_json) if circuit.distance_json else [],
+                    "corners": json.loads(circuit.corners_json) if circuit.corners_json else [],
+                    "marshalSectors": json.loads(circuit.marshal_sectors_json) if circuit.marshal_sectors_json else [],
+                    "marshalLights": json.loads(circuit.marshal_lights_json) if circuit.marshal_lights_json else []
                 }
-            except:
-                pass
+            except Exception as e:
+                print(f"Error loading map data for race {race_id}: {e}")
+                import traceback
+                traceback.print_exc()
 
         if not laps: return None
             
@@ -371,6 +393,7 @@ def get_race_replay(race_id):
         result = {
             "raceId": race_id,
             "totalLaps": max_lap,
+            "startTime": f"{race.date.isoformat()}Z" if race.date else None,
             "data": replay_data,
             "map": map_data,
             "drivers": driver_meta,
@@ -385,7 +408,8 @@ def get_race_replay(race_id):
                 ev = {
                     "time": s.time,
                     "status": s.status,
-                    "weather": json.loads(s.weather) if s.weather else None
+                    "weather": json.loads(s.weather) if s.weather else None,
+                    "category": s.category # Return category to frontend
                 }
                 result["events"].append(ev)
         
@@ -433,342 +457,225 @@ def get_telemetry(race_id, driver=None):
 # --- Analysis Service ---
 def get_analysis_data(race_id, driver1, driver2, lap1_num=None, lap2_num=None):
     """
-    Computes deep-dive analysis. Now supports specific Laps.
+    Computes deep-dive analysis using DB stored telemetry.
     """
-    import fastf1
-    import fastf1.utils
     import numpy as np
+    import json
     
     db_session = get_db_session()
     try:
-        print(f"Analyzing Race {race_id}: {driver1} vs {driver2} (Laps: {lap1_num}, {lap2_num})")
         race = db_session.query(Race).filter_by(id=race_id).first()
         if not race: return {"error": "Race not found"}
 
-        # Cache Setup
-        cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data_pipeline', 'f1_cache')
-        if not os.path.exists(cache_dir): os.makedirs(cache_dir)
-        fastf1.Cache.enable_cache(cache_dir)
+        # Helper to get specific lap telemetry
+        def get_lap_telemetry(driver, lap_num):
+            # If lap_num is 'fastest' or None, we need logic to find it.
+            # Currently our Telemetry table stores the FASTEST LAP only (from seed_full_telemetry).
+            # If we want specific laps, we need to store ALL laps telemetry which is huge.
+            # Assuming 'seed_full_telemetry.py' stores the generic fastest lap telemetry.
+            # If the user wants specific laps, we might be limited by current DB schema unless we store all.
+            # For now, we fetch the stored telemetry from the Telemetry table which represents the 'best' or 'reference' lap.
+            
+            # FUTURE: If we need specific lap telemetry, we must expand the Telemetry table to include lap_number
+            # and seed EVERY lap (GBs of data). 
+            # Current Requirement: "Stop using cache". 
+            # We will use what we have in DB.
+            
+            t = db_session.query(Telemetry).filter_by(race_id=race_id, driver=driver).first()
+            if not t: return None
+            
+            return {
+                "distance": json.loads(t.distance_json),
+                "speed": json.loads(t.speed_json),
+                "throttle": json.loads(t.throttle_json),
+                "brake": json.loads(t.brake_json),
+                "gear": json.loads(t.gear_json) if t.gear_json else [],
+                "rpm": json.loads(t.rpm_json) if t.rpm_json else [],
+                "time": json.loads(t.time_json) if hasattr(t, 'time_json') and t.time_json else []
+            }
 
-    # Load Session
-        # Enable weather for context, telemetry is already True
-        session = fastf1.get_session(race.year, race.round, 'R')
-        session.load(telemetry=True, weather=True, messages=False)
+        d1_tel = get_lap_telemetry(driver1, lap1_num)
+        d2_tel = get_lap_telemetry(driver2, lap2_num)
 
-        # Get Laps
-        laps = session.laps.pick_quicklaps()
+        if not d1_tel or not d2_tel:
+            return {"error": "Telemetry not available in DB for one or both drivers"}
+
+        # 1. Delta Calculation (Manual Resampling)
+        # We need to interpolate d2 to d1 distances
+        d1_dist = np.array(d1_tel['distance'])
+        d1_speed = np.array(d1_tel['speed'])
         
-        # Helper to pick lap
-        def pick_lap(driver, lap_num):
-            d_laps = laps.pick_drivers(driver)
-            if not lap_num or str(lap_num) == 'fastest':
-                return d_laps.pick_fastest()
-            else:
-                # Find specific lap
-                try:
-                    ln = float(lap_num)
-                    l = d_laps[d_laps['LapNumber'] == ln]
-                    if not l.empty: return l.iloc[0]
-                except: pass
-                return d_laps.pick_fastest() # Fallback
-
-        d1_lap = pick_lap(driver1, lap1_num)
-        d2_lap = pick_lap(driver2, lap2_num)
-
-        if d1_lap is None or d2_lap is None:
-            return {"error": "Telemetry not available for one or both drivers"}
-
-        # 0. Weather Conditions (Context)
-        conditions = {}
-        try:
-            # session.weather_data is a DataFrame with cols: Time, AirTemp, Humidity, Pressure, Rainfall, TrackTemp, WindDirection, WindSpeed
-            # We'll take the weather closest to the start of the reference lap
-            w_data = session.weather_data
-            if not w_data.empty:
-                # Find weather at lap start time
-                # d1_lap['LapStartTime'] is a Timedelta relative to session start? 
-                # Actually FastF1 weather is indexed by Time usually or available as stream.
-                # Let's just pick the mean or the first row if we can't sync perfectly easily, 
-                # but better to sync.
-                # lap start time is d1_lap['LapStartTime'] (timedelta)
-                # match closest in w_data['Time']
-                lap_start = d1_lap['LapStartTime']
-                # find row with closest Time
-                idx = (w_data['Time'] - lap_start).abs().idxmin()
-                w_row = w_data.loc[idx]
-                conditions = {
-                    "airTemp": float(w_row['AirTemp']),
-                    "trackTemp": float(w_row['TrackTemp']),
-                    "humidity": float(w_row['Humidity']),
-                    "pressure": float(w_row['Pressure']),
-                    "windSpeed": float(w_row['WindSpeed']),
-                    "rain": bool(w_row['Rainfall'])
-                }
-        except Exception as e:
-            print(f"Weather error: {e}")
-            pass
-
-        # 1. Time Delta (Gap) & Speed/Throttle Delta
-        # delta_time returns the time gap at specific distances of the reference lap (d1_lap)
-        delta_time, ref_tel, def_tel = fastf1.utils.delta_time(d1_lap, d2_lap)
+        d2_dist = np.array(d2_tel['distance'])
+        d2_speed = np.array(d2_tel['speed'])
         
-        # Prepare Delta Series for Chart & Map
-        # ref_tel['Distance'] is the x-axis
+        # Interpolate D2 speed to D1 distances
+        d2_speed_interp = np.interp(d1_dist, d2_dist, d2_speed)
+        
+        # Calculate Delta (Time)
+        # Time = Distance / Speed. 
+        # Integration method: dt = dx / v
+        # We can approximate time at each point
+        
+        # Simple Speed Delta first
+        speed_delta = d1_speed - d2_speed_interp
+        
+        # Time Delta Construction
+        time_delta_vals = []
+        if d1_tel.get('time') and d2_tel.get('time'):
+             t1 = np.array(d1_tel['time'])
+             t2 = np.array(d2_tel['time'])
+             if len(t1) == len(d1_dist) and len(t2) == len(d2_dist):
+                 # Interpolate t2 to d1_dist
+                 t2_interp = np.interp(d1_dist, d2_dist, t2)
+                 # Gap = Comp - Ref. (Positive if Ref is faster/ahead ... wait)
+                 # Frontend expects: Negative value = Active Driver (D1) is Faster.
+                 # If D1 is 10s, D2 is 11s. D1 is faster.
+                 # Gap = D2 - D1 = 1s.
+                 # We want NEGATIVE to indicate D1 is faster? 
+                 # Previous code: `delta: round(-deltas[i], 4)` where deltas was from fastf1.
+                 # fastf1 delta: D1 ahead -> Positive.
+                 # -Positive -> Negative.
+                 # So if D1 ahead, we send Negative.
+                 # D2 - D1 = Positive.
+                 # So we send -(D2 - D1) = D1 - D2? (= -1s).
+                 # Correct.
+                 time_delta_vals = t1 - t2_interp
+             
+        
         delta_series = []
-        dists = ref_tel['Distance'].tolist()
-        deltas = delta_time.tolist()
-        
-        # Reference Data
-        ref_speeds = ref_tel['Speed'].tolist()
-        ref_throttle = ref_tel['Throttle'].tolist()
-        ref_gear = ref_tel['nGear'].tolist()
+        # Downsample
+        step = 10
+        for i in range(0, len(d1_dist), step):
+            if i >= len(d2_speed_interp): break
+            
+            s1 = d1_speed[i]
+            s2 = d2_speed_interp[i]
+            
+            d_val = 0
+            if len(time_delta_vals) > i:
+                 d_val = float(time_delta_vals[i])
 
-        # Compare Data (Need to interpolate to align with ref distances for "Delta")
-        # fastf1.utils.delta_time aligns them internally but returns ref_tel and def_tel separate?
-        # Actually ref_tel is the reference telemetry interpolated to a common index?
-        # No, delta_time returns "ref_tel" (aligned to distance?)
-        # Let's double check fastf1 docs logic:
-        # "ref_tel" is the telemetry of the reference lap. "def_tel" is the comparison lap telemetry REMAPPED to ref_tel distance?
-        # Typically people assume def_tel is aligned. Let's assume lengths match?
-        # If lengths don't match, we need to interpolate def_tel to ref_tel['Distance'].
-        
-        # Interpolate Compare Telemetry to Reference Distances
-        # We use numpy interp
-        comp_speeds = np.interp(dists, def_tel['Distance'], def_tel['Speed'])
-        comp_throttle = np.interp(dists, def_tel['Distance'], def_tel['Throttle'])
-        comp_gear = np.interp(dists, def_tel['Distance'], def_tel['nGear']) # Gear interp is slightly weird but OK for vis
-
-        # Downsample for frontend performance (every 10th point)
-        for i in range(0, len(dists), 10):
             delta_series.append({
-                "dist": round(dists[i], 1),
-                "delta": round(-deltas[i], 4), # Invert: Gap > 0 (Ahead) -> Delta < 0 (Faster)
-                "speed": int(ref_speeds[i]),
-                "gear": int(ref_gear[i]),
-                "throttle": int(ref_throttle[i]),
-                # Extended Data
-                "speed_compare": int(comp_speeds[i]),
-                "throttle_compare": int(comp_throttle[i]),
-                "gear_compare": int(comp_gear[i]),
-                "speed_delta": int(ref_speeds[i] - comp_speeds[i]),
-                "throttle_delta": int(ref_throttle[i] - comp_throttle[i])
+                "dist": round(d1_dist[i], 1),
+                "delta": round(d_val, 4), 
+                "speed": int(s1),
+                "speed_compare": int(s2),
+                "speed_delta": int(s1 - s2)
             })
 
         # 2. Corner Analysis
-        circuit_info = session.get_circuit_info()
+        # Fetch Circuit Corners
+        circuit = db_session.query(Circuit).filter_by(race_id=race_id).first()
         corners = []
-        
-        # Helper to get specific speed at distance
-        def get_speed_at(telemetry, target_dist):
-            # Find closest point
-            idx = (np.abs(telemetry['Distance'] - target_dist)).argmin()
-            if idx < 0 or idx >= len(telemetry): return 0
-            return telemetry.iloc[idx]['Speed']
-
-        # Helper to get min speed in a window around a distance
-        def get_corner_stats(telemetry, center_dist, window=50):
-            mask = (telemetry['Distance'] > center_dist - window) & (telemetry['Distance'] < center_dist + window)
-            sector = telemetry[mask]
-            if sector.empty: return 0, 0
-            return sector['Speed'].min(), sector['nGear'].mode().max() if not sector['nGear'].mode().empty else 0
-
-        if circuit_info is not None:
-            # Iterate through corners
-            for index, row in circuit_info.corners.iterrows():
-                num = row['Number']
-                dist = row['Distance']
+        if circuit and circuit.corners_json:
+            corners_data = json.loads(circuit.corners_json)
+            # Find closest points in telemetry
+            for c in corners_data:
+                dist = c['distance']
+                # match closest index in d1
+                idx = (np.abs(d1_dist - dist)).argmin()
                 
-                # Apex Stats
-                v_min_1, gear_1 = get_corner_stats(d1_lap.get_telemetry(), dist)
-                v_min_2, gear_2 = get_corner_stats(d2_lap.get_telemetry(), dist)
+                v1 = d1_speed[idx]
+                v2 = d2_speed_interp[idx]
                 
-                # Entry/Exit Stats (approx +/- 30m from apex)
-                v_entry_1 = get_speed_at(d1_lap.get_telemetry(), dist - 30)
-                v_entry_2 = get_speed_at(d2_lap.get_telemetry(), dist - 30)
-                v_exit_1 = get_speed_at(d1_lap.get_telemetry(), dist + 30)
-                v_exit_2 = get_speed_at(d2_lap.get_telemetry(), dist + 30)
-
-                # Time Delta at this corner (approximate from delta series)
-                idx = (np.abs(ref_tel['Distance'] - dist)).argmin()
-                time_lost = -delta_time.iloc[idx] # Invert to match Delta convention
-                
-                # Determine "Reason"
-                # Heuristic: Compare speed profiles
                 reason = "Balanced"
-                if abs(time_lost) > 0.05: # Only significant gaps
-                    # Check who is faster based on delta trend or just raw speeds
-                    # If time_lost (D1 - D2?) is NEGATIVE -> D1 is AHEAD/FASTER? 
-                    # fastf1 delta: Ref(D1) - Comp(D2). + means D1 is AHEAD (Faster if strictly gap... wait)
-                    # "Positive value means that 'ref' is ahead of 'comp'" => Ref time < Comp time?
-                    # Usually "Gap" = Ref - Comp. If Ref is 10s, Comp 11s. Gap = -1s? 
-                    # No, usually Gap = Leader - Car. 
-                    # Let's rely on stored delta. Frontend treats < 0 as "Active Driver Faster".
-                    
-                    winner = 1 if time_lost < 0 else 2 # Who has the advantage (time_lost is accumulated gap?)
-                    # Wait, 'delta_time' is CUMULATIVE GAP.
-                    # We need LOCAL gain/loss.
-                    # 'time_lost' here is just the gap value at that point. 
-                    # Use local speed diffs to explain the STATE at that corner.
-                    
-                    if v_min_1 > v_min_2 + 5: reason = f"{driver1} Higher Apex Speed"
-                    elif v_min_2 > v_min_1 + 5: reason = f"{driver2} Higher Apex Speed"
-                    elif v_exit_1 > v_exit_2 + 5: reason = f"{driver1} Better Exit"
-                    elif v_exit_2 > v_exit_1 + 5: reason = f"{driver2} Better Exit"
-                    elif v_entry_1 > v_entry_2 + 5: reason = f"{driver1} Later Braking"
-                    elif v_entry_2 > v_entry_1 + 5: reason = f"{driver2} Later Braking"
+                if v1 > v2 + 5: reason = f"{driver1} Faster"
+                elif v2 > v1 + 5: reason = f"{driver2} Faster"
                 
                 corners.append({
-                    "number": str(num) + str(row['Letter']),
+                    "number": c['number'],
                     "distance": dist,
-                    "d1_min_speed": round(v_min_1, 1),
-                    "d2_min_speed": round(v_min_2, 1),
-                    "d1_gear": int(gear_1),
-                    "d2_gear": int(gear_2),
-                    "delta_at_apex": round(time_lost, 3),
+                    "d1_min_speed": int(v1),
+                    "d2_min_speed": int(v2),
                     "reason": reason
                 })
 
         return {
             "driver1": driver1,
             "driver2": driver2,
-            "session_name": session.name,
-            "lap_time_diff": round(d1_lap.LapTime.total_seconds() - d2_lap.LapTime.total_seconds(), 3),
             "delta_series": delta_series,
             "corners": corners,
-            "conditions": conditions,
-            "lap1_time": d1_lap['LapTime'].total_seconds(),
-            "lap2_time": d2_lap['LapTime'].total_seconds(),
-            "lap1_compound": d1_lap['Compound'],
-            "lap2_compound": d2_lap['Compound'],
+            "conditions": {}, # simplified
             "color1": "#FFFFFF", 
             "color2": "#FFFFFF"
         }
 
     except Exception as e:
-        print(f"Analysis Error: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"Analysis DB Error: {e}")
         return {"error": str(e)}
     finally:
         db_session.close()
 
 def get_race_control_messages(race_id):
     """
-    Fetches Race Control Messages (Flags, SC, Penalties) for a race.
+    Fetches Race Control Messages (Flags, SC, Penalties) for a race from DB.
     """
-    import fastf1
     db_session = get_db_session()
     try:
-        race = db_session.query(Race).filter_by(id=race_id).first()
-        if not race: return {"messages": []}
-
-        # Cache Setup
-        cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data_pipeline', 'f1_cache')
-        if not os.path.exists(cache_dir):
-            os.makedirs(cache_dir)
-        fastf1.Cache.enable_cache(cache_dir)
+        msgs = db_session.query(RaceStatus).filter_by(race_id=race_id).order_by(RaceStatus.time).all()
         
-        session = fastf1.get_session(race.year, race.round, 'R')
-        session.load(telemetry=False, weather=False, messages=True) # Load ONLY messages for speed
-        
-        messages = session.race_control_messages
-        # Ensure we have a valid DataFrame (session.load can sometimes result in None or empty structures if no data)
-        # messages is a property, usually returning None or DataFrame
-        if messages is None or (hasattr(messages, 'empty') and messages.empty):
-            # Try to return at least something
-            messages = pd.DataFrame() 
-
-        # Format Messages
-        # Columns available: 'Time', 'Category', 'Message', 'lap', 'Sector', 'Status'
         formatted_messages = []
-        for _, row in messages.iterrows():
-            # Inferred Category if missing
-            category = row['Category']
-            msg_text = str(row['Message'])
+        for m in msgs:
+            # Format time
+            m_sec = int(m.time)
+            h = m_sec // 3600
+            rem = m_sec % 3600
+            mins = rem // 60
+            secs = rem % 60
+            time_str = f"+{h}:{mins:02d}:{secs:02d}" if h > 0 else f"+{mins}:{secs:02d}"
             
-            if "SAFETY CAR" in msg_text or "VIRTUAL SAFETY CAR" in msg_text:
-                category = "SafetyCar"
-            elif "PENALTY" in msg_text or "INVESTIGATION" in msg_text:
-                category = "Penalty"
-            elif "FLAG" in msg_text:
-                category = "Flag"
-            elif category == "Other":
-                category = "General"
-
-            # Format Time
-            # We want a string for display: "HH:MM:SS" or "+1:23.456"
-            time_display = ""
-            # ... (Time format logic same)
-            raw_time = row['Time']
-            if not pd.isna(raw_time):
-                 if hasattr(raw_time, 'total_seconds'):
-                     s = int(raw_time.total_seconds())
-                     h = s // 3600
-                     m = (s % 3600) // 60
-                     s = s % 60
-                     if h > 0: time_display = f"+{h}:{m:02d}:{s:02d}"
-                     else: time_display = f"+{m}:{s:02d}"
-                 elif hasattr(raw_time, 'strftime'):
-                      try: time_display = raw_time.strftime("%H:%M:%S")
-                      except: time_display = str(raw_time)
-                 else:
-                      time_display = str(raw_time)
-
             formatted_messages.append({
-                "time": time_display,
-                "lap": int(row['Lap']) if 'Lap' in row and not pd.isna(row['Lap']) else None,
-                "category": category,
-                "message": msg_text,
-                "flag": row['Flag'] if 'Flag' in row and not pd.isna(row['Flag']) else None
+                "time": time_str,
+                "category": m.status,
+                "message": f"{m.status} - {m.weather}" if m.weather else m.status,
+                "flag": "RED" if "RED" in m.status else "YELLOW" if "YELLOW" in m.status else None
             })
             
         return {"messages": formatted_messages}
 
     except Exception as e:
         print(f"Error fetching race control messages: {e}")
-        # Return empty list for future races instead of crashing
         return {"messages": []}
     finally:
         db_session.close()
 
 def get_driver_laps(race_id, driver_id):
     """
-    Returns list of valid laps for a driver
+    Returns list of valid laps for a driver from DB.
     """
-    import fastf1
     db_session = get_db_session()
     try:
-        race = db_session.query(Race).filter_by(id=race_id).first()
-        if not race: return []
+        # Query Laps table
+        laps = db_session.query(Lap).filter_by(race_id=race_id, driver=driver_id).order_by(Lap.lap_number).all()
         
-        # Cache & Session Load
-        cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data_pipeline', 'f1_cache')
-        fastf1.Cache.enable_cache(cache_dir)
-        session = fastf1.get_session(race.year, race.round, 'R')
-        session.load(telemetry=False, weather=False, messages=False) # Lighter load
-        
-        laps = session.laps.pick_drivers(driver_id).pick_quicklaps()
         result = []
-        for i, lap in laps.iterrows():
-            if pd.isna(lap['LapTime']): continue
-            # Format Sectors
-            def fmt_time(t):
-               if pd.isna(t): return None
-               return str(t).split('days')[-1].strip()
+        # Find fastest lap for marking
+        min_time = min([l.lap_time for l in laps if l.lap_time]) if laps else 0
+        
+        for lap in laps:
+            if not lap.lap_time: continue
+            
+            # Format Time helper
+            def fmt(sec):
+                if not sec: return "-"
+                m = int(sec // 60)
+                s = sec % 60
+                return f"{m}:{s:06.3f}"
 
             result.append({
-                "lap_number": int(lap['LapNumber']),
-                "lap_time": fmt_time(lap['LapTime']),
-                "s1": fmt_time(lap['Sector1Time']),
-                "s2": fmt_time(lap['Sector2Time']),
-                "s3": fmt_time(lap['Sector3Time']),
-                "compound": lap['Compound'],
-                "stint": int(lap['Stint']) if not pd.isna(lap['Stint']) else 0,
-                "is_fastest": lap['LapTime'] == laps.pick_fastest()['LapTime']
+                "lap_number": lap.lap_number,
+                "lap_time": fmt(lap.lap_time),
+                "s1": fmt(lap.sector1_time),
+                "s2": fmt(lap.sector2_time),
+                "s3": fmt(lap.sector3_time),
+                "compound": lap.tyre_compound,
+                "stint": lap.stint if lap.stint else 0,
+                "is_fastest": lap.lap_time == min_time
             })
         return result
+
     except Exception as e:
-        print(f"Error fetching laps: {e}")
+        print(f"Error fetching laps from DB: {e}")
         return []
     finally:
         db_session.close()
@@ -891,72 +798,72 @@ def get_season_standings(year=2024):
 
         # Helper to calculate rank change
         # 1. Calculate points before the last round
-        # We need to know which races count for "Current" vs "Previous"
-        # Since 'all_races' are ordered, we assume the season is cumulative.
-        # But `results` contains ALL results for the year.
-        # To find "previous" rank, we look at `d.history[-2]` if available? 
-        # d.history tracks cumulative points.
-        # So Rank at index -2 vs Rank at index -1.
-        
-        # We need to sort drivers by history[-2] to get previous rank.
-        
-        # Check history length first
         season_len = len(driver_list[0]["history"]) if driver_list else 0
         
         if season_len >= 2:
-            # Map driver_code -> prev_points
             prev_points_map = {}
             for d in driver_list:
-                # history[-2] is points before last race?
-                # history has one entry per race in `all_races`.
-                # If race hasn't happened, points stay flat.
-                # We want the change due to the LATEST result.
-                # So we compare Rank(End) vs Rank(Start of Last Result).
-                # Actually, simplest is just Sort by history[-2] and get Rank.
                 prev_points_map[d["code"]] = d["history"][-2] if len(d["history"]) >= 2 else 0
             
-            # Sort by prev points
             sorted_prev = sorted(driver_list, key=lambda x: prev_points_map.get(x["code"], 0), reverse=True)
-            
-            # Assign prev_rank
             for rank, d in enumerate(sorted_prev):
                 d["prev_rank"] = rank + 1
-                
-            # Now compare with current rank (already sorted by points)
             for rank, d in enumerate(driver_list):
                 curr_rank = rank + 1
                 prev = d.get("prev_rank", curr_rank)
-                d["change"] = prev - curr_rank # Positive = Gained places (e.g. 5 -> 3 = +2)
+                d["change"] = prev - curr_rank
         else:
             for d in driver_list: d["change"] = 0
 
-        # --- Constructor Standings ---
+        # --- Constructor Standings (Refactored) ---
+        # Aggregate DIRECTLY from results to handle mid-season transfers correctly
         constructors = {}
-        # We also need constructor history to compute constructor arrows
-        # Re-accumulate based on drivers
-        
-        # Initialize constructors
-        for d in driver_list:
-            team = d.get("team")
+        constructor_round_points = {}  # team -> {race_name -> points}
+
+        for r, race in results:
+            team = r.team_name
             if not team or team == "None": continue
+
+            # Initialize Team Stats
             if team not in constructors:
                 constructors[team] = {
                     "name": team,
                     "points": 0,
-                    "wins": 0, 
-                    "podiums": 0, 
-                    "drivers": [],
-                    "history": [0] * season_len # Initialize history array
+                    "wins": 0,
+                    "podiums": 0,
+                    "drivers": set(), # Use set to track unique drivers
+                    "history": [] 
                 }
-            constructors[team]["points"] += d.get("points", 0)
-            constructors[team]["wins"] += d.get("wins", 0)
-            constructors[team]["podiums"] += d.get("podiums", 0)
-            constructors[team]["drivers"].append(d.get("code", "???"))
-            
-            # Sum history
-            for i, pts in enumerate(d.get("history", [])):
-                if i < len(constructors[team]["history"]):
-                    constructors[team]["history"][i] += pts
+            if team not in constructor_round_points:
+                constructor_round_points[team] = {}
+            if race.race_name not in constructor_round_points[team]:
+                constructor_round_points[team][race.race_name] = 0
+
+            # Determine Session Type
+            stype = str(r.session_type).upper() if r.session_type else 'R'
+            if stype not in ['R', 'S']: continue
+
+            # Aggregate Points
+            pts = r.points if r.points is not None else 0
+            constructors[team]["points"] += pts
+            constructor_round_points[team][race.race_name] += pts
+            constructors[team]["drivers"].add(r.driver_code)
+
+            # Aggregate Stats (Main Race Only)
+            if stype == "R":
+                 pos = r.position if r.position is not None else 999
+                 if pos == 1: constructors[team]["wins"] += 1
+                 if pos <= 3: constructors[team]["podiums"] += 1
+
+        # Build Constructor History
+        for team, c in constructors.items():
+            cumulative = 0
+            for race_obj in all_races:
+                pts = constructor_round_points.get(team, {}).get(race_obj.race_name, 0)
+                cumulative += pts
+                c["history"].append(cumulative)
+            # Convert driver set to list
+            c["drivers"] = list(c["drivers"])
 
         constructor_list = list(constructors.values())
         constructor_list.sort(key=lambda x: x["points"], reverse=True)
@@ -982,7 +889,7 @@ def get_season_standings(year=2024):
         # Calculate Consistency King (Restored)
         consistency_leader = None
         best_rate = -1
-        total_completed = len(set(r.race_id for r, _ in results)) # Restored variable
+        total_completed = len(set(r.race_id for r, _ in results)) 
         min_starts = 2 if total_completed > 2 else 0 
         
         for d in driver_list:

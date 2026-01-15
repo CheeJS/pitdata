@@ -5,6 +5,9 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import json
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 Base = declarative_base()
 
@@ -20,8 +23,10 @@ class Prediction(Base):
 # dedicated DB for votes to separate from ETL data
 # dedicated DB for votes to separate from ETL data
 # In production, we use the same DATABASE_URL for simplicity (Postgres schema or tables)
-FALLBACK_DB_URL = "sqlite:///votes.db"
-DB_URL = os.getenv("DATABASE_URL", FALLBACK_DB_URL)
+DB_URL = os.getenv("DATABASE_URL")
+if not DB_URL:
+    print("WARNING: DATABASE_URL not set for Voting Service.")
+    DB_URL = "sqlite:///:memory:" # Fallback to memory to prevent disk writes, or fail.
 
 engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
