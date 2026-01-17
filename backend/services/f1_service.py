@@ -227,6 +227,45 @@ def get_latest_race_results():
         session.close()
 
 
+
+def get_active_drivers(year=2025):
+    """
+    Returns a list of active drivers for the season with their team and inferred stats.
+    """
+    session = get_db_session()
+    try:
+        # Get all results for the year to find active drivers
+        # We use results to ensure they actually raced or are entered
+        results = session.query(Result).join(Race).filter(Race.year == year).all()
+        
+        # If no results (start of season), try previous year for initial roster?
+        # Or just return empty if it's truly empty.
+        if not results:
+             # Fallback to previous year if current year has no data yet (common in pre-season)
+             results = session.query(Result).join(Race).filter(Race.year == year - 1).all()
+
+        drivers = {}
+        
+        for r in results:
+            if r.driver_code not in drivers and r.driver_code:
+                # Basic Stats Mockup -> In future, calculate real probability based on points
+                drivers[r.driver_code] = {
+                    "code": r.driver_code,
+                    "name": r.driver_name,
+                    "team": r.team_name,
+                    "color": TEAM_COLORS.get(r.team_name, "#333333"),
+                    "probability": 0, # Placeholder
+                    "dnfRisk": 10 # Placeholder default
+                }
+        
+        return list(drivers.values())
+
+    except Exception as e:
+        print(f"Active Drivers Error: {e}")
+        return []
+    finally:
+        session.close()
+
 def get_races_list(year=None):
     session = get_db_session()
     try:
@@ -281,6 +320,8 @@ def get_races_list(year=None):
             return f"unk_{r.id}"
 
         result = []
+        now = datetime.utcnow()
+
         for r in races:
             code = get_code(r.race_name)
             
@@ -298,6 +339,20 @@ def get_races_list(year=None):
             circuit_info = CIRCUIT_DATA.get(code, {})
             laps = circuit_info.get("laps", 50) 
             
+            # Prediction Window Logic
+            # Open: Monday before race (Race Date - 6 days) @ 00:00
+            # Close: Qualifying Start Time (or 24h before race if Quali missing)
+            
+            # Assuming r.date is Sunday Race Time.
+            # Monday Start:
+            open_time = r.date - pd.Timedelta(days=6)
+            open_time = open_time.replace(hour=0, minute=0, second=0)
+            
+            # Close Time: Qualifying
+            close_time = r.qualifying_date if r.qualifying_date else (r.date - pd.Timedelta(hours=24))
+            
+            is_open = open_time <= now <= close_time
+            
             result.append({
                 "id": r.id,     # DB ID (Integer) for History/Results API
                 "code": code,   # String Code ('aus') for Strategy/Simulations
@@ -305,10 +360,15 @@ def get_races_list(year=None):
                 "date": r.date.strftime("%d %b %Y"),
                 "circuit": r.circuit_name,
                 "round": r.round,
-                "status": "Completed" if r.date < datetime.now() else "Upcoming",
+                "status": "Completed" if r.date < now else "Upcoming",
                 "laps": laps,
                 "conditions": f"{cond['weather']} • {cond['temp']} • {cond['deg']}",
-                "sc_context": f"Based on {cond['sc_prob']} incident rate"
+                "sc_context": f"Based on {cond['sc_prob']} incident rate",
+                "predictions": {
+                    "is_open": is_open,
+                    "open_time": open_time.isoformat(),
+                    "close_time": close_time.isoformat()
+                }
             })
         return result
     except Exception as e:
@@ -316,6 +376,16 @@ def get_races_list(year=None):
         return []
     finally:
         session.close()
+
+
+
+# --- Constants ---
+TEAM_COLORS = {
+    "Red Bull Racing": "#3671C6", "Mercedes": "#6CD3BF", "Ferrari": "#F91536",
+    "McLaren": "#F58020", "Aston Martin": "#358C75", "Alpine": "#2293D1",
+    "Williams": "#37BEDD", "RB": "#6692FF", "Sauber": "#52E252", "Haas F1 Team": "#B6BABD",
+    "Kick Sauber": "#52E252", "Racing Bulls": "#6692FF" # Aliases
+}
 
 def get_race_replay(race_id):
     session = get_db_session()
@@ -326,14 +396,13 @@ def get_race_replay(race_id):
         
         # Circuit Map
         circuit = session.query(Circuit).filter_by(race_id=race_id).first()
-        print(f"[DEBUG] Race ID: {race_id}, Circuit found: {circuit is not None}")
         map_data = None
         if circuit:
             import json
             try:
                 map_data = {
-                    "x": json.loads(circuit.x_json),
-                    "y": json.loads(circuit.y_json),
+                    "x": json.loads(circuit.x_json) if circuit.x_json else [],
+                    "y": json.loads(circuit.y_json) if circuit.y_json else [],
                     "distance": json.loads(circuit.distance_json) if circuit.distance_json else [],
                     "corners": json.loads(circuit.corners_json) if circuit.corners_json else [],
                     "marshalSectors": json.loads(circuit.marshal_sectors_json) if circuit.marshal_sectors_json else [],
@@ -341,42 +410,37 @@ def get_race_replay(race_id):
                 }
             except Exception as e:
                 print(f"Error loading map data for race {race_id}: {e}")
-                import traceback
-                traceback.print_exc()
 
-        if not laps: return None
-            
         # Group by lap number
         replay_data = {}
         max_lap = 0
         
-        for lap in laps:
-            if lap.lap_number not in replay_data:
-                replay_data[lap.lap_number] = []
-            
-            replay_data[lap.lap_number].append({
-                "driver": lap.driver,
-                "position": lap.position,
-                "time": lap.lap_time,
-                "cummulative": lap.cumulative_time,
-                "tyre": lap.tyre_compound
-            })
-            if lap.lap_number > max_lap:
-                max_lap = lap.lap_number
+        if laps:
+            for lap in laps:
+                if lap.lap_number not in replay_data:
+                    replay_data[lap.lap_number] = []
+                
+                replay_data[lap.lap_number].append({
+                    "driver": lap.driver,
+                    "position": lap.position,
+                    "time": lap.lap_time,
+                    "cummulative": lap.cumulative_time,
+                    "tyre": lap.tyre_compound
+                })
+                if lap.lap_number > max_lap:
+                    max_lap = lap.lap_number
                 
         # Driver Metadata (Teams & Colors)
         driver_meta = {}
-        team_colors = {
-            "Red Bull Racing": "#3671C6", "Mercedes": "#6CD3BF", "Ferrari": "#F91536",
-            "McLaren": "#F58020", "Aston Martin": "#358C75", "Alpine": "#2293D1",
-            "Williams": "#37BEDD", "RB": "#6692FF", "Sauber": "#52E252", "Haas F1 Team": "#B6BABD",
-            "Kick Sauber": "#52E252", "Racing Bulls": "#6692FF" # Aliases
-        }
         results = session.query(Result).filter_by(race_id=race_id).all()
+        
+        if not results and not laps:
+            return None # truly no data
+            
         for r in results:
             # Try to match team color
             color = "#FFFFFF"
-            for team_key, hex_val in team_colors.items():
+            for team_key, hex_val in TEAM_COLORS.items():
                 if team_key in (r.team_name or ""):
                     color = hex_val
                     break
@@ -388,7 +452,6 @@ def get_race_replay(race_id):
                 "grid": r.grid_position,
                 "status": r.status
             }
-
 
         result = {
             "raceId": race_id,
@@ -422,6 +485,7 @@ def get_race_replay(race_id):
         return None
     finally:
         session.close()
+
 
 def get_telemetry(race_id, driver=None):
     session = get_db_session()
@@ -578,6 +642,16 @@ def get_analysis_data(race_id, driver1, driver2, lap1_num=None, lap2_num=None):
                 v1 = d1_speed[idx]
                 v2 = d2_speed_interp[idx]
                 
+                # Get Gear
+                d1_gear_val = "-"
+                if d1_tel.get('gear') and len(d1_tel['gear']) > idx:
+                     d1_gear_val = d1_tel['gear'][idx]
+                
+                # Get Delta at Apex
+                delta_val = 0
+                if len(time_delta_vals) > idx:
+                    delta_val = float(time_delta_vals[idx])
+
                 reason = "Balanced"
                 if v1 > v2 + 5: reason = f"{driver1} Faster"
                 elif v2 > v1 + 5: reason = f"{driver2} Faster"
@@ -587,6 +661,8 @@ def get_analysis_data(race_id, driver1, driver2, lap1_num=None, lap2_num=None):
                     "distance": dist,
                     "d1_min_speed": int(v1),
                     "d2_min_speed": int(v2),
+                    "d1_gear": d1_gear_val,
+                    "delta_at_apex": round(delta_val, 3),
                     "reason": reason
                 })
 
@@ -733,9 +809,8 @@ def get_season_standings(year=2024):
             # Determine Session Type
             stype = str(r.session_type).upper() if r.session_type else 'R'
 
-            # Skip Practice and Qualifying for Standings Stats
-            # (Note: Pole positions could be tracked from Q, but not for "Wins"/"Points" in main table usually)
-            if stype not in ['R', 'S']:
+            # Skip Practice, Qualifying, and Entries for Standings Stats
+            if stype not in ['R', 'S'] or str(r.status) == 'Entry':
                 continue
 
             # Update Stats
@@ -889,7 +964,18 @@ def get_season_standings(year=2024):
         # Calculate Consistency King (Restored)
         consistency_leader = None
         best_rate = -1
-        total_completed = len(set(r.race_id for r, _ in results)) 
+        
+        # Calculate completed rounds (Races with valid results, excluding 'Entry')
+        completed_count = 0
+        # Iterate over all race IDs found in results (r_id is first element of tuple key in races_set? No, set was empty)
+        # Using keys from 'results' list
+        unique_race_ids = set(r.race_id for r, _ in results)
+        for r_id in unique_race_ids:
+            has_real_result = any(res.race_id == r_id and str(res.status) != 'Entry' for res, _ in results)
+            if has_real_result:
+                completed_count += 1
+        
+        total_completed = completed_count
         min_starts = 2 if total_completed > 2 else 0 
         
         for d in driver_list:
@@ -908,14 +994,47 @@ def get_season_standings(year=2024):
         # Final sort to ensure rank is correct
         driver_list.sort(key=lambda x: x["points"], reverse=True)
 
+        # NEW: Season Stats Calculation
+        # NEW: Season Stats Calculation
+        fastest_lap_record = None
+        
+        # Query Laps table for absolute fastest lap of the season
+        # Ensure lap_time is valid (non-zero)
+        try:
+            best_lap = db_session.query(Lap, Race).join(Race).filter(
+                Race.year == year, 
+                Lap.lap_time > 0
+            ).order_by(Lap.lap_time.asc()).first()
+            
+            if best_lap:
+                lap, race = best_lap
+                # Format time (seconds to MM:SS.ms)
+                def fmt_time(s):
+                    m = int(s // 60)
+                    sec = s % 60
+                    return f"{m}:{sec:06.3f}"
+                
+                fastest_lap_record = {
+                    "time": fmt_time(lap.lap_time),
+                    "driver": lap.driver, 
+                    "circuit": race.circuit_name
+                }
+        except Exception as e:
+            print(f"Fastest Lap Calc Error: {e}")
+
+
         return {
             "drivers": driver_list,
             "constructors": constructor_list,
             "races": race_list,
             "total_rounds": len(all_races) if len(all_races) > 0 else 24,
             "completed_rounds": total_completed,
-            "consistency_leader": consistency_leader
+            "consistency_leader": consistency_leader,
+            "season_stats": {
+                "fastest_lap": fastest_lap_record,
+            }
         }
+
 
     except Exception as e:
         print(f"Standings Error: {e}")
@@ -1684,6 +1803,142 @@ def run_race_monte_carlo(race_code, num_simulations=1000, chaos_factor=1.0):
         
     except Exception as e:
         return {"error": str(e)}
+
+
+def get_dashboard_data(year=2026):
+    """
+    Returns data for the dashboard hero section.
+    Determines if we should show 'Latest Results' or 'Next Race' based on date.
+    - If a race finished within the last 3 days: Show Results.
+    - Otherwise: Show Next Race.
+    """
+    session = get_db_session()
+    try:
+        current_time = datetime.utcnow()
+        
+        # 1. Check for Completed Races in the last 3 days
+        # Get latest result
+        latest_race_q = session.query(Race).join(Result).filter(Race.year == year).order_by(Race.date.desc()).first()
+        
+        mode = "NEXT_RACE" # Default
+        target_race_id = None
+        
+        if latest_race_q:
+            # Check time since race
+            delta = current_time - latest_race_q.date
+            if 0 <= delta.days <= 3:
+                mode = "LATEST_RESULTS"
+                target_race_id = latest_race_q.id
+
+        # 2. Find Next Race
+        # If not showing results, find the next upcoming race
+        if mode == "NEXT_RACE":
+            next_race = session.query(Race).filter(Race.year == year, Race.date >= current_time).order_by(Race.date.asc()).first()
+            
+            # If no race left, fallback to latest result (End of Season)
+            if not next_race:
+                if latest_race_q:
+                    mode = "LATEST_RESULTS"
+                    target_race_id = latest_race_q.id
+                else:
+                    return None # No data at all?
+            else:
+                target_race_id = next_race.id
+                
+        # 3. Fetch Data for Target Race
+        race = session.query(Race).get(target_race_id)
+        if not race: return None
+
+        # Build payload
+        payload = {
+            "mode": mode,
+            "raceId": race.id,
+            "raceName": race.race_name,
+            "circuit": race.circuit_name,
+            "date": race.date.isoformat(),
+            "round": race.round,
+            "sessions": {
+                "fp1": race.fp1_date.isoformat() if race.fp1_date else None,
+                "fp2": race.fp2_date.isoformat() if race.fp2_date else None,
+                "fp3": race.fp3_date.isoformat() if race.fp3_date else None,
+                "qualifying": race.qualifying_date.isoformat() if race.qualifying_date else None,
+                "sprint": race.sprint_date.isoformat() if race.sprint_date else None,
+            },
+            # NEW: Circuit Intel + Strategy HQ Data
+            "circuit_stats": {
+                "length": "5.278 km", # Placeholder - ideally fetch from Circuit model
+                "laps": 58,
+                "distance": "306.124 km",
+                "record": {"time": "1:20.260", "driver": "LEC", "year": "2022"}
+            },
+            "strategy_hq": {
+                "tyres": ["C3", "C4", "C5"], # Softest range
+                "pit_loss": 20.5,
+                "weather": {"temp": 24, "rain_prob": 10, "condition": "Sunny"}
+            },
+            # If results mode, include top 3 + winner
+            "results": None
+        }
+
+        # Always fetch results if available (even for Next Race if Q happened?)
+        # Logic: If LATEST_RESULTS, we definitely have them.
+        # If NEXT_RACE, we might have Qualifying but not Race.
+        # Let's try to fetch what exists for this race_id.
+        
+        # 1. Qualifying Results
+        q_results = session.query(Result).filter(Result.race_id == race.id, Result.session_type == 'Q').order_by(Result.position).all()
+        q_list = [{
+            "pos": r.position,
+            "driver": r.driver_code,
+            "team": r.team_name,
+            "time": r.time_str
+        } for r in q_results]
+
+        # 2. Race Results
+        # Filter out 'Entry' placeholders (position 0) so we correctly show "Upcoming" state
+        r_results = session.query(Result).filter(
+            Result.race_id == race.id, 
+            Result.session_type == 'R',
+            Result.position > 0  # Only actual classified results
+        ).order_by(Result.position).all()
+        
+        r_list = [{
+            "pos": r.position,
+            "driver": r.driver_code,
+            "team": r.team_name,
+            "time": r.time_str,
+            "pts": r.points
+        } for r in r_results]
+
+        # 3. Constructor Results (Event Specific)
+        team_points = {}
+        for r in r_results:
+            t = r.team_name
+            if t not in team_points: team_points[t] = 0
+            team_points[t] += (r.points or 0)
+        
+        c_list = [{"team": t, "pts": p} for t, p in team_points.items()]
+        c_list.sort(key=lambda x: x['pts'], reverse=True)
+
+        payload["results"] = {
+            "Q": q_list,
+            "R": r_list,
+            "C": c_list
+        }
+
+        # If we are in results mode, set the winner info for Hero
+        if mode == "LATEST_RESULTS" and r_results:
+             winner = r_results[0]
+             payload["winner"] = winner.driver_name
+             payload["winnerTeam"] = winner.team_name
+
+        return payload
+
+    except Exception as e:
+        print(f"Dashboard Error: {e}")
+        return {"error": str(e)}
+    finally:
+        session.close()
 
 
 

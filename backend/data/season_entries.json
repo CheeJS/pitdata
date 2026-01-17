@@ -1,0 +1,158 @@
+{
+    "2026": [
+        {
+            "code": "VER",
+            "number": "1",
+            "name": "Max Verstappen",
+            "team": "Red Bull Racing",
+            "grid": 1
+        },
+        {
+            "code": "HAD",
+            "number": "6",
+            "name": "Isack Hadjar",
+            "team": "Red Bull Racing",
+            "grid": 2
+        },
+        {
+            "code": "LEC",
+            "number": "16",
+            "name": "Charles Leclerc",
+            "team": "Ferrari",
+            "grid": 3
+        },
+        {
+            "code": "HAM",
+            "number": "44",
+            "name": "Lewis Hamilton",
+            "team": "Ferrari",
+            "grid": 4
+        },
+        {
+            "code": "NOR",
+            "number": "4",
+            "name": "Lando Norris",
+            "team": "McLaren",
+            "grid": 5
+        },
+        {
+            "code": "PIA",
+            "number": "81",
+            "name": "Oscar Piastri",
+            "team": "McLaren",
+            "grid": 6
+        },
+        {
+            "code": "RUS",
+            "number": "63",
+            "name": "George Russell",
+            "team": "Mercedes",
+            "grid": 7
+        },
+        {
+            "code": "ANT",
+            "number": "12",
+            "name": "Kimi Antonelli",
+            "team": "Mercedes",
+            "grid": 8
+        },
+        {
+            "code": "ALO",
+            "number": "14",
+            "name": "Fernando Alonso",
+            "team": "Aston Martin",
+            "grid": 9
+        },
+        {
+            "code": "STR",
+            "number": "18",
+            "name": "Lance Stroll",
+            "team": "Aston Martin",
+            "grid": 10
+        },
+        {
+            "code": "GAS",
+            "number": "10",
+            "name": "Pierre Gasly",
+            "team": "Alpine",
+            "grid": 11
+        },
+        {
+            "code": "COL",
+            "number": "43",
+            "name": "Franco Colapinto",
+            "team": "Alpine",
+            "grid": 12
+        },
+        {
+            "code": "ALB",
+            "number": "23",
+            "name": "Alexander Albon",
+            "team": "Williams",
+            "grid": 13
+        },
+        {
+            "code": "SAI",
+            "number": "55",
+            "name": "Carlos Sainz",
+            "team": "Williams",
+            "grid": 14
+        },
+        {
+            "code": "HUL",
+            "number": "27",
+            "name": "Nico Hulkenberg",
+            "team": "Kick Sauber",
+            "grid": 15
+        },
+        {
+            "code": "BOR",
+            "number": "8",
+            "name": "Gabriel Bortoleto",
+            "team": "Kick Sauber",
+            "grid": 16
+        },
+        {
+            "code": "LAW",
+            "number": "30",
+            "name": "Liam Lawson",
+            "team": "Racing Bulls",
+            "grid": 17
+        },
+        {
+            "code": "LIN",
+            "number": "41",
+            "name": "Arvid Lindblad",
+            "team": "Racing Bulls",
+            "grid": 18
+        },
+        {
+            "code": "OCO",
+            "number": "31",
+            "name": "Esteban Ocon",
+            "team": "Haas F1 Team",
+            "grid": 19
+        },
+        {
+            "code": "BEA",
+            "number": "87",
+            "name": "Oliver Bearman",
+            "team": "Haas F1 Team",
+            "grid": 20
+        },
+        {
+            "code": "PER",
+            "number": "11",
+            "name": "Sergio Perez",
+            "team": "Cadillac",
+            "grid": 21
+        },
+        {
+            "code": "BOT",
+            "number": "77",
+            "name": "Vatteri Bottas",
+            "team": "Cadillac",
+            "grid": 22
+        }
+    ]
+}

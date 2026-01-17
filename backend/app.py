@@ -32,7 +32,9 @@ def health_check():
 
 @app.route('/api/latest-results')
 def latest_results():
-    data = get_latest_race_results()
+    from services.f1_service import get_dashboard_data
+    year = request.args.get('year', 2026, type=int) 
+    data = get_dashboard_data(year)
     if data:
         return jsonify(data)
     else:
@@ -190,16 +192,38 @@ def race_control_feed(race_id):
          return jsonify(data), 500
     return jsonify(data)
 
+
+@app.route('/api/drivers')
+def get_active_season_drivers():
+    from services.f1_service import get_active_drivers
+    year = request.args.get('year', 2026, type=int)
+    drivers = get_active_drivers(year)
+    return jsonify(drivers)
+
 # --- Crowd Prediction APIs ---
 @app.route('/api/predictions/vote', methods=['POST'])
 def submit_prediction():
     from services.voting_service import submit_vote
     data = request.json
+    
+    # New Payload: { race_id, client_id, payload: { ... } }
+    # Or flattened? Frontend sends:
+    # { race_id, client_id, category: "winner", value: { ... } } -> Old way
+    # New plan says: send full state.
+    # Let's standardize on:
+    # { race_id, client_id, data: { podium: ..., gap: ... } }
+    # And store this whole object in 'value'. Category can be 'full_prediction'
+    
+    race_id = data.get('race_id')
+    client_id = data.get('client_id')
+    # If frontend sends "value" directly
+    payload = data.get('value') or data.get('payload') or data
+    
     res = submit_vote(
-        data.get('race_id'),
-        data.get('client_id'),
-        data.get('category'),
-        data.get('value')
+        race_id,
+        client_id,
+        "full_prediction", # Unified category
+        payload
     )
     return jsonify(res)
 

@@ -28,7 +28,10 @@ if not DB_URL:
     print("WARNING: DATABASE_URL not set for Voting Service.")
     DB_URL = "sqlite:///:memory:" # Fallback to memory to prevent disk writes, or fail.
 
-engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
+if "sqlite" in str(DB_URL):
+    engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DB_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
@@ -66,53 +69,102 @@ def submit_vote(race_id, client_id, category, value):
     finally:
         session.close()
 
+
 def get_vote_stats(race_id):
     session = SessionLocal()
     try:
         votes = session.query(Prediction).filter_by(race_id=str(race_id)).all()
         
         stats = {
-            "podium": [],
-            "winner": {},
-            "total_votes": len(votes)
+            "total_votes": len(votes),
+            "podium": {1: {}, 2: {}, 3: {}}, # {pos: {driver: count}}
+            "winningGap": {}, # {gap: count}
+            "dnfPredictions": {}, # {driver: count}
+            "safetyCar": {"yes": 0, "no": 0, "avg_count": 0},
+            "pitStrategy": {"avg_stops": 0, "tyres": {}} # {stint_idx: {tyre: count}}
         }
         
-        # Aggregation Logic
-        winner_counts = {}
-        sc_values = []
-        
+        if not votes:
+            return stats
+
+        sc_counts = []
+        stops_counts = []
+
         for v in votes:
             try:
+                # Value is stored as JSON string
                 val = json.loads(v.value)
                 
-                if v.category == "winner":
-                    # Handle legacy string vs new object
-                    driver = val.get("code") if isinstance(val, dict) else val
-                    if driver:
-                        winner_counts[driver] = winner_counts.get(driver, 0) + 1
-                        
-                elif v.category == "safety_car":
-                    # Handle legacy "YES"/"NO" -> 100/0 map, or new distinct int
-                    if val == "YES": sc_values.append(100)
-                    elif val == "NO": sc_values.append(0)
-                    elif isinstance(val, (int, float)): sc_values.append(val)
+                # Check format version. New payload has 'podium' key.
+                if isinstance(val, dict) and "podium" in val:
+                    # 1. Podium
+                    for pos, driver in val.get("podium", {}).items():
+                        if not driver: continue
+                        p_key = int(pos)
+                        stats["podium"][p_key][driver] = stats["podium"][p_key].get(driver, 0) + 1
                     
-            except:
+                    # 2. Winning Gap
+                    gap = val.get("winningGap")
+                    if gap:
+                        stats["winningGap"][gap] = stats["winningGap"].get(gap, 0) + 1
+                    
+                    # 3. DNFs
+                    for driver in val.get("dnfPredictions", []):
+                        stats["dnfPredictions"][driver] = stats["dnfPredictions"].get(driver, 0) + 1
+                    
+                    # 4. Safety Car
+                    sc = val.get("safetyCar", {})
+                    if sc.get("enabled"):
+                        stats["safetyCar"]["yes"] += 1
+                        if "count" in sc: sc_counts.append(sc["count"])
+                    else:
+                        stats["safetyCar"]["no"] += 1
+                        
+                    # 5. Pit Strategy
+                    strat = val.get("pitStrategy", {})
+                    if "stops" in strat:
+                        stops_counts.append(strat["stops"])
+                    
+                # Support Legacy "Winner" votes if any exist (graceful fallback)
+                elif isinstance(val, dict) and "code" in val:
+                     # Just count as P1
+                     driver = val.get("code")
+                     if driver:
+                         stats["podium"][1][driver] = stats["podium"][1].get(driver, 0) + 1
+
+            except Exception as e:
+                print(f"Error parsing vote {v.id}: {e}")
                 continue
 
-        # Format Winner Stats
-        total_winner_votes = sum(winner_counts.values()) or 1
-        stats["winner"] = [
-            {"code": k, "count": v, "percent": round((v/total_winner_votes)*100, 1)} 
-            for k, v in winner_counts.items()
-        ]
-        stats["winner"].sort(key=lambda x: x["count"], reverse=True)
+        # Post-Processing / Formatting
+        # Convert Podium dicts to sorted lists
+        def format_podium(pos_data):
+            # Sort by count desc
+            sorted_items = sorted(pos_data.items(), key=lambda x: x[1], reverse=True)
+            # Take top 5?
+            return [{"code": k, "count": v, "percent": round((v/max(1, len(votes)))*100, 1)} for k, v in sorted_items]
+
+        stats["podium"] = {
+            1: format_podium(stats["podium"][1]),
+            2: format_podium(stats["podium"][2]),
+            3: format_podium(stats["podium"][3])
+        }
         
-        # Format SC Stats
-        stats["safety_car_avg"] = round(sum(sc_values) / len(sc_values)) if sc_values else 0
+        # Aggregates
+        if sc_counts:
+            stats["safetyCar"]["avg_count"] = round(sum(sc_counts) / len(sc_counts), 1)
+            
+        if stops_counts:
+            stats["pitStrategy"]["avg_stops"] = round(sum(stops_counts) / len(stops_counts), 1)
+            dist = {1: 0, 2: 0, 3: 0}
+            for s in stops_counts:
+                if s in dist:
+                    dist[s] += 1
+            stats["pitStrategy"]["stop_dist"] = dist
 
         return stats
     except Exception as e:
+        print(f"Stats Error: {e}")
         return {"error": str(e)}
     finally:
         session.close()

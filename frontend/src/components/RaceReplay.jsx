@@ -4,29 +4,7 @@ import { Play, Pause, Square, FastForward, Rewind, Map as MapIcon, RotateCcw, Ch
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Placeholder grid for 2026 (races haven't happened yet)
-const F1_2026_GRID = [
-    { driver: 'VER', team: 'Red Bull Racing', color: '#3671C6' },
-    { driver: 'PIA', team: 'McLaren', color: '#FF8000' },
-    { driver: 'NOR', team: 'McLaren', color: '#FF8000' },
-    { driver: 'LEC', team: 'Ferrari', color: '#E8002D' },
-    { driver: 'ALO', team: 'Aston Martin', color: '#229971' },
-    { driver: 'RUS', team: 'Mercedes', color: '#6CD3BF' },
-    { driver: 'BOR', team: 'Racing Bulls', color: '#6692FF' },
-    { driver: 'HAD', team: 'Racing Bulls', color: '#6692FF' },
-    { driver: 'OCO', team: 'Haas F1 Team', color: '#B6BABD' },
-    { driver: 'TSU', team: 'Red Bull Racing', color: '#3671C6' },
-    { driver: 'LAW', team: 'Williams', color: '#64C4FF' },
-    { driver: 'BEA', team: 'Haas F1 Team', color: '#B6BABD' },
-    { driver: 'SAI', team: 'Williams', color: '#64C4FF' },
-    { driver: 'HAM', team: 'Ferrari', color: '#E8002D' },
-    { driver: 'ALB', team: 'Alpine', color: '#0093CC' },
-    { driver: 'STR', team: 'Aston Martin', color: '#229971' },
-    { driver: 'ANT', team: 'Mercedes', color: '#6CD3BF' },
-    { driver: 'HUL', team: 'Kick Sauber', color: '#52E252' },
-    { driver: 'GAS', team: 'Alpine', color: '#0093CC' },
-    { driver: 'COL', team: 'Kick Sauber', color: '#52E252' },
-];
+
 
 const getStatusClasses = (status) => {
     const s = (status || "").toUpperCase();
@@ -52,7 +30,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
     const [loading, setLoading] = useState(false);
     const [mobileTab, setMobileTab] = useState('map'); // 'map', 'standings', 'events'
     const [showLeaderboard, setShowLeaderboard] = useState(true); // Toggle mini leaderboard
-    const [year, setYear] = useState(2026);
+    const [year, setYear] = useState(2025);
     const [error, setError] = useState(null);
     const AVAILABLE_YEARS = [2026, 2025, 2024];
 
@@ -235,22 +213,14 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
 
     // Positions
     const currentPositions = useMemo(() => {
-        // For future races (2026+) without data, use placeholder grid
-        if (!replayData && year >= 2026) {
-            return F1_2026_GRID.map((d, i) => ({
-                driver: d.driver,
-                rank: i + 1,
-                interval: i === 0 ? null : null, // No intervals for placeholder
-                lap: 0,
-                tyre: 'M', // Default tyre
-                progress: 0,
-            }));
-        }
         if (!replayData) return [];
 
-        // At race start (Time <= 0), sort drivers by Grid Position
-        if (raceTime <= 0) {
+        // If no lap data (future race or just entry list), build grid from metadata
+        const hasLaps = replayData.totalLaps > 0;
+
+        if (!hasLaps || raceTime <= 0) {
             const positions = [];
+            // Use replayData.drivers to build the grid
             Object.entries(replayData.drivers || {}).forEach(([code, meta]) => {
                 // Check if driver is retired/DNF even at start
                 const statusLower = (meta.status || '').toLowerCase();
@@ -261,7 +231,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                     statusLower.includes('collision') ||
                     statusLower.includes('disqualified') ||
                     statusLower === 'nc' ||
-                    (statusLower !== '' && statusLower !== 'finished' && !statusLower.startsWith('+'));
+                    (statusLower !== '' && statusLower !== 'finished' && !statusLower.startsWith('+') && statusLower !== 'entry'); // 'Entry' is valid active status for future
 
                 if (isRetired) {
                     positions.push({

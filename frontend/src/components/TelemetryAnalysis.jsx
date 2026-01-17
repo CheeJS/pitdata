@@ -388,7 +388,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                                                 "text-[10px] font-bold px-2 py-0.5 rounded-full",
                                                 corner.delta_at_apex < 0 ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
                                             )}>
-                                                {corner.delta_at_apex > 0 ? "+" : ""}{corner.delta_at_apex}s
+                                                {corner.delta_at_apex > 0 ? "+" : ""}{corner.delta_at_apex} sec
                                             </span>
                                         </div>
                                         <div className="flex justify-between text-[10px]">
@@ -459,7 +459,6 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                             >
                                 {raceList.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                             </select>
-                            <span className="bg-f1-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded">TELEMETRY ENGINE</span>
                         </div>
                     </div>
 
@@ -752,7 +751,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                                                     "text-xs font-bold px-2 py-0.5 rounded-full",
                                                     corner.delta_at_apex < 0 ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"
                                                 )}>
-                                                    {corner.delta_at_apex > 0 ? "+" : ""}{corner.delta_at_apex}s
+                                                    {corner.delta_at_apex > 0 ? "+" : ""}{corner.delta_at_apex} sec
                                                 </span>
                                             </div>
                                             <div className="grid grid-cols-2 gap-2 text-xs">
