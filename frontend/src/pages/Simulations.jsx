@@ -14,8 +14,7 @@ export default function Simulations() {
     const [activeTab, setActiveTab] = useState('simulator');
     const [races, setRaces] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [year, setYear] = useState(2026);
-    const availableYears = [2026, 2025, 2024];
+    const year = 2026; // Hardcoded to 2026 as requested
 
     useEffect(() => {
         const fetchData = async () => {
@@ -42,14 +41,7 @@ export default function Simulations() {
                 {/* Header */}
                 <div className="p-4 space-y-3 shrink-0">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-lg font-bold text-white">Simulations</h1>
-                        <select
-                            value={year}
-                            onChange={(e) => setYear(Number(e.target.value))}
-                            className="bg-[#111] border border-[#222] text-white text-xs rounded-lg px-2 py-1 outline-none"
-                        >
-                            {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
-                        </select>
+                        <h1 className="text-lg font-bold text-white">Simulations {year}</h1>
                     </div>
 
                     {/* Tabs */}
@@ -87,20 +79,9 @@ export default function Simulations() {
                     <div>
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold text-white">Simulation Hub</h1>
-                            <div className="flex bg-[#111] rounded-lg p-0.5 border border-[#222]">
-                                {availableYears.map(y => (
-                                    <button
-                                        key={y}
-                                        onClick={() => setYear(y)}
-                                        className={cn(
-                                            "px-3 py-1 text-xs font-medium rounded-md transition-all",
-                                            year === y ? "bg-f1-red text-white shadow-sm" : "text-gray-500 hover:text-white"
-                                        )}
-                                    >
-                                        {y}
-                                    </button>
-                                ))}
-                            </div>
+                            <span className="bg-[#111] text-gray-400 border border-[#222] px-3 py-1 text-xs font-medium rounded-md">
+                                SEASON {year}
+                            </span>
                         </div>
                         <p className="text-gray-500 text-xs mt-1">Monte Carlo race prediction engine</p>
                     </div>
@@ -557,7 +538,7 @@ function StrategyView({ races }) {
                     <div className="flex items-center justify-between">
                         <select
                             value={selectedRace?.id || ''}
-                            onChange={(e) => setSelectedRace(races.find(r => r.id === e.target.value))}
+                            onChange={(e) => setSelectedRace(races.find(r => r.id === parseInt(e.target.value)))}
                             className="bg-[#111] text-white text-sm font-medium border border-[#222] rounded-lg px-3 py-2 flex-1"
                         >
                             {races && races.map(r => (
@@ -594,7 +575,7 @@ function StrategyView({ races }) {
                             <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Race Event</label>
                             <select
                                 value={selectedRace?.id || ''}
-                                onChange={(e) => setSelectedRace(races.find(r => r.id === e.target.value))}
+                                onChange={(e) => setSelectedRace(races.find(r => r.id === parseInt(e.target.value)))}
                                 className="bg-[#15151E] text-white text-sm font-bold border border-[#2A2A30] rounded px-3 py-1 outline-none focus:border-f1-red"
                             >
                                 {races && races.map(r => (

@@ -281,6 +281,7 @@ def get_races_list(year=None):
             n = name.lower()
             if "bahrain" in n: return "bhr"
             if "saudi" in n or "jeddah" in n: return "sau"
+            if "madrid" in n: return "mad"
             if "australia" in n or "melbourne" in n: return "aus"
             if "japan" in n or "suzuka" in n: return "jpn"
             if "chinese" in n or "china" in n or "shanghai" in n: return "chn"
@@ -323,7 +324,9 @@ def get_races_list(year=None):
         now = datetime.utcnow()
 
         for r in races:
-            code = get_code(r.race_name)
+            # Check circuit name first for specificity (e.g. Madrid vs Barcelona)
+            name_to_check = r.circuit_name if r.circuit_name else r.race_name
+            code = get_code(name_to_check)
             
             # Circuit Context Mock/Map
             cond = {"weather": "Dry", "temp": "25°C", "deg": "Med Deg", "sc_prob": "Low"}
@@ -1288,7 +1291,9 @@ CIRCUIT_DATA = {
     "bra": {"pit_loss": 20.5, "deg_factor": 1.1, "overtake_delta": 0.7, "laps": 71},
     "lvg": {"pit_loss": 20.0, "deg_factor": 0.7, "overtake_delta": 0.5, "laps": 50},
     "qat": {"pit_loss": 23.5, "deg_factor": 1.5, "overtake_delta": 1.0, "laps": 57}, 
+    "qat": {"pit_loss": 23.5, "deg_factor": 1.5, "overtake_delta": 1.0, "laps": 57}, 
     "abu": {"pit_loss": 22.0, "deg_factor": 1.1, "overtake_delta": 1.3, "laps": 58},
+    "mad": {"pit_loss": 21.0, "deg_factor": 1.0, "overtake_delta": 1.2, "laps": 55}, # Madrid (2026)
 }
 
 def generate_strategies(total_laps, compounds):
@@ -1477,15 +1482,20 @@ def simulate_race_strategy(race_id='abu', race_laps=58, traffic=False, deg_multi
     pit_gain = runner_up["analysis"]["pit_loss"] - winner["analysis"]["pit_loss"]
     pace_diff = winner["analysis"]["deg_loss"] - runner_up["analysis"]["deg_loss"] 
     
+    deg_val = circuit.get('deg_factor', 1.0) * deg_multiplier
     reason = ""
-    if objective == 'Track Position' and len(winner["pit_stops"]) < len(runner_up["pit_stops"]):
-         reason = "Prioritizes track position with fewer stops, despite slower raw pace."
-    elif pit_gain > 5.0:
-        reason = f"Avoids extra pit stop (saves {round(pit_gain,1)}s), outweighing tyre wear."
-    elif pit_gain < -5.0:
-        reason = f"Fresh tyres provide {round(abs(pace_diff),1)}s pace advantage, overcoming pit loss."
-    else:
-        reason = f"Better compound suitability for {circuit.get('deg_factor', 1.0) * deg_multiplier:.1f}x degradation."
+    
+    stops_diff = len(runner_up["pit_stops"]) - len(winner["pit_stops"])
+    
+    if objective == 'Track Position' and stops_diff > 0:
+         reason = f"Saves {stops_diff} pit stop{'s' if stops_diff>1 else ''} to prioritize track position over raw pace ({net_delta}s slower)."
+    elif stops_diff > 0: # Winner has fewer stops
+         reason = f"Fewer stops strategy is faster by {net_delta}s as tire wear ({deg_val:.1f}x) allows extending stints."
+    elif stops_diff < 0: # Winner has more stops
+         reason = f"Aggressive strategy gains {net_delta}s; extra stop offset by {round(abs(pace_diff),1)}s pace advantage."
+    else: # Same stops
+         winner_compounds = "-".join([s[0][0] for s in winner["stints"]])
+         reason = f"Optimal compound usage ({winner_compounds}) for {deg_val:.1f}x degradation conditions."
 
     verdict = {
         "recommended": winner["name"],
@@ -1649,14 +1659,32 @@ def run_race_monte_carlo(race_code, num_simulations=1000, chaos_factor=1.0, pred
         }
         
         # ============================================================
-        # 1. GET DRIVER LIST FROM MOST RECENT STANDINGS
+        # 1. GET DRIVER LIST
         # ============================================================
         
-        standings_data = get_season_standings(standings_year)
-        if not standings_data:
-            return {"error": f"Could not fetch {standings_year} standings"}
-        
-        drivers = standings_data.get("drivers", [])[:20]
+        # Check season_entries.json first (for 2026+ support)
+        import json
+        import os
+        drivers = []
+        season_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'season_entries.json')
+        if os.path.exists(season_file):
+            try:
+                with open(season_file, 'r') as f:
+                    entries = json.load(f)
+                    if str(prediction_year) in entries:
+                        drivers = entries[str(prediction_year)]
+                        # Add mock points/podiums to match structure if needed
+                        for d in drivers:
+                            if "points" not in d: d["points"] = 0
+            except Exception as e:
+                print(f"Error loading season entries: {e}")
+
+        # Fallback to standings if no JSON entry
+        if not drivers:
+            standings_data = get_season_standings(standings_year)
+            if not standings_data:
+                return {"error": f"Could not fetch {standings_year} standings"}
+            drivers = standings_data.get("drivers", [])[:20]
         
         # ============================================================
         # 2. ANALYZE HISTORICAL PERFORMANCE
