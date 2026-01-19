@@ -179,7 +179,9 @@ def race_monte_carlo():
     race_code = request.args.get('race', 'AUS')
     num_sims = request.args.get('sims', 1000, type=int)
     chaos = request.args.get('chaos', 1.0, type=float)
-    data = run_race_monte_carlo(race_code, num_sims, chaos)
+    year = request.args.get('year', None, type=int)
+    lookback = request.args.get('lookback', 2, type=int)
+    data = run_race_monte_carlo(race_code, num_sims, chaos, year, lookback)
     if "error" in data:
         return jsonify(data), 500
     return jsonify(data)
@@ -233,6 +235,75 @@ def prediction_stats():
     race_id = request.args.get('race_id')
     data = get_vote_stats(race_id)
     return jsonify(data)
+
+
+# --- AI PREDICTIONS ENDPOINT ---
+@app.route('/api/predictions/ai')
+def ai_prediction():
+    try:
+        from services.ml_service import predict_race
+        race_code = request.args.get('race', 'AUS')
+        year = request.args.get('year', None, type=int)
+        data = predict_race(race_code, year)
+        if "error" in data:
+            return jsonify(data), 500
+        return jsonify(data)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+# --- PADDOCK (REDDIT-STYLE) ENDPOINTS ---
+@app.route('/api/paddock/threads', methods=['GET'])
+def paddock_threads():
+    from services.paddock_service import get_threads
+    return jsonify(get_threads())
+
+@app.route('/api/paddock/threads', methods=['POST'])
+def paddock_create_thread():
+    from services.paddock_service import create_thread
+    data = request.json
+    res = create_thread(
+        data.get('client_id'),
+        data.get('nickname'),
+        data.get('title'),
+        data.get('content'),
+        data.get('category')
+    )
+    return jsonify(res)
+
+@app.route('/api/paddock/threads/<int:thread_id>', methods=['GET'])
+def paddock_thread_detail(thread_id):
+    from services.paddock_service import get_thread_detail
+    viewer_id = request.args.get('client_id')
+    res = get_thread_detail(thread_id, viewer_id)
+    if not res: return jsonify({"error": "Thread not found"}), 404
+    return jsonify(res)
+
+@app.route('/api/paddock/threads/<int:thread_id>/comments', methods=['POST'])
+def paddock_post_comment(thread_id):
+    from services.paddock_service import post_comment
+    data = request.json
+    res = post_comment(
+        thread_id,
+        data.get('client_id'),
+        data.get('nickname'),
+        data.get('content')
+    )
+    return jsonify(res)
+
+@app.route('/api/paddock/vote', methods=['POST'])
+def paddock_vote():
+    from services.paddock_service import cast_vote
+    data = request.json
+    res = cast_vote(
+        data.get('client_id'),
+        data.get('item_type'),
+        data.get('item_id'),
+        data.get('direction')
+    )
+    return jsonify(res)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import { Trophy, Calendar, Zap, Timer, ChevronRight, Activity, TrendingUp, AlertTriangle, Calculator, Map, Info, Dna, RefreshCw, Clock, Play, BarChart3 } from 'lucide-react';
+import { Trophy, Calendar, Zap, Timer, ChevronRight, Activity, TrendingUp, AlertTriangle, Calculator, Map, Info, Dna, RefreshCw, Clock, Play, BarChart3, Brain } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Label, ComposedChart, Area, BarChart, Bar, Cell } from 'recharts';
 
@@ -64,6 +64,11 @@ export default function Simulations() {
                                 activeTab === 'strategy' ? "bg-f1-red text-white" : "text-gray-500")}>
                             <Activity size={14} /> Strategy
                         </button>
+                        <button onClick={() => setActiveTab('ai')}
+                            className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-medium transition-all",
+                                activeTab === 'ai' ? "bg-f1-red text-white" : "text-gray-500")}>
+                            <Brain size={14} /> AI
+                        </button>
                     </div>
                 </div>
 
@@ -71,6 +76,7 @@ export default function Simulations() {
                 <div className="flex-1 overflow-y-auto px-4 pb-20">
                     {activeTab === 'simulator' && <RaceSimulator races={races} year={year} />}
                     {activeTab === 'strategy' && <StrategyView races={races} />}
+                    {activeTab === 'ai' && <AIPredictions races={races} year={year} />}
                 </div>
             </div>
 
@@ -110,6 +116,11 @@ export default function Simulations() {
                                 activeTab === 'strategy' ? "bg-f1-red text-white" : "text-gray-500 hover:text-white")}>
                             <Activity size={16} /> Strategy
                         </button>
+                        <button onClick={() => setActiveTab('ai')}
+                            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                                activeTab === 'ai' ? "bg-f1-red text-white" : "text-gray-500 hover:text-white")}>
+                            <Brain size={16} /> AI Predictions
+                        </button>
                     </div>
                 </div>
 
@@ -117,6 +128,7 @@ export default function Simulations() {
                 <div className="flex-1 overflow-hidden">
                     {activeTab === 'simulator' && <RaceSimulator races={races} year={year} />}
                     {activeTab === 'strategy' && <StrategyView races={races} />}
+                    {activeTab === 'ai' && <AIPredictions races={races} year={year} />}
                 </div>
             </div>
         </div>
@@ -752,6 +764,169 @@ function StrategyView({ races }) {
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
+            </div>
+        </div>
+    );
+}
+
+
+// ============================================================
+// AI PREDICTIONS COMPONENT
+// ============================================================
+function AIPredictions({ races, year }) {
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [selectedRace, setSelectedRace] = useState(races[0]?.code || 'AUS');
+
+    const fetchPrediction = async () => {
+        setLoading(true);
+        try {
+            const res = await axios.get(`http://localhost:5000/api/predictions/ai?race=${selectedRace}&year=${year}`);
+            setData(res.data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (selectedRace) fetchPrediction();
+    }, [selectedRace, year]);
+
+    const teamColors = { "Red Bull Racing": "#3671C6", "Mercedes": "#6CD3BF", "Ferrari": "#E8002D", "McLaren": "#FF8000", "Aston Martin": "#229971", "Alpine": "#FF87BC", "Williams": "#64C4FF", "RB": "#6692FF", "Sauber": "#52E252", "Haas": "#B6BABD" };
+
+    return (
+        <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-hidden">
+            {/* LEFT: Config */}
+            <div className="lg:w-1/3 flex flex-col gap-4 shrink-0">
+                <div className="bg-gradient-to-br from-purple-900/30 to-[#15151E] border border-purple-500/30 rounded-2xl p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                            <Brain size={24} className="text-purple-400" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-white">AI Model</h2>
+                            <p className="text-xs text-gray-400">The model thinks...</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-xs font-bold uppercase text-gray-500 block mb-2">Select Race</label>
+                            <select
+                                value={selectedRace}
+                                onChange={(e) => setSelectedRace(e.target.value)}
+                                className="w-full bg-[#0B0B0F] text-white text-sm font-bold border border-[#2A2A30] rounded-lg px-4 py-2 outline-none focus:border-purple-500"
+                            >
+                                {races.map(r => (
+                                    <option key={r.id} value={r.code}>{r.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {data && (
+                            <div className="bg-black/30 rounded-xl p-4 space-y-2">
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-gray-500">Model Type</span>
+                                    <span className="text-purple-400 font-mono">{data.model_type}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-gray-500">Prediction Year</span>
+                                    <span className="text-white font-bold">{data.prediction_year}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-gray-500">Data Confidence</span>
+                                    <span className={cn("font-bold", data.model_confidence >= 70 ? "text-emerald-400" : data.model_confidence >= 40 ? "text-amber-400" : "text-red-400")}>
+                                        {data.model_confidence}%
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Info Box */}
+                <div className="bg-[#15151E] border border-[#2A2A30] rounded-2xl p-4">
+                    <h4 className="text-xs font-bold uppercase text-gray-500 mb-2 flex items-center gap-2">
+                        <Info size={12} /> How It Works
+                    </h4>
+                    <p className="text-xs text-gray-400 leading-relaxed">
+                        The AI model analyzes circuit-specific performance, recent form, and historical win rates to predict race outcomes. Features include average finish position at this circuit, podium rate, and championship standing.
+                    </p>
+                </div>
+            </div>
+
+            {/* RIGHT: Results */}
+            <div className="flex-1 bg-[#15151E] rounded-2xl border border-[#2A2A30] flex flex-col overflow-hidden">
+                {loading ? (
+                    <div className="flex-1 flex items-center justify-center">
+                        <Brain className="animate-pulse text-purple-500" size={48} />
+                    </div>
+                ) : !data ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                        <Brain size={64} className="opacity-20 mb-4" />
+                        <div className="text-sm">Select a race to see AI predictions</div>
+                    </div>
+                ) : (
+                    <>
+                        <div className="p-4 border-b border-[#2A2A30] bg-black/20 flex justify-between items-center shrink-0">
+                            <div>
+                                <h3 className="text-sm font-bold uppercase text-purple-400 flex items-center gap-2">
+                                    <Brain size={14} /> AI Win Probabilities
+                                </h3>
+                                <div className="text-[10px] text-gray-600">Based on circuit-specific historical data</div>
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
+                            {data.results.map((d, i) => {
+                                const color = teamColors[Object.keys(teamColors).find(k => d.team?.includes(k))] || "#888";
+                                return (
+                                    <motion.div
+                                        key={d.code}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: i * 0.05 }}
+                                        className="bg-[#0B0B0F] p-4 rounded-xl border border-[#2A2A30] flex items-center gap-4 relative overflow-hidden"
+                                    >
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${d.win_probability}%` }}
+                                            transition={{ delay: i * 0.05 + 0.2, duration: 0.5 }}
+                                            className="absolute left-0 top-0 bottom-0 opacity-15"
+                                            style={{ backgroundColor: color }}
+                                        />
+                                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold z-10" style={{ backgroundColor: color + "30", color: color }}>
+                                            {i + 1}
+                                        </div>
+                                        <div className="flex-1 z-10">
+                                            <div className="font-bold text-white flex items-center gap-2">
+                                                {d.name}
+                                                {d.confidence >= 70 && (
+                                                    <span className="bg-purple-500/20 text-purple-400 text-[9px] px-1.5 py-0.5 rounded font-bold">
+                                                        HIGH CONF
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="text-xs text-gray-400 flex items-center gap-2">
+                                                {d.team}
+                                                {d.features && (
+                                                    <span className="text-[9px] text-gray-500">
+                                                        • Avg P{d.features.circuit_avg} at circuit
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="text-right z-10">
+                                            <div className="text-2xl font-mono font-bold text-white">{d.win_probability}%</div>
+                                            <div className="text-[10px] text-gray-500">Podium: {d.podium_probability}%</div>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

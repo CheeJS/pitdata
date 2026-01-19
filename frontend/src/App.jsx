@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Flag, Trophy, Calendar, ChevronRight, ChevronUp, ChevronDown, Activity, Zap, Timer, MapPin, BarChart, Brain, Menu, X, Thermometer } from 'lucide-react';
+import { Flag, Trophy, Calendar, ChevronRight, ChevronUp, ChevronDown, Activity, Zap, Timer, MapPin, BarChart, Brain, Menu, X, Thermometer, MessageSquare } from 'lucide-react';
 import axios from 'axios';
 import { cn } from './lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -10,6 +10,7 @@ import Simulations from './pages/Simulations';
 import Predictions from './pages/Predictions';
 import History from './pages/History';
 import RaceControlFeed from './components/RaceControlFeed';
+import Paddock from './pages/Paddock';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -99,6 +100,7 @@ export default function App() {
           <MobileNavItem icon={<Brain />} label="Simulations" active={activeTab === 'simulations'} onClick={() => handleTabChange('simulations')} />
           <MobileNavItem icon={<Calendar />} label="History" active={activeTab === 'history'} onClick={() => handleTabChange('history')} />
           <MobileNavItem icon={<Zap />} label="Predictions" active={activeTab === 'predictions'} onClick={() => handleTabChange('predictions')} />
+          <MobileNavItem icon={<MessageSquare />} label="The Paddock" active={activeTab === 'paddock'} onClick={() => handleTabChange('paddock')} />
         </nav>
 
         <div className="absolute bottom-4 left-4 right-4">
@@ -125,6 +127,7 @@ export default function App() {
           <NavItem icon={<Brain />} label="Simulations" active={activeTab === 'simulations'} onClick={() => setActiveTab('simulations')} />
           <NavItem icon={<Calendar />} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
           <NavItem icon={<Zap />} label="Predictions" active={activeTab === 'predictions'} onClick={() => setActiveTab('predictions')} />
+          <NavItem icon={<MessageSquare />} label="The Paddock" active={activeTab === 'paddock'} onClick={() => setActiveTab('paddock')} />
         </nav>
 
         <div className="p-4 border-t border-[#2A2A30] hidden lg:block">
@@ -152,6 +155,7 @@ export default function App() {
               {activeTab === 'simulations' && <Simulations />}
               {activeTab === 'history' && <History />}
               {activeTab === 'predictions' && <Predictions />}
+              {activeTab === 'paddock' && <Paddock />}
             </>
           )}
         </div>

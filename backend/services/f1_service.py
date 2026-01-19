@@ -1601,53 +1601,96 @@ def get_championship_scenarios(year=2025):
         return {"error": str(e)}
 
 
-def run_race_monte_carlo(race_code, num_simulations=1000, chaos_factor=1.0):
+def run_race_monte_carlo(race_code, num_simulations=1000, chaos_factor=1.0, prediction_year=None, lookback_years=2):
     """
-    Monte Carlo simulation for 2026 race predictions.
-    Uses WEIGHTED historical data from multiple years:
-    - 50% weight: 2025 (most recent)
-    - 35% weight: 2024
-    - 15% weight: 2023
+    Monte Carlo simulation for race predictions.
+    
+    Args:
+        race_code: Circuit code (e.g. "MON", "SPA")
+        num_simulations: Number of simulations to run
+        chaos_factor: Variance multiplier (1.0 = normal, 3.0 = chaotic)
+        prediction_year: Year to predict for (default: current year + 1)
+        lookback_years: Number of historical years to use (default: 2)
+    
+    Features:
+        - Circuit-specific historical performance
+        - Dynamic year weights (more recent = higher weight)
+        - Fallback to global stats when circuit data is sparse
     """
     import random
+    from datetime import datetime
     
     try:
         session = get_db_session()
         
-        # Years and weights for historical analysis
-        YEAR_WEIGHTS = {2025: 0.50, 2024: 0.35, 2023: 0.15}
-        
         # ============================================================
-        # 1. GET DRIVER LIST FROM 2025 STANDINGS
+        # 0. CONFIGURATION - Dynamic year handling
         # ============================================================
         
-        standings_data = get_season_standings(2025)
+        if prediction_year is None:
+            prediction_year = datetime.now().year + 1
+        
+        # Calculate historical years and their weights
+        # More recent years get higher weight
+        historical_years = [prediction_year - i for i in range(1, lookback_years + 1)]
+        weight_sum = sum(range(1, lookback_years + 1))
+        year_weights = {y: (lookback_years - i) / weight_sum 
+                       for i, y in enumerate(historical_years)}
+        
+        # Most recent year for standings
+        standings_year = prediction_year - 1
+        
+        # Strength calculation weights (configurable)
+        STRENGTH_CONFIG = {
+            "win_rate_weight": 0.35,
+            "circuit_weight": 0.25,
+            "points_weight": 0.20,
+            "form_weight": 0.20
+        }
+        
+        # ============================================================
+        # 1. GET DRIVER LIST FROM MOST RECENT STANDINGS
+        # ============================================================
+        
+        standings_data = get_season_standings(standings_year)
         if not standings_data:
-            return {"error": "Could not fetch standings"}
+            return {"error": f"Could not fetch {standings_year} standings"}
         
         drivers = standings_data.get("drivers", [])[:20]
         
         # ============================================================
-        # 2. ANALYZE HISTORICAL PERFORMANCE (2023-2025)
+        # 2. ANALYZE HISTORICAL PERFORMANCE
         # ============================================================
         
         driver_stats = {}
         for d in drivers:
             code = d.get("code")
             driver_stats[code] = {
-                "weighted_win_rate": 0,
-                "weighted_podium_rate": 0,
-                "weighted_dnf_rate": 0,
+                # Global stats (all circuits)
+                "global_win_rate": 0,
+                "global_podium_rate": 0,
+                "global_dnf_rate": 0,
+                "global_races": 0,
+                # Circuit-specific stats
+                "circuit_win_rate": 0,
+                "circuit_podium_rate": 0,
+                "circuit_avg_position": 0,
+                "circuit_races": 0,
+                "circuit_positions": [],
+                # Recent form
                 "recent_positions": [],
-                "total_weighted_races": 0,
-                "wins_2025": 0
+                "recent_wins": 0
             }
         
-        # Process each year with its weight
-        for year, weight in YEAR_WEIGHTS.items():
+        # Process each historical year
+        for year in historical_years:
+            weight = year_weights.get(year, 0.5)
             races = session.query(Race).filter(Race.year == year).all()
             
             for race in races:
+                is_target_circuit = (race.circuit_code == race_code if hasattr(race, 'circuit_code') 
+                                    else race_code.upper() in (race.race_name or "").upper())
+                
                 race_results = session.query(Result).filter(
                     Result.race_id == race.id,
                     Result.session_type == 'R'
@@ -1658,54 +1701,88 @@ def run_race_monte_carlo(race_code, num_simulations=1000, chaos_factor=1.0):
                     if code not in driver_stats:
                         continue
                     
-                    driver_stats[code]["total_weighted_races"] += weight
+                    stats = driver_stats[code]
                     
-                    # Track wins
+                    # Global stats
+                    stats["global_races"] += weight
                     if res.position == 1:
-                        driver_stats[code]["weighted_win_rate"] += weight
-                        if year == 2025:
-                            driver_stats[code]["wins_2025"] += 1
-                    
-                    # Track podiums
+                        stats["global_win_rate"] += weight
                     if res.position and res.position <= 3:
-                        driver_stats[code]["weighted_podium_rate"] += weight
-                    
-                    # Track DNFs
+                        stats["global_podium_rate"] += weight
                     if res.status and ("DNF" in res.status.upper() or "Retired" in res.status):
-                        driver_stats[code]["weighted_dnf_rate"] += weight
+                        stats["global_dnf_rate"] += weight
                     
-                    # Track recent positions (only from 2025 for recency)
-                    if year == 2025 and res.position:
-                        driver_stats[code]["recent_positions"].append(res.position)
+                    # Circuit-specific stats
+                    if is_target_circuit:
+                        stats["circuit_races"] += weight
+                        if res.position == 1:
+                            stats["circuit_win_rate"] += weight
+                        if res.position and res.position <= 3:
+                            stats["circuit_podium_rate"] += weight
+                        if res.position:
+                            stats["circuit_positions"].append(res.position)
+                    
+                    # Recent form (most recent year only)
+                    if year == standings_year and res.position:
+                        stats["recent_positions"].append(res.position)
+                        if res.position == 1:
+                            stats["recent_wins"] += 1
         
         session.close()
         
         # ============================================================
-        # 3. CALCULATE NORMALIZED DRIVER STRENGTH
+        # 3. CALCULATE DRIVER STRENGTH (WITH CIRCUIT BONUS)
         # ============================================================
         
         driver_strength = {}
+        circuit_data_available = {}
         total_strength = 0
         
         for d in drivers:
             code = d.get("code")
             stats = driver_stats.get(code, {})
-            weighted_races = max(stats.get("total_weighted_races", 1), 0.1)
             
-            # Win rate from weighted historical data (40%)
-            win_rate = stats.get("weighted_win_rate", 0) / weighted_races
+            # Global win rate
+            global_races = max(stats.get("global_races", 1), 0.1)
+            global_win_rate = stats.get("global_win_rate", 0) / global_races
             
-            # Points share from 2025 standings (30%)
+            # Circuit-specific performance
+            circuit_races = stats.get("circuit_races", 0)
+            has_circuit_data = circuit_races >= 1
+            circuit_data_available[code] = has_circuit_data
+            
+            if has_circuit_data:
+                circuit_positions = stats.get("circuit_positions", [])
+                circuit_avg = sum(circuit_positions) / len(circuit_positions) if circuit_positions else 10
+                circuit_score = max(0, (11 - circuit_avg) / 10)
+            else:
+                circuit_score = 0.5  # Neutral for unknown
+            
+            # Points share
             total_points = sum(x.get("points", 1) for x in drivers) or 1
             points_share = d.get("points", 0) / total_points
             
-            # Recent form from last 5 races of 2025 (30%)
+            # Recent form
             recent = stats.get("recent_positions", [])[-5:]
             avg_pos = sum(recent) / len(recent) if recent else 10
             form_score = max(0, (11 - avg_pos) / 10)
             
-            # Combined strength
-            strength = (win_rate * 0.40) + (points_share * 0.30) + (form_score * 0.30)
+            # Combined strength with configurable weights
+            cfg = STRENGTH_CONFIG
+            if has_circuit_data:
+                strength = (global_win_rate * cfg["win_rate_weight"] +
+                           circuit_score * cfg["circuit_weight"] +
+                           points_share * cfg["points_weight"] +
+                           form_score * cfg["form_weight"])
+            else:
+                # No circuit data: redistribute circuit weight to other factors
+                adjusted_win = cfg["win_rate_weight"] + cfg["circuit_weight"] * 0.5
+                adjusted_points = cfg["points_weight"] + cfg["circuit_weight"] * 0.25
+                adjusted_form = cfg["form_weight"] + cfg["circuit_weight"] * 0.25
+                strength = (global_win_rate * adjusted_win +
+                           points_share * adjusted_points +
+                           form_score * adjusted_form)
+            
             driver_strength[code] = strength
             total_strength += strength
         
@@ -1715,17 +1792,16 @@ def run_race_monte_carlo(race_code, num_simulations=1000, chaos_factor=1.0):
                 driver_strength[code] /= total_strength
         
         # ============================================================
-        # 4. CALCULATE RELIABILITY FROM HISTORICAL DNF RATES
+        # 4. CALCULATE RELIABILITY (DNF RATES)
         # ============================================================
         
-        team_dnf_rates = {}
+        driver_dnf_rates = {}
         for d in drivers:
             code = d.get("code")
             stats = driver_stats.get(code, {})
-            weighted_races = max(stats.get("total_weighted_races", 1), 0.1)
-            base_dnf = stats.get("weighted_dnf_rate", 0) / weighted_races
-            # Apply chaos factor and cap
-            team_dnf_rates[code] = min(base_dnf * chaos_factor, 0.5)
+            global_races = max(stats.get("global_races", 1), 0.1)
+            base_dnf = stats.get("global_dnf_rate", 0) / global_races
+            driver_dnf_rates[code] = min(base_dnf * chaos_factor, 0.5)
         
         # ============================================================
         # 5. RUN MONTE CARLO SIMULATIONS
@@ -1738,26 +1814,22 @@ def run_race_monte_carlo(race_code, num_simulations=1000, chaos_factor=1.0):
             
             for d in drivers:
                 code = d.get("code")
-                dnf_rate = team_dnf_rates.get(code, 0.05)
+                dnf_rate = driver_dnf_rates.get(code, 0.05)
                 
-                # DNF check
                 if random.random() < dnf_rate:
                     race_results.append({"code": code, "pos": 99, "dnf": True})
                     continue
                 
-                # Performance with variance
                 base = driver_strength.get(code, 0.05)
                 performance = base + random.gauss(0, 0.12 * chaos_factor)
                 race_results.append({"code": code, "pos": 0, "perf": performance, "dnf": False})
             
-            # Sort finishers
             finishers = sorted(
                 [r for r in race_results if not r["dnf"]],
                 key=lambda x: x.get("perf", 0),
                 reverse=True
             )
             
-            # Assign positions and points
             pts_map = {1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1}
             for i, r in enumerate(finishers):
                 pos = i + 1
@@ -1785,20 +1857,28 @@ def run_race_monte_carlo(race_code, num_simulations=1000, chaos_factor=1.0):
                 "win_probability": round(sim_stats.get("wins", 0) / num_simulations * 100, 1),
                 "podium_probability": round(sim_stats.get("podiums", 0) / num_simulations * 100, 1),
                 "avg_points": round(sim_stats.get("points", 0) / num_simulations, 1),
-                "wins_2025": hist_stats.get("wins_2025", 0),
-                "reliability": round((1 - team_dnf_rates.get(code, 0.05)) * 100, 0)
+                "recent_wins": hist_stats.get("recent_wins", 0),
+                "circuit_races": round(hist_stats.get("circuit_races", 0)),
+                "has_circuit_data": circuit_data_available.get(code, False),
+                "reliability": round((1 - driver_dnf_rates.get(code, 0.05)) * 100, 0)
             })
         
         output.sort(key=lambda x: x.get("win_probability", 0), reverse=True)
+        
+        # Count races with circuit data
+        total_circuit_races = sum(1 for code in circuit_data_available if circuit_data_available[code])
         
         return {
             "race": race_code,
             "simulations": num_simulations,
             "chaos_factor": chaos_factor,
+            "prediction_year": prediction_year,
+            "historical_years": historical_years,
+            "year_weights": {str(k): round(v, 2) for k, v in year_weights.items()},
             "results": output[:10],
-            "avg_dnf_rate": round(sum(team_dnf_rates.values()) / max(len(team_dnf_rates), 1) * 100, 1),
-            "data_source": "Weighted 2023-2025 data (122 races)",
-            "prediction_year": 2026
+            "avg_dnf_rate": round(sum(driver_dnf_rates.values()) / max(len(driver_dnf_rates), 1) * 100, 1),
+            "drivers_with_circuit_data": total_circuit_races,
+            "data_source": f"Historical data from {', '.join(map(str, historical_years))}"
         }
         
     except Exception as e:

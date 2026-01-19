@@ -1,0 +1,20 @@
+{
+  "training_years": [
+    2025,
+    2024,
+    2023,
+    2022
+  ],
+  "samples": 1398,
+  "mae": 3.47,
+  "features": [
+    "grid_position",
+    "circuit_avg_position",
+    "circuit_races",
+    "recent_form",
+    "is_sprint_weekend",
+    "sprint_position",
+    "round"
+  ],
+  "trained_at": "2026-01-19T20:19:57.834639"
+}
