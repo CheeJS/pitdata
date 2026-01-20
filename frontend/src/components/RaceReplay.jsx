@@ -30,7 +30,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
     const [loading, setLoading] = useState(false);
     const [mobileTab, setMobileTab] = useState('map'); // 'map', 'standings', 'events'
     const [showLeaderboard, setShowLeaderboard] = useState(true); // Toggle mini leaderboard
-    const [year, setYear] = useState(2025);
+    const [year, setYear] = useState(2026);
     const [error, setError] = useState(null);
     const AVAILABLE_YEARS = [2026, 2025, 2024];
 
@@ -91,7 +91,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 // Handle expected missing data (200 OK with error code)
                 if (repRes.data.code === 'NO_DATA' || repRes.data.error) {
                     if (year >= 2026) {
-                        setError("This race has not occurred yet. Check back after the race weekend!");
+                        setError(`This race hasn't happened yet! Try selecting ${year - 1} or ${year - 2} from the year dropdown above to watch past races.`);
                     } else {
                         setError("Replay telemetry not available for this race.");
                     }
@@ -993,10 +993,20 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                     {/* The Map */}
                     {error ? (
                         <div className="h-full flex items-center justify-center flex-col p-8 text-center text-gray-500">
-                            <AlertTriangle size={32} className="mb-2 text-yellow-500" />
-                            <div className="font-bold text-white">Data Unavailable</div>
-                            <div className="text-xs">{error}</div>
-                            <p className="text-[10px] mt-2 max-w-[200px]">Historical replay data is limited to specific featured races.</p>
+                            <AlertTriangle size={48} className="mb-4 text-yellow-500" />
+                            <div className="font-bold text-white text-lg mb-2">Data Unavailable</div>
+                            <div className="text-sm text-gray-300 mb-4 max-w-md">{error}</div>
+                            {year >= 2026 && (
+                                <div className="mt-4 p-4 bg-f1-red/5 border border-f1-red/20 rounded-lg max-w-sm backdrop-blur-sm">
+                                    <div className="text-f1-red text-xs font-bold mb-2 flex items-center gap-2 justify-center uppercase tracking-wider">
+
+                                        Available Replays
+                                    </div>
+                                    <div className="text-xs text-gray-300">
+                                        Select from the year selector above
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : replayData?.map ? (
                         <SVGTrackMap
@@ -1126,11 +1136,22 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                         <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center flex-col text-center z-50 bg-[#1a1a1a]">
                             {/* Grid pattern background */}
                             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-                            <div className="relative z-10">
+                            <div className="relative z-10 px-8">
                                 <AlertTriangle size={64} className="mb-4 text-yellow-500 mx-auto" />
                                 <h3 className="text-2xl font-bold text-white mb-3">REPLAY UNAVAILABLE</h3>
-                                <p className="text-gray-300 max-w-md text-lg">{error}</p>
-                                {year < 2026 && <p className="text-sm text-gray-500 mt-4">We are gradually adding historical telemetry data.</p>}
+                                <p className="text-gray-300 max-w-md text-lg mb-4">{error}</p>
+                                {year >= 2026 ? (
+                                    <div className="mt-6 p-5 bg-f1-red/5 border border-f1-red/20 rounded-lg max-w-lg mx-auto backdrop-blur-sm">
+                                        <div className="text-f1-red text-sm font-bold mb-3 flex items-center gap-2 justify-center uppercase tracking-wider">
+                                            Available Replays
+                                        </div>
+                                        <div className="text-sm text-gray-300">
+                                            Select from the year selector above to watch past race replays
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-500 mt-4">We are gradually adding historical telemetry data.</p>
+                                )}
                             </div>
                         </div>
                     ) : replayData?.map ? (

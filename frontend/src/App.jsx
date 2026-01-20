@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Flag, Trophy, Calendar, ChevronRight, ChevronUp, ChevronDown, Activity, Zap, Timer, MapPin, BarChart, Brain, Menu, X, Thermometer, MessageSquare } from 'lucide-react';
+import { Flag, Trophy, Calendar, ChevronRight, ChevronUp, ChevronDown, Activity, Zap, Timer, MapPin, BarChart, Brain, Menu, X, Thermometer, MessageSquare, Clock } from 'lucide-react';
 import axios from 'axios';
 import { cn } from './lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -38,7 +38,7 @@ export default function App() {
         setRaceData({
           raceName: "Italian Grand Prix",
           circuit: "Monza",
-          date: "01 Sep 2024",
+          date: "2024-09-01T15:00:00Z",
           winner: "Charles Leclerc",
           winnerTeam: "Ferrari",
           fastestLap: { driver: "Lando Norris", time: "1:21.046" },
@@ -433,6 +433,11 @@ function DashboardView({ data, standingsData }) {
 
                   {/* Countdown */}
                   <div className="text-right">
+                    {/* Time Display */}
+                    <div className="flex justify-end mb-4">
+                      <TimeDisplay date={data.date} circuit={data.circuit} />
+                    </div>
+
                     <div className="text-gray-500 text-xs uppercase tracking-widest mb-3 font-bold">Lights Out In</div>
                     <div className="flex items-center gap-3">
                       <CountdownTimer targetDate={data.date} large />
@@ -827,5 +832,104 @@ function CountdownTimer({ targetDate, large = false }) {
         <div className="text-[8px] uppercase text-gray-500 mt-1">Secs</div>
       </div>
     </>
+  );
+}
+
+// Timezone Utilities
+const TIMEZONES = {
+  // Primary names
+  'Albert Park Circuit': 'Australia/Melbourne',
+  'Bahrain International Circuit': 'Asia/Bahrain',
+  'Jeddah Corniche Circuit': 'Asia/Riyadh',
+  'Suzuka Circuit': 'Asia/Tokyo',
+  'Shanghai International Circuit': 'Asia/Shanghai',
+  'Miami International Autodrome': 'America/New_York',
+  'Autodromo Enzo e Dino Ferrari': 'Europe/Rome',
+  'Circuit de Monaco': 'Europe/Monaco',
+  'Circuit Gilles-Villeneuve': 'America/Toronto',
+  'Circuit de Barcelona-Catalunya': 'Europe/Madrid',
+  'Red Bull Ring': 'Europe/Vienna',
+  'Silverstone Circuit': 'Europe/London',
+  'Hungaroring': 'Europe/Budapest',
+  'Circuit de Spa-Francorchamps': 'Europe/Brussels',
+  'Zandvoort': 'Europe/Amsterdam',
+  'Monza': 'Europe/Rome',
+  'Baku City Circuit': 'Asia/Baku',
+  'Marina Bay Street Circuit': 'Asia/Singapore',
+  'Circuit of the Americas': 'America/Chicago',
+  'Autodromo Hermanos Rodriguez': 'America/Mexico_City',
+  'Interlagos': 'America/Sao_Paulo',
+  'Las Vegas Strip Circuit': 'America/Los_Angeles',
+  'Lusail International Circuit': 'Asia/Qatar',
+  'Yas Marina Circuit': 'Asia/Dubai',
+  // Alternative names / fallbacks
+  'Melbourne': 'Australia/Melbourne',
+  'Bahrain': 'Asia/Bahrain',
+  'Jeddah': 'Asia/Riyadh',
+  'Suzuka': 'Asia/Tokyo',
+  'Shanghai': 'Asia/Shanghai',
+  'Miami': 'America/New_York',
+  'Imola': 'Europe/Rome',
+  'Monaco': 'Europe/Monaco',
+  'Montreal': 'America/Toronto',
+  'Barcelona': 'Europe/Madrid',
+  'Spielberg': 'Europe/Vienna',
+  'Silverstone': 'Europe/London',
+  'Budapest': 'Europe/Budapest',
+  'Spa-Francorchamps': 'Europe/Brussels',
+  'Baku': 'Asia/Baku',
+  'Singapore': 'Asia/Singapore',
+  'Austin': 'America/Chicago',
+  'Mexico City': 'America/Mexico_City',
+  'Sao Paulo': 'America/Sao_Paulo',
+  'São Paulo': 'America/Sao_Paulo',
+  'Las Vegas': 'America/Los_Angeles',
+  'Lusail': 'Asia/Qatar',
+  'Abu Dhabi': 'Asia/Dubai',
+  'Yas Marina': 'Asia/Dubai'
+};
+
+function TimeDisplay({ date, circuit }) {
+  const [showLocal, setShowLocal] = React.useState(true); // Toggle between My Time and Track Time
+
+  if (!date) return null;
+
+  const raceDate = new Date(date);
+  const trackTimezone = TIMEZONES[circuit] || 'UTC';
+
+  // Format My Time (Local Browser Time)
+  const myTime = raceDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const myDate = raceDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+
+  // Format Track Time
+  let trackTime = 'Unknown';
+  let trackDate = '';
+  try {
+    trackTime = raceDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: trackTimezone });
+    trackDate = raceDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', timeZone: trackTimezone });
+  } catch (e) {
+    console.error("Timezone error:", e);
+    trackTime = "--:--";
+  }
+
+  return (
+    <div
+      className="flex items-center gap-2 cursor-pointer group bg-black/40 hover:bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/10 transition-all"
+      onClick={() => setShowLocal(!showLocal)}
+      title="Click to toggle between Your Time and Track Time"
+    >
+      <Clock size={12} className="text-gray-400 group-hover:text-white transition-colors" />
+      <div className="flex flex-col leading-none">
+        <span className="text-[10px] uppercase font-bold text-gray-500 mb-0.5">
+          {showLocal ? "Your Time" : "Track Time"}
+        </span>
+        <span className="text-sm font-bold text-white font-mono">
+          {showLocal ? `${myTime}` : `${trackTime}`}
+        </span>
+      </div>
+      <div className="text-[10px] text-gray-500 border-l border-white/10 pl-2 ml-1">
+        {showLocal ? "Switch to Track" : "Switch to Local"}
+      </div>
+    </div>
   );
 }

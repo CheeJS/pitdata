@@ -65,6 +65,7 @@ def seed_2026_from_api():
         # I'll stick to 'Location' from FastF1 as it's authentic data.
         
         r_circuit = row['Location']
+        # Use EventDate as fallback, but prefer Session5DateUtc (actual Race session time)
         r_date = row['EventDate'].to_pydatetime()
         
         race = Race(
@@ -72,11 +73,12 @@ def seed_2026_from_api():
             round=r_round,
             circuit_name=r_circuit,
             race_name=r_name,
-            date=r_date
+            date=r_date  # Will be updated below if Session5 exists
         )
 
         # Dynamic Session Mapping
         # FastF1 columns: Session1, Session1DateUtc, etc.
+        # Session5 is typically the Race
         for i in range(1, 6):
             s_name = row.get(f'Session{i}', '')
             s_date = row.get(f'Session{i}DateUtc')
@@ -92,6 +94,9 @@ def seed_2026_from_api():
                  elif s_name == 'Qualifying': race.qualifying_date = dt
                  elif s_name == 'Sprint': race.sprint_date = dt
                  elif s_name == 'Sprint Qualifying': race.sprint_qualifying_date = dt
+                 elif s_name == 'Race':
+                     # Update the race date to the actual Race session time
+                     race.date = dt
 
         session.add(race)
         count += 1

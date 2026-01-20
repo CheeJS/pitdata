@@ -172,14 +172,14 @@ def get_race_results_by_id(race_id):
             "raceId": race.id,
             "raceName": race.race_name,
             "circuit": race.circuit_name,
-            "date": race.date.strftime("%d %b %Y"),
+            "date": f"{race.date.isoformat()}Z",
             "sessions": {
-                "fp1": race.fp1_date.isoformat() if race.fp1_date else None,
-                "fp2": race.fp2_date.isoformat() if race.fp2_date else None,
-                "fp3": race.fp3_date.isoformat() if race.fp3_date else None,
-                "qualifying": race.qualifying_date.isoformat() if race.qualifying_date else None,
-                "sprint": race.sprint_date.isoformat() if race.sprint_date else None,
-                "sprintQuali": race.sprint_qualifying_date.isoformat() if race.sprint_qualifying_date else None,
+                "fp1": f"{race.fp1_date.isoformat()}Z" if race.fp1_date else None,
+                "fp2": f"{race.fp2_date.isoformat()}Z" if race.fp2_date else None,
+                "fp3": f"{race.fp3_date.isoformat()}Z" if race.fp3_date else None,
+                "qualifying": f"{race.qualifying_date.isoformat()}Z" if race.qualifying_date else None,
+                "sprint": f"{race.sprint_date.isoformat()}Z" if race.sprint_date else None,
+                "sprintQuali": f"{race.sprint_qualifying_date.isoformat()}Z" if race.sprint_qualifying_date else None,
             },
             "results": grouped_results,
             "fastestLap": fl_data,
@@ -360,7 +360,7 @@ def get_races_list(year=None):
                 "id": r.id,     # DB ID (Integer) for History/Results API
                 "code": code,   # String Code ('aus') for Strategy/Simulations
                 "name": r.race_name.replace(" Grand Prix", ""),
-                "date": r.date.strftime("%d %b %Y"),
+                "date": f"{r.date.isoformat()}Z",
                 "circuit": r.circuit_name,
                 "round": r.round,
                 "status": "Completed" if r.date < now else "Upcoming",
@@ -1463,6 +1463,7 @@ def simulate_race_strategy(race_id='abu', race_laps=58, traffic=False, deg_multi
             "metric_score": round(metric_score, 2), # Internal sorting metric
             "lap_data": lap_times,
             "pit_stops": pit_stops,
+            "stints": strat["stints"],
             "color": "#3671C6" if "1-Stop" in strat["name"] else "#E8002D", 
             "analysis": {
                 "deg_loss": round(time_lost_deg, 2),
@@ -1474,8 +1475,12 @@ def simulate_race_strategy(race_id='abu', race_laps=58, traffic=False, deg_multi
     sorted_res = sorted(results, key=lambda x: x["metric_score"])
     top_strategies = sorted_res[:3]
 
-    winner = top_strategies[0]
-    runner_up = top_strategies[1]
+    if not sorted_res:
+        return {"error": "No valid strategies generated", "recommended": "None", "breakdown": {}}
+
+    winner = sorted_res[0]
+    # Safety: If only 1 strategy exists, compare against itself or handle gracefully
+    runner_up = sorted_res[1] if len(sorted_res) > 1 else winner
     
     # Verdict Logic ...
     net_delta = round(runner_up["total_time"] - winner["total_time"], 2)
@@ -1916,42 +1921,75 @@ def run_race_monte_carlo(race_code, num_simulations=1000, chaos_factor=1.0, pred
 def get_dashboard_data(year=2026):
     """
     Returns data for the dashboard hero section.
-    Determines if we should show 'Latest Results' or 'Next Race' based on date.
-    - If a race finished within the last 3 days: Show Results.
-    - Otherwise: Show Next Race.
+    Intelligently determines if we should show 'Latest Results' or 'Next Race':
+    
+    Logic:
+    1. If no results exist yet → Show Next Race
+    2. If race just finished (< 3 days ago) → Show Results
+    3. For back-to-back races: Show results for first half of gap, next race for second half
+    4. End of season → Show final race results
     """
     session = get_db_session()
     try:
         current_time = datetime.utcnow()
         
-        # 1. Check for Completed Races in the last 3 days
-        # Get latest result
-        latest_race_q = session.query(Race).join(Result).filter(Race.year == year).order_by(Race.date.desc()).first()
+        # 1. Get latest race with results
+        latest_race_with_results = session.query(Race).join(Result).filter(Race.year == year).order_by(Race.date.desc()).first()
         
-        mode = "NEXT_RACE" # Default
+        # 2. Get next upcoming race
+        next_race = session.query(Race).filter(Race.year == year, Race.date >= current_time).order_by(Race.date.asc()).first()
+        
+        mode = "NEXT_RACE"  # Default
         target_race_id = None
         
-        if latest_race_q:
-            # Check time since race
-            delta = current_time - latest_race_q.date
-            if 0 <= delta.days <= 3:
-                mode = "LATEST_RESULTS"
-                target_race_id = latest_race_q.id
-
-        # 2. Find Next Race
-        # If not showing results, find the next upcoming race
-        if mode == "NEXT_RACE":
-            next_race = session.query(Race).filter(Race.year == year, Race.date >= current_time).order_by(Race.date.asc()).first()
-            
-            # If no race left, fallback to latest result (End of Season)
-            if not next_race:
-                if latest_race_q:
-                    mode = "LATEST_RESULTS"
-                    target_race_id = latest_race_q.id
-                else:
-                    return None # No data at all?
-            else:
+        # Case 1: No results exist yet (start of season)
+        if not latest_race_with_results:
+            if next_race:
+                mode = "NEXT_RACE"
                 target_race_id = next_race.id
+            else:
+                return None  # No data at all
+        
+        # Case 2: Season ended (no more upcoming races)
+        elif not next_race:
+            mode = "LATEST_RESULTS"
+            target_race_id = latest_race_with_results.id
+        
+        # Case 3: Both past results and upcoming races exist
+        else:
+            days_since_last_race = (current_time - latest_race_with_results.date).total_seconds() / 86400
+            days_until_next_race = (next_race.date - current_time).total_seconds() / 86400
+            
+            # Calculate the gap between races
+            gap_between_races = (next_race.date - latest_race_with_results.date).total_seconds() / 86400
+            
+            # Smart switching logic:
+            # - If race was < 3 days ago: Always show results (fresh results priority)
+            # - If gap is small (back-to-back): Show results for first 50% of gap
+            # - If gap is large (rest week): Show results for 3 days max
+            
+            if days_since_last_race < 3:
+                # Fresh results - always show
+                mode = "LATEST_RESULTS"
+                target_race_id = latest_race_with_results.id
+            elif gap_between_races <= 7:
+                # Back-to-back race (7 days or less between races)
+                # Show results for first 50% of gap, then switch to next race
+                if days_since_last_race < (gap_between_races / 2):
+                    mode = "LATEST_RESULTS"
+                    target_race_id = latest_race_with_results.id
+                else:
+                    mode = "NEXT_RACE"
+                    target_race_id = next_race.id
+            else:
+                # Normal gap (> 7 days)
+                # Show results for 3 days, then switch to next race
+                if days_since_last_race < 3:
+                    mode = "LATEST_RESULTS"
+                    target_race_id = latest_race_with_results.id
+                else:
+                    mode = "NEXT_RACE"
+                    target_race_id = next_race.id
                 
         # 3. Fetch Data for Target Race
         race = session.query(Race).get(target_race_id)
@@ -1963,14 +2001,14 @@ def get_dashboard_data(year=2026):
             "raceId": race.id,
             "raceName": race.race_name,
             "circuit": race.circuit_name,
-            "date": race.date.isoformat(),
+            "date": f"{race.date.isoformat()}Z",
             "round": race.round,
             "sessions": {
-                "fp1": race.fp1_date.isoformat() if race.fp1_date else None,
-                "fp2": race.fp2_date.isoformat() if race.fp2_date else None,
-                "fp3": race.fp3_date.isoformat() if race.fp3_date else None,
-                "qualifying": race.qualifying_date.isoformat() if race.qualifying_date else None,
-                "sprint": race.sprint_date.isoformat() if race.sprint_date else None,
+                "fp1": f"{race.fp1_date.isoformat()}Z" if race.fp1_date else None,
+                "fp2": f"{race.fp2_date.isoformat()}Z" if race.fp2_date else None,
+                "fp3": f"{race.fp3_date.isoformat()}Z" if race.fp3_date else None,
+                "qualifying": f"{race.qualifying_date.isoformat()}Z" if race.qualifying_date else None,
+                "sprint": f"{race.sprint_date.isoformat()}Z" if race.sprint_date else None,
             },
             # NEW: Circuit Intel + Strategy HQ Data
             "circuit_stats": {

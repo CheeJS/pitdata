@@ -83,7 +83,7 @@ export default function Simulations() {
                                 SEASON {year}
                             </span>
                         </div>
-                        <p className="text-gray-500 text-xs mt-1">Monte Carlo race prediction engine</p>
+                        <p className="text-gray-500 text-xs mt-1">Advanced predictive simulations & strategy analysis for the 2026 Season</p>
                     </div>
 
                     <div className="flex bg-[#111] p-1 rounded-xl border border-[#222]">
@@ -326,6 +326,19 @@ function RaceSimulator({ races, year }) {
                         <div className="text-[10px] text-gray-500 mt-1">{new Date(lastRun.timestamp).toLocaleString()}</div>
                     </div>
                 )}
+
+
+                {/* METHODOLOGY INFO */}
+                <div className="bg-[#15151E] border border-[#2A2A30] rounded-2xl p-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-2 opacity-10"><BarChart3 size={48} /></div>
+                    <h4 className="text-xs font-bold uppercase text-gray-400 mb-2 flex items-center gap-2 relative z-10">
+                        <Info size={12} /> How It Works
+                    </h4>
+                    <p className="text-xs text-gray-400 relative z-10 leading-relaxed">
+                        This engine runs <strong>{numSims.toLocaleString()} Monte Carlo simulations</strong> per race.
+                        It combines 2024-2025 circuit history with the <strong>2026 driver lineup</strong> (e.g. Hamilton/Ferrari) to predict outcomes.
+                    </p>
+                </div>
 
                 {/* CONFIG PANEL */}
                 <div className="bg-[#15151E] border border-[#2A2A30] rounded-2xl p-6 space-y-6">
