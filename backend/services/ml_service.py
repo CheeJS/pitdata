@@ -97,7 +97,7 @@ def get_weather_for_race(race_code, prediction_year):
     return {"conditions": "Dry", "temperature": 25}
 
 
-def extract_features(race_code, prediction_year, lookback_years=2):
+def extract_features(race_code, prediction_year, lookback_years=3):
     """Extract ML features for all drivers."""
     from services.f1_service import get_season_standings, Race, Result
     
@@ -133,16 +133,40 @@ def extract_features(race_code, prediction_year, lookback_years=2):
     features = []
     driver_info = []
     
+    # Calculate team strengths from previous season
+    team_strengths = {}
+    for team_name in set(d.get("team") for d in drivers if d.get("team")):
+        team_results = session.query(Result).join(Race).filter(
+            Race.year == standings_year,
+            Result.session_type == 'R',
+            Result.team_name.ilike(f"%{team_name}%")
+        ).all()
+        
+        if team_results:
+            avg_position = sum(r.position for r in team_results if r.position) / len([r for r in team_results if r.position])
+            team_strengths[team_name] = max(21 - avg_position, 1) / 20  # Normalize 0-1
+        else:
+            team_strengths[team_name] = 0.5
+    
     for idx, d in enumerate(drivers):
         code = d.get("code")
         
+        # Weighted tracking (recent year gets more weight)
+        weighted_races = weighted_wins = weighted_podiums = weighted_dnfs = 0
         global_races = global_wins = global_podiums = global_dnfs = 0
         circuit_races = circuit_podiums = 0
         circuit_positions = []
+        weighted_circuit_positions = []
         recent_positions = []
         sprint_positions = []
         
-        for year in historical_years:
+        for year_idx, year in enumerate(historical_years):
+            # Weight: 70% for most recent year, 30% split for older years
+            if year_idx == 0:  # Most recent year (2025 for 2026 predictions)
+                weight = 0.70
+            else:  # Older years split remaining 30%
+                weight = 0.30 / (len(historical_years) - 1)
+            
             races = session.query(Race).filter(Race.year == year).all()
             
             for race in races:
@@ -157,6 +181,7 @@ def extract_features(race_code, prediction_year, lookback_years=2):
                 ).first()
                 
                 if result:
+                    # Unweighted tracking
                     global_races += 1
                     if result.position == 1:
                         global_wins += 1
@@ -165,9 +190,20 @@ def extract_features(race_code, prediction_year, lookback_years=2):
                     if result.status and ("DNF" in result.status.upper() or "Retired" in result.status):
                         global_dnfs += 1
                     
+                    # Weighted tracking
+                    if result.position:
+                        weighted_races += weight
+                        if result.position == 1:
+                            weighted_wins += weight
+                        if result.position <= 3:
+                            weighted_podiums += weight
+                    if result.status and ("DNF" in result.status.upper() or "Retired" in result.status):
+                        weighted_dnfs += weight
+                    
                     if is_target and result.position:
                         circuit_races += 1
                         circuit_positions.append(result.position)
+                        weighted_circuit_positions.append(result.position * weight)
                         if result.position <= 3:
                             circuit_podiums += 1
                     
@@ -185,20 +221,25 @@ def extract_features(race_code, prediction_year, lookback_years=2):
                     sprint_positions.append(sprint.position)
         
         global_races = max(global_races, 1)
+        weighted_races = max(weighted_races, 1)
+        
+        # Get team strength
+        team_strength = team_strengths.get(d.get("team"), 0.5)
         
         feature_vec = {
             "grid_position": 10,  # Will be updated with actual quali if available
-            "circuit_avg_position": sum(circuit_positions) / len(circuit_positions) if circuit_positions else 10,
+            "circuit_avg_position": sum(weighted_circuit_positions) / sum([1 for _ in weighted_circuit_positions]) if weighted_circuit_positions else 10,
             "circuit_races": circuit_races,
             "recent_form": sum(recent_positions[-5:]) / len(recent_positions[-5:]) if recent_positions else 10,
             "is_sprint_weekend": 0,
             "sprint_position": sum(sprint_positions[-3:]) / len(sprint_positions[-3:]) if sprint_positions else 10,
             "round": 1,
-            "global_win_rate": global_wins / global_races,
+            "global_win_rate": weighted_wins / weighted_races,  # Use weighted win rate
             "circuit_podium_rate": circuit_podiums / max(circuit_races, 1),
-            "dnf_rate": global_dnfs / global_races,
+            "dnf_rate": weighted_dnfs / weighted_races,  # Use weighted DNF rate
             "championship_position": idx + 1,
-            "points_share": d.get("points", 0) / max(sum(x.get("points", 1) for x in drivers), 1)
+            "points_share": d.get("points", 0) / max(sum(x.get("points", 1) for x in drivers), 1),
+            "team_strength": team_strength  # NEW: Team performance from previous season
         }
         
         features.append(feature_vec)
@@ -213,7 +254,7 @@ def extract_features(race_code, prediction_year, lookback_years=2):
     return features, driver_info
 
 
-def predict_race(race_code, prediction_year=None, lookback_years=2):
+def predict_race(race_code, prediction_year=None, lookback_years=3):
     """Predict race outcomes using ML model or heuristics."""
     
     if prediction_year is None:
@@ -244,14 +285,15 @@ def predict_race(race_code, prediction_year=None, lookback_years=2):
         scores = [max(21 - pos, 1) for pos in predicted_positions]
         model_type = "xgboost"
     else:
-        # Fallback to heuristics
+        # Fallback to heuristics (updated weights with team strength)
         scores = []
         for f in features:
             score = 0
-            score += (11 - f.get("circuit_avg_position", 10)) / 10 * 0.30
-            score += f.get("global_win_rate", 0) * 0.25
-            score += (11 - f.get("recent_form", 10)) / 10 * 0.25
-            score += f.get("points_share", 0) * 0.20
+            score += (11 - f.get("circuit_avg_position", 10)) / 10 * 0.25  # Circuit performance
+            score += f.get("global_win_rate", 0) * 0.25  # Historical wins
+            score += (11 - f.get("recent_form", 10)) / 10 * 0.20  # Recent form
+            score += f.get("points_share", 0) * 0.15  # Championship standing
+            score += f.get("team_strength", 0.5) * 0.15  # NEW: Team performance
             scores.append(max(score, 0.01))
         model_type = "weighted_heuristic"
     

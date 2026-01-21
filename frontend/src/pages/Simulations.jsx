@@ -774,11 +774,41 @@ function AIPredictions({ races, year }) {
 
     const fetchPrediction = async () => {
         setLoading(true);
+        const startTime = performance.now();
+
         try {
-            const res = await axios.get(`http://localhost:5000/api/predictions/ai?race=${selectedRace}&year=${year}`);
-            setData(res.data);
-        } catch (err) {
-            console.error(err);
+            // Load pre-computed predictions from S3
+            const cdnUrl = `https://pitdata-prediction.s3.ap-southeast-2.amazonaws.com/${year}/${selectedRace.toUpperCase()}.json`;
+
+            // Or if using CloudFront (faster):
+            // const cdnUrl = `https://YOUR_CLOUDFRONT_ID.cloudfront.net/${year}/${selectedRace}.json`;
+
+            const response = await fetch(cdnUrl);
+
+            if (response.ok) {
+                const data = await response.json();
+                const elapsed = Math.round(performance.now() - startTime);
+                console.log(`✓ Prediction loaded in ${elapsed}ms from CDN`);
+                setData(data);
+            } else {
+                throw new Error(`Failed to load prediction: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Prediction error:', error);
+
+            // Fallback to API if CDN fails (still available during development)
+            try {
+                const res = await axios.get(`http://localhost:5000/api/predictions/ai?race=${selectedRace}&year=${year}`);
+                const elapsed = Math.round(performance.now() - startTime);
+                console.log(`⚙️ Prediction loaded in ${elapsed}ms from API (fallback)`);
+                setData(res.data);
+            } catch (apiError) {
+                console.error('API fallback also failed:', apiError);
+                setData({
+                    error: "Failed to load predictions. Please try again.",
+                    results: []
+                });
+            }
         } finally {
             setLoading(false);
         }
