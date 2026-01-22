@@ -11,8 +11,8 @@
       "code": "NOR",
       "name": "Lando Norris",
       "team": "McLaren",
-      "win_probability": 21.3,
-      "podium_probability": 53.2,
+      "win_probability": 21.2,
+      "podium_probability": 53.0,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -40,7 +40,7 @@
       "name": "Charles Leclerc",
       "team": "Ferrari",
       "win_probability": 10.0,
-      "podium_probability": 25.0,
+      "podium_probability": 24.9,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -54,7 +54,7 @@
       "name": "Oscar Piastri",
       "team": "McLaren",
       "win_probability": 9.8,
-      "podium_probability": 24.5,
+      "podium_probability": 24.4,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -134,17 +134,17 @@
       }
     },
     {
-      "code": "OCO",
-      "name": "Esteban Ocon",
-      "team": "Haas",
-      "win_probability": 2.1,
-      "podium_probability": 5.3,
+      "code": "LIN",
+      "name": "Arvid Lindblad",
+      "team": "Racing Bulls",
+      "win_probability": 2.2,
+      "podium_probability": 5.4,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
-        "circuit_avg": 9.0,
-        "recent_form": 10.4,
-        "team_score": 0.09
+        "circuit_avg": 10.0,
+        "recent_form": 10.0,
+        "team_score": 0.07
       }
     }
   ],

@@ -11,8 +11,8 @@
       "code": "VER",
       "name": "Max Verstappen",
       "team": "Red Bull Racing",
-      "win_probability": 22.3,
-      "podium_probability": 55.7,
+      "win_probability": 22.2,
+      "podium_probability": 55.6,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -25,8 +25,8 @@
       "code": "PIA",
       "name": "Oscar Piastri",
       "team": "McLaren",
-      "win_probability": 21.8,
-      "podium_probability": 54.4,
+      "win_probability": 21.7,
+      "podium_probability": 54.3,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -124,7 +124,7 @@
       "name": "Oliver Bearman",
       "team": "Haas",
       "win_probability": 2.5,
-      "podium_probability": 6.3,
+      "podium_probability": 6.2,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {

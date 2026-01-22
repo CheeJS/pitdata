@@ -726,7 +726,7 @@ function getTeamColor(teamName) {
   if (lower.includes('alpine')) return '#0093cc';
   if (lower.includes('williams')) return '#64C4FF';
   if (lower.includes('haas')) return '#B6BABD';
-  if (lower.includes('sauber') || lower.includes('kick')) return '#52e252';
+  if (lower.includes('audi')) return '#808080';
   if (lower.includes('rb') || lower.includes('alpha')) return '#6692FF';
   return '#666';
 }

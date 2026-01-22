@@ -12,7 +12,7 @@
       "name": "Max Verstappen",
       "team": "Red Bull Racing",
       "win_probability": 16.4,
-      "podium_probability": 41.1,
+      "podium_probability": 41.0,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -40,7 +40,7 @@
       "name": "Oscar Piastri",
       "team": "McLaren",
       "win_probability": 12.9,
-      "podium_probability": 32.2,
+      "podium_probability": 32.1,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -54,7 +54,7 @@
       "name": "Charles Leclerc",
       "team": "Ferrari",
       "win_probability": 8.3,
-      "podium_probability": 20.8,
+      "podium_probability": 20.7,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -67,8 +67,8 @@
       "code": "RUS",
       "name": "George Russell",
       "team": "Mercedes",
-      "win_probability": 6.5,
-      "podium_probability": 16.2,
+      "win_probability": 6.4,
+      "podium_probability": 16.1,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -82,7 +82,7 @@
       "name": "Lewis Hamilton",
       "team": "Ferrari",
       "win_probability": 5.8,
-      "podium_probability": 14.5,
+      "podium_probability": 14.4,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -120,31 +120,31 @@
       }
     },
     {
-      "code": "ALO",
-      "name": "Fernando Alonso",
-      "team": "Aston Martin",
-      "win_probability": 2.1,
-      "podium_probability": 5.3,
+      "code": "LIN",
+      "name": "Arvid Lindblad",
+      "team": "Racing Bulls",
+      "win_probability": 2.2,
+      "podium_probability": 5.4,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
         "circuit_avg": 10.0,
-        "recent_form": 11.2,
-        "team_score": 0.14
+        "recent_form": 10.0,
+        "team_score": 0.07
       }
     },
     {
-      "code": "BEA",
-      "name": "Oliver Bearman",
-      "team": "Haas",
+      "code": "ALO",
+      "name": "Fernando Alonso",
+      "team": "Aston Martin",
       "win_probability": 2.1,
       "podium_probability": 5.2,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
         "circuit_avg": 10.0,
-        "recent_form": 10.2,
-        "team_score": 0.09
+        "recent_form": 11.2,
+        "team_score": 0.14
       }
     }
   ],

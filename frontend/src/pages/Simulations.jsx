@@ -80,26 +80,26 @@ export default function Simulations() {
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold text-white">Simulation Hub</h1>
                             <span className="bg-[#111] text-gray-400 border border-[#222] px-3 py-1 text-xs font-medium rounded-md">
-                                SEASON {year}
+                                {year} SEASON
                             </span>
                         </div>
-                        <p className="text-gray-500 text-xs mt-1">Advanced predictive simulations & strategy analysis for the 2026 Season</p>
+                        <p className="text-gray-500 text-sm mt-1">Race predictions, pit strategy analysis, and AI-powered forecasting</p>
                     </div>
 
-                    <div className="flex bg-[#111] p-1 rounded-xl border border-[#222]">
+                    <div className="flex bg-[#0B0B0F] p-1.5 rounded-xl border border-[#2A2A30]">
                         <button onClick={() => setActiveTab('simulator')}
-                            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                                activeTab === 'simulator' ? "bg-f1-red text-white" : "text-gray-500 hover:text-white")}>
-                            <BarChart3 size={16} /> Race Sim
+                            className={cn("flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all",
+                                activeTab === 'simulator' ? "bg-[#15151E] text-white border border-[#2A2A30]" : "text-gray-500 hover:text-white")}>
+                            <BarChart3 size={16} /> Monte Carlo
                         </button>
                         <button onClick={() => setActiveTab('strategy')}
-                            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                                activeTab === 'strategy' ? "bg-f1-red text-white" : "text-gray-500 hover:text-white")}>
-                            <Activity size={16} /> Strategy
+                            className={cn("flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all",
+                                activeTab === 'strategy' ? "bg-[#15151E] text-white border border-[#2A2A30]" : "text-gray-500 hover:text-white")}>
+                            <Activity size={16} /> Pit Strategy
                         </button>
                         <button onClick={() => setActiveTab('ai')}
-                            className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                                activeTab === 'ai' ? "bg-f1-red text-white" : "text-gray-500 hover:text-white")}>
+                            className={cn("flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all",
+                                activeTab === 'ai' ? "bg-[#15151E] text-white border border-[#2A2A30]" : "text-gray-500 hover:text-white")}>
                             <Brain size={16} /> AI Predictions
                         </button>
                     </div>
@@ -134,7 +134,7 @@ function ChampionshipCalculator() {
     if (loading) return <div className="flex-1 flex items-center justify-center"><RefreshCw className="animate-spin text-f1-red" size={32} /></div>;
     if (!data) return <div className="flex-1 flex items-center justify-center text-gray-500">Failed to load data</div>;
 
-    const teamColors = { "Red Bull Racing": "#3671C6", "Mercedes": "#6CD3BF", "Ferrari": "#E8002D", "McLaren": "#FF8000", "Aston Martin": "#229971", "Alpine": "#FF87BC", "Williams": "#64C4FF", "RB": "#6692FF", "Sauber": "#52E252", "Haas": "#B6BABD" };
+    const teamColors = { "Red Bull Racing": "#3671C6", "Mercedes": "#6CD3BF", "Ferrari": "#E8002D", "McLaren": "#FF8000", "Aston Martin": "#229971", "Alpine": "#FF87BC", "Williams": "#64C4FF", "RB": "#6692FF", "Audi": "#808080", "Haas": "#B6BABD" };
 
     return (
         <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-hidden">
@@ -329,15 +329,39 @@ function RaceSimulator({ races, year }) {
 
 
                 {/* METHODOLOGY INFO */}
-                <div className="bg-[#15151E] border border-[#2A2A30] rounded-2xl p-4 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-2 opacity-10"><BarChart3 size={48} /></div>
-                    <h4 className="text-xs font-bold uppercase text-gray-400 mb-2 flex items-center gap-2 relative z-10">
-                        <Info size={12} /> How It Works
+                <div className="bg-[#15151E] border border-[#2A2A30] rounded-2xl p-5">
+                    <h4 className="text-xs font-bold uppercase text-gray-400 mb-3 flex items-center gap-2">
+                        <BarChart3 size={12} /> Monte Carlo Simulation
                     </h4>
-                    <p className="text-xs text-gray-400 relative z-10 leading-relaxed">
-                        This engine runs <strong>{numSims.toLocaleString()} Monte Carlo simulations</strong> per race.
-                        It combines 2024-2025 circuit history with the <strong>2026 driver lineup</strong> (e.g. Hamilton/Ferrari) to predict outcomes.
-                    </p>
+                    <div className="space-y-3 text-xs text-gray-400">
+                        <p>
+                            We run <span className="text-white font-semibold">{numSims.toLocaleString()} virtual races</span> with randomized variables to calculate win probability distributions.
+                        </p>
+                        <div className="bg-black/30 rounded-lg p-3 space-y-2">
+                            <div className="text-[10px] font-bold uppercase text-gray-500 mb-1">Data Sources</div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                <span>2020-2025 Race Results (120+ races)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                                <span>2026 Driver Lineup (HAM/Ferrari, etc.)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                <span>Circuit-Specific Performance History</span>
+                            </div>
+                        </div>
+                        <div className="bg-black/30 rounded-lg p-3">
+                            <div className="text-[10px] font-bold uppercase text-gray-500 mb-1">Factors Considered</div>
+                            <div className="grid grid-cols-2 gap-1 text-[11px]">
+                                <span>Driver Strength</span>
+                                <span>DNF Probability</span>
+                                <span>Team Reliability</span>
+                                <span>Chaos Factor</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* CONFIG PANEL */}
@@ -630,11 +654,47 @@ function StrategyView({ races }) {
             {/* MAIN CONTENT */}
             <div className="p-4 md:p-6 flex flex-col flex-1 min-h-0 overflow-y-auto custom-scrollbar pb-20 md:pb-6">
                 {/* ONE-LINE DEFINITION */}
-                <div className="mb-6 flex items-baseline gap-2">
+                <div className="mb-4 flex items-baseline gap-2">
                     <span className="text-gray-400 text-sm">Simulating</span>
                     <strong className="text-white text-lg">{selectedRace?.name} ({selectedRace?.laps} laps)</strong>
                     <span className="text-gray-400 text-sm">starting</span>
                     <strong className="text-white text-lg">P{gridPos}</strong>
+                </div>
+
+                {/* METHODOLOGY PANEL */}
+                <div className="bg-[#0B0B0F] border border-[#2A2A30] rounded-xl p-4 mb-6">
+                    <div className="flex items-start gap-4">
+                        <div className="flex-1">
+                            <h4 className="text-xs font-bold uppercase text-gray-400 mb-2 flex items-center gap-2">
+                                <Activity size={12} /> How Strategy is Calculated
+                            </h4>
+                            <p className="text-xs text-gray-400 leading-relaxed mb-3">
+                                We compare <span className="text-white">1-stop, 2-stop, and aggressive strategies</span> by modeling tire degradation curves and pit stop time losses for each compound.
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[10px]">
+                                <div className="bg-black/40 rounded p-2">
+                                    <div className="text-gray-500 uppercase mb-0.5">Pit Loss</div>
+                                    <div className="text-white font-bold">~22s</div>
+                                </div>
+                                <div className="bg-black/40 rounded p-2">
+                                    <div className="text-gray-500 uppercase mb-0.5">Tire Compounds</div>
+                                    <div className="flex gap-1">
+                                        <span className="w-3 h-3 rounded-full bg-red-500" title="Soft" />
+                                        <span className="w-3 h-3 rounded-full bg-yellow-500" title="Medium" />
+                                        <span className="w-3 h-3 rounded-full bg-white" title="Hard" />
+                                    </div>
+                                </div>
+                                <div className="bg-black/40 rounded p-2">
+                                    <div className="text-gray-500 uppercase mb-0.5">Deg Rate</div>
+                                    <div className="text-white font-bold">{degMult}x</div>
+                                </div>
+                                <div className="bg-black/40 rounded p-2">
+                                    <div className="text-gray-500 uppercase mb-0.5">Safety Cars</div>
+                                    <div className="text-amber-400 font-bold">{scLaps.length} scheduled</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* INSIGHT + SCENARIO */}
@@ -779,10 +839,6 @@ function AIPredictions({ races, year }) {
         try {
             // Load pre-computed predictions from S3
             const cdnUrl = `https://pitdata-prediction.s3.ap-southeast-2.amazonaws.com/${year}/${selectedRace.toUpperCase()}.json`;
-
-            // Or if using CloudFront (faster):
-            // const cdnUrl = `https://YOUR_CLOUDFRONT_ID.cloudfront.net/${year}/${selectedRace}.json`;
-
             const response = await fetch(cdnUrl);
 
             if (response.ok) {
@@ -794,16 +850,16 @@ function AIPredictions({ races, year }) {
                 throw new Error(`Failed to load prediction: ${response.status}`);
             }
         } catch (error) {
-            console.error('Prediction error:', error);
+            console.error('CDN error, trying API fallback:', error.message);
 
-            // Fallback to API if CDN fails (still available during development)
+            // Fallback to API if CDN fails
             try {
                 const res = await axios.get(`http://localhost:5000/api/predictions/ai?race=${selectedRace}&year=${year}`);
                 const elapsed = Math.round(performance.now() - startTime);
-                console.log(`⚙️ Prediction loaded in ${elapsed}ms from API (fallback)`);
+                console.log(`⚙️ Prediction loaded in ${elapsed}ms from API`);
                 setData(res.data);
             } catch (apiError) {
-                console.error('API fallback also failed:', apiError);
+                console.error('Both sources failed:', apiError);
                 setData({
                     error: "Failed to load predictions. Please try again.",
                     results: []
@@ -849,6 +905,26 @@ function AIPredictions({ races, year }) {
                             </select>
                         </div>
 
+                        {/* PRE-SEASON PREDICTION BANNER */}
+                        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-4">
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                                    <Info size={16} className="text-blue-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="text-sm font-bold text-white">Pre-Season Prediction</h4>
+                                        <span className="bg-blue-500/20 text-blue-400 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
+                                            Estimated Quali
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-gray-400 leading-relaxed">
+                                        Based on 2025 performance data and team strengths. <span className="text-blue-400 font-semibold">Predictions will be updated with actual qualifying times</span> after Saturday sessions.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         {data && (
                             <div className="bg-black/30 rounded-xl p-4 space-y-2">
                                 <div className="flex items-center justify-between text-xs">
@@ -870,14 +946,48 @@ function AIPredictions({ races, year }) {
                     </div>
                 </div>
 
-                {/* Info Box */}
+                {/* METHODOLOGY PANEL */}
                 <div className="bg-[#15151E] border border-[#2A2A30] rounded-2xl p-4">
-                    <h4 className="text-xs font-bold uppercase text-gray-500 mb-2 flex items-center gap-2">
-                        <Info size={12} /> How It Works
+                    <h4 className="text-xs font-bold uppercase text-gray-400 mb-3 flex items-center gap-2">
+                        <Brain size={12} /> AI Model Methodology
                     </h4>
-                    <p className="text-xs text-gray-400 leading-relaxed">
-                        The AI model analyzes circuit-specific performance, recent form, and historical win rates to predict race outcomes. Features include average finish position at this circuit, podium rate, and championship standing.
-                    </p>
+
+                    {/* Feature Weights */}
+                    <div className="space-y-2 mb-4">
+                        <div className="text-[10px] font-bold uppercase text-gray-500">Feature Weights</div>
+                        <div className="space-y-1.5">
+                            {[
+                                { name: 'Qualifying Position', weight: 30, color: 'bg-purple-500' },
+                                { name: 'Circuit History', weight: 25, color: 'bg-blue-500' },
+                                { name: 'Recent Form (Last 5)', weight: 20, color: 'bg-emerald-500' },
+                                { name: 'Team Strength', weight: 15, color: 'bg-amber-500' },
+                                { name: 'Championship Pos', weight: 10, color: 'bg-gray-500' },
+                            ].map(f => (
+                                <div key={f.name} className="flex items-center gap-2 text-[11px]">
+                                    <div className="w-16 text-gray-500">{f.weight}%</div>
+                                    <div className="flex-1 h-1.5 bg-[#2A2A30] rounded-full overflow-hidden">
+                                        <div className={`h-full ${f.color}`} style={{ width: `${f.weight}%` }} />
+                                    </div>
+                                    <div className="w-28 text-gray-400 text-right">{f.name}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Prediction Modes */}
+                    <div className="bg-black/30 rounded-lg p-3">
+                        <div className="text-[10px] font-bold uppercase text-gray-500 mb-2">Prediction Modes</div>
+                        <div className="grid grid-cols-2 gap-2 text-[11px]">
+                            <div className="bg-blue-500/10 border border-blue-500/20 rounded p-2">
+                                <div className="font-bold text-blue-400 mb-0.5">Pre-Season</div>
+                                <div className="text-gray-500">Estimated qualifying from team strength. ~65% accuracy.</div>
+                            </div>
+                            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded p-2">
+                                <div className="font-bold text-emerald-400 mb-0.5">Post-Qualifying</div>
+                                <div className="text-gray-500">Uses actual Q3 times. ~85% accuracy.</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -911,39 +1021,83 @@ function AIPredictions({ races, year }) {
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: i * 0.05 }}
-                                        className="bg-[#0B0B0F] p-4 rounded-xl border border-[#2A2A30] flex items-center gap-4 relative overflow-hidden"
+                                        className="bg-[#0B0B0F]/80 p-3 rounded-xl border border-[#2A2A30] flex items-center gap-4 relative overflow-hidden group hover:border-[#3A3A45] transition-colors"
                                     >
+                                        {/* Background Probability Bar */}
                                         <motion.div
                                             initial={{ width: 0 }}
                                             animate={{ width: `${d.win_probability}%` }}
                                             transition={{ delay: i * 0.05 + 0.2, duration: 0.5 }}
-                                            className="absolute left-0 top-0 bottom-0 opacity-15"
+                                            className="absolute left-0 top-0 bottom-0 opacity-10 group-hover:opacity-20 transition-opacity"
                                             style={{ backgroundColor: color }}
                                         />
-                                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold z-10" style={{ backgroundColor: color + "30", color: color }}>
-                                            {i + 1}
-                                        </div>
-                                        <div className="flex-1 z-10">
-                                            <div className="font-bold text-white flex items-center gap-2">
-                                                {d.name}
-                                                {d.confidence >= 70 && (
-                                                    <span className="bg-purple-500/20 text-purple-400 text-[9px] px-1.5 py-0.5 rounded font-bold">
-                                                        HIGH CONF
-                                                    </span>
-                                                )}
+
+                                        {/* Rank & Driver Info */}
+                                        <div className="flex items-center gap-3 w-[220px] z-10 shrink-0">
+                                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold font-mono"
+                                                style={{ backgroundColor: color + "20", color: color, border: `1px solid ${color}40` }}>
+                                                {i + 1}
                                             </div>
-                                            <div className="text-xs text-gray-400 flex items-center gap-2">
-                                                {d.team}
-                                                {d.features && (
-                                                    <span className="text-[9px] text-gray-500">
-                                                        • Avg P{d.features.circuit_avg} at circuit
-                                                    </span>
-                                                )}
+                                            <div>
+                                                <div className="font-bold text-white text-sm flex items-center gap-2">
+                                                    {d.name}
+                                                    {d.code === 'VER' && <Trophy size={10} className="text-yellow-500" />}
+                                                </div>
+                                                <div className="text-[10px] text-gray-400 font-medium">{d.team}</div>
                                             </div>
                                         </div>
-                                        <div className="text-right z-10">
-                                            <div className="text-2xl font-mono font-bold text-white">{d.win_probability}%</div>
-                                            <div className="text-[10px] text-gray-500">Podium: {d.podium_probability}%</div>
+
+                                        {/* Key Stats */}
+                                        <div className="flex-1 flex items-center gap-8 z-10">
+                                            {/* Win Probability */}
+                                            <div className="flex flex-col w-24">
+                                                <span className="text-[9px] uppercase font-bold text-gray-500 mb-0.5">Win Prob</span>
+                                                <div className="flex items-end gap-1">
+                                                    <span className="text-lg font-bold text-white leading-none">{d.win_probability}%</span>
+                                                    <div className="h-1.5 flex-1 bg-[#2A2A30] rounded-full overflow-hidden mb-1">
+                                                        <div className="h-full rounded-full" style={{ width: `${d.win_probability}%`, backgroundColor: color }} />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Podium Probability */}
+                                            <div className="flex flex-col w-24">
+                                                <span className="text-[9px] uppercase font-bold text-gray-500 mb-0.5">Podium</span>
+                                                <div className="flex items-end gap-1">
+                                                    <span className="text-sm font-bold text-gray-300 leading-none">{d.podium_probability}%</span>
+                                                    <div className="h-1.5 flex-1 bg-[#2A2A30] rounded-full overflow-hidden mb-0.5">
+                                                        <div className="h-full rounded-full bg-gray-500" style={{ width: `${d.podium_probability}%` }} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Feature Insights */}
+                                        <div className="w-[180px] flex gap-3 z-10 border-l border-[#2A2A30] pl-4">
+                                            {d.features && (
+                                                <>
+                                                    <div className="flex-1">
+                                                        <div className="flex justify-between text-[9px] mb-1">
+                                                            <span className="text-gray-500">Circuit Avg</span>
+                                                            <span className="text-white font-mono">{d.features.circuit_avg?.toFixed(1) || '-'}</span>
+                                                        </div>
+                                                        <div className="h-1 bg-[#2A2A30] rounded-full overflow-hidden">
+                                                            {/* Inverse bar: lower is better (max 20) */}
+                                                            <div className="h-full bg-blue-500/60" style={{ width: `${Math.max(0, 100 - (d.features.circuit_avg * 5))}%` }} />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="flex justify-between text-[9px] mb-1">
+                                                            <span className="text-gray-500">Recent Form</span>
+                                                            <span className="text-white font-mono">{d.features.recent_form?.toFixed(1) || '-'}</span>
+                                                        </div>
+                                                        <div className="h-1 bg-[#2A2A30] rounded-full overflow-hidden">
+                                                            {/* Inverse bar: lower is better */}
+                                                            <div className="h-full bg-purple-500/60" style={{ width: `${Math.max(0, 100 - (d.features.recent_form * 5))}%` }} />
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     </motion.div>
                                 );

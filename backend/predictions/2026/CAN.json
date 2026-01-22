@@ -1,5 +1,5 @@
 {
-  "race": "MAR",
+  "race": "MTL",
   "prediction_year": 2026,
   "model_type": "database_ml",
   "weather": {
@@ -11,8 +11,8 @@
       "code": "VER",
       "name": "Max Verstappen",
       "team": "Red Bull Racing",
-      "win_probability": 20.3,
-      "podium_probability": 50.8,
+      "win_probability": 22.3,
+      "podium_probability": 55.8,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -22,25 +22,11 @@
       }
     },
     {
-      "code": "NOR",
-      "name": "Lando Norris",
-      "team": "McLaren",
-      "win_probability": 15.0,
-      "podium_probability": 37.5,
-      "confidence": 200.0,
-      "wet_boost": false,
-      "features": {
-        "circuit_avg": 3.0,
-        "recent_form": 5.6,
-        "team_score": 1.0
-      }
-    },
-    {
       "code": "PIA",
       "name": "Oscar Piastri",
       "team": "McLaren",
-      "win_probability": 11.4,
-      "podium_probability": 28.6,
+      "win_probability": 12.6,
+      "podium_probability": 31.4,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -53,8 +39,8 @@
       "code": "RUS",
       "name": "George Russell",
       "team": "Mercedes",
-      "win_probability": 8.9,
-      "podium_probability": 22.2,
+      "win_probability": 9.7,
+      "podium_probability": 24.3,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -67,12 +53,12 @@
       "code": "LEC",
       "name": "Charles Leclerc",
       "team": "Ferrari",
-      "win_probability": 6.8,
-      "podium_probability": 17.0,
+      "win_probability": 8.2,
+      "podium_probability": 20.4,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
-        "circuit_avg": 6.0,
+        "circuit_avg": 5.0,
         "recent_form": 7.4,
         "team_score": 0.98
       }
@@ -81,12 +67,12 @@
       "code": "HAM",
       "name": "Lewis Hamilton",
       "team": "Ferrari",
-      "win_probability": 4.7,
-      "podium_probability": 11.7,
+      "win_probability": 5.8,
+      "podium_probability": 14.5,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
-        "circuit_avg": 8.0,
+        "circuit_avg": 6.0,
         "recent_form": 10.8,
         "team_score": 0.98
       }
@@ -95,26 +81,40 @@
       "code": "ANT",
       "name": "Kimi Antonelli",
       "team": "Mercedes",
-      "win_probability": 4.5,
-      "podium_probability": 11.1,
+      "win_probability": 5.5,
+      "podium_probability": 13.7,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
-        "circuit_avg": 5.0,
+        "circuit_avg": 3.0,
         "recent_form": 6.2,
         "team_score": 0.7
+      }
+    },
+    {
+      "code": "NOR",
+      "name": "Lando Norris",
+      "team": "McLaren",
+      "win_probability": 4.4,
+      "podium_probability": 10.9,
+      "confidence": 200.0,
+      "wet_boost": false,
+      "features": {
+        "circuit_avg": 18.0,
+        "recent_form": 5.6,
+        "team_score": 1.0
       }
     },
     {
       "code": "HAD",
       "name": "Isack Hadjar",
       "team": "Red Bull Racing",
-      "win_probability": 3.1,
-      "podium_probability": 7.9,
+      "win_probability": 2.9,
+      "podium_probability": 7.2,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
-        "circuit_avg": 11.0,
+        "circuit_avg": 16.0,
         "recent_form": 12.4,
         "team_score": 0.88
       }
@@ -123,8 +123,8 @@
       "code": "ALO",
       "name": "Fernando Alonso",
       "team": "Aston Martin",
-      "win_probability": 2.2,
-      "podium_probability": 5.6,
+      "win_probability": 2.5,
+      "podium_probability": 6.2,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -134,17 +134,17 @@
       }
     },
     {
-      "code": "BEA",
-      "name": "Oliver Bearman",
-      "team": "Haas",
-      "win_probability": 2.1,
-      "podium_probability": 5.3,
+      "code": "LIN",
+      "name": "Arvid Lindblad",
+      "team": "Racing Bulls",
+      "win_probability": 2.3,
+      "podium_probability": 5.8,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
-        "circuit_avg": 9.0,
-        "recent_form": 10.2,
-        "team_score": 0.09
+        "circuit_avg": 10.0,
+        "recent_form": 10.0,
+        "team_score": 0.07
       }
     }
   ],

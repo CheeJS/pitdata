@@ -279,34 +279,52 @@ def get_races_list(year=None):
         # We can try to infer from CIRCUIT_DATA keys or hardcode logic
         def get_code(name):
             n = name.lower()
+            # Check specific circuits first (to avoid conflicts)
+            if "sakhir" in n: return "bhr"  # Bahrain circuit
             if "bahrain" in n: return "bhr"
-            if "saudi" in n or "jeddah" in n: return "sau"
+            if "jeddah" in n: return "sau"
+            if "saudi" in n: return "sau"
             if "madrid" in n: return "mad"
-            if "australia" in n or "melbourne" in n: return "aus"
-            if "japan" in n or "suzuka" in n: return "jpn"
-            if "chinese" in n or "china" in n or "shanghai" in n: return "chn"
+            if "melbourne" in n: return "aus"
+            if "australia" in n: return "aus"
+            if "suzuka" in n: return "jpn"
+            if "japan" in n: return "jpn"
+            if "shanghai" in n: return "chn"
+            if "chinese" in n or "china" in n: return "chn"
             if "miami" in n: return "mia"
             if "emilia" in n or "imola" in n: return "emi"
-            if "monaco" in n or "monte carlo" in n: return "mon"
-            if "canadian" in n or "canada" in n or "montreal" in n: return "can"
-            if "spain" in n or "spanish" in n or "barcelona" in n: return "esp"
-            if "austria" in n or "spielberg" in n: return "aut"
-            if "britain" in n or "british" in n or "silverstone" in n: return "gbr"
-            if "hungary" in n or "hungarian" in n or "budapest" in n: return "hun"
-            if "belgium" in n or "belgian" in n or "spa" in n: return "bel"
-            if "netherlands" in n or "dutch" in n or "zandvoort" in n: return "ned"
-            if "italy" in n or "italian" in n or "monza" in n: return "ita"
-            if "azerbaijan" in n or "baku" in n: return "azb"
-            if "singapore" in n or "marina bay" in n: return "sin"
-            if "united states" in n or "usa" in n or "austin" in n or "cota" in n: return "usa"
-            if "miami" in n: return "mia"
+            if "monte carlo" in n: return "mon"
+            if "monaco" in n: return "mon"
+            if "montréal" in n or "montreal" in n: return "can"
+            if "canadian" in n or "canada" in n: return "can"
+            if "barcelona" in n: return "esp"
+            if "spain" in n or "spanish" in n: return "esp"
+            if "spielberg" in n: return "aut"
+            if "austria" in n: return "aut"
+            if "silverstone" in n: return "gbr"
+            if "britain" in n or "british" in n: return "gbr"
+            if "budapest" in n: return "hun"
+            if "hungary" in n or "hungarian" in n: return "hun"
+            if "spa" in n: return "bel"
+            if "belgium" in n or "belgian" in n: return "bel"
+            if "zandvoort" in n: return "ned"
+            if "netherlands" in n or "dutch" in n: return "ned"
+            if "monza" in n: return "ita"
+            if "italy" in n or "italian" in n: return "ita"
+            if "baku" in n: return "azb"
+            if "azerbaijan" in n: return "azb"
+            if "marina bay" in n: return "sin"
+            if "singapore" in n: return "sin"
+            if "austin" in n or "cota" in n: return "usa"
+            if "united states" in n or "usa" in n: return "usa"
             if "las vegas" in n or "vegas" in n: return "lvg"
             if "mexico" in n or "mexican" in n: return "mex"
-            if "madrid" in n: return "mad" # New for 2026
-            if "brazil" in n or "são paulo" in n or "sao paulo" in n or "interlagos" in n: return "bra"
-            if "vegas" in n: return "lvg"
-            if "qatar" in n or "lusail" in n: return "qat"
-            if "abu dhabi" in n or "yas marina" in n: return "abu"
+            if "são paulo" in n or "sao paulo" in n or "interlagos" in n: return "bra"
+            if "brazil" in n: return "bra"
+            if "lusail" in n: return "qat"
+            if "qatar" in n: return "qat"
+            if "yas marina" in n: return "abu"
+            if "abu dhabi" in n: return "abu"
             # Historical 2020-2022
             if "french" in n or "france" in n: return "fra"
             if "turkish" in n or "turkey" in n: return "tur"
@@ -316,7 +334,6 @@ def get_races_list(year=None):
             if "70th" in n: return "70a"
             if "eifel" in n: return "eif"
             if "tuscan" in n: return "tus"
-            if "sakhir" in n: return "sak"
             # Fallback: Use first 3 chars + ID to ensure uniqueness
             return f"unk_{r.id}"
 
@@ -387,7 +404,7 @@ TEAM_COLORS = {
     "Red Bull Racing": "#3671C6", "Mercedes": "#6CD3BF", "Ferrari": "#F91536",
     "McLaren": "#F58020", "Aston Martin": "#358C75", "Alpine": "#2293D1",
     "Williams": "#37BEDD", "RB": "#6692FF", "Sauber": "#52E252", "Haas F1 Team": "#B6BABD",
-    "Kick Sauber": "#52E252", "Racing Bulls": "#6692FF" # Aliases
+    "Audi": "#808080", "Racing Bulls": "#6692FF" # Aliases
 }
 
 def get_race_replay(race_id):

@@ -62,7 +62,7 @@ TEAM_PERFORMANCE_2025 = {
     "McLaren": 666, "Ferrari": 652, "Red Bull Racing": 589,
     "Mercedes": 468, "Aston Martin": 94, "Alpine": 65,
     "Haas": 58, "Racing Bulls": 46, "Williams": 17,
-    "Kick Sauber": 4, "Cadillac": 0
+    "Audi": 4, "Cadillac": 0
 }
 
 
@@ -124,22 +124,49 @@ def estimate_qualifying_times(drivers_list, team_performance):
     return quali_times
 
 
-# Circuit code mapping to handle collisions
+# Circuit name to API code mapping (matches f1_service.py get_code function)
+# NOTE: API returns lowercase, but S3 files are UPPERCASE
 CIRCUIT_CODE_MAP = {
-    "Montréal": "MTL",      # Canadian GP
-    "Monte Carlo": "MCO",    # Monaco GP
-    "Monza": "MON",          # Italian GP
+    # Standard circuits
+    "melbourne": "AUS",
+    "shanghai": "CHN",
+    "suzuka": "JPN",
+    "sakhir": "BHR",
+    "jeddah": "SAU",
+    "miami": "MIA",
+    "montréal": "CAN",
+    "montreal": "CAN",
+    "monte carlo": "MON",  # Monaco - API returns "mon"
+    "barcelona": "ESP",
+    "spielberg": "AUT",
+    "silverstone": "GBR",
+    "spa": "BEL",
+    "budapest": "HUN",
+    "zandvoort": "NED",
+    "monza": "ITA",
+    "madrid": "MAD",
+    "baku": "AZB",  # Azerbaijan - API returns "azb"
+    "marina bay": "SIN",
+    "austin": "USA",
+    "mexico": "MEX",
+    "são paulo": "BRA",
+    "sao paulo": "BRA",
+    "las vegas": "LVG",
+    "lusail": "QAT",
+    "yas marina": "ABU",
 }
 
 
 def get_circuit_code(circuit_name):
-    """Get unique circuit code, handling collisions"""
-    # Check for special cases
+    """Get API-compatible race code from circuit name"""
+    name_lower = circuit_name.lower()
+    
+    # Check for matches in the map
     for key, code in CIRCUIT_CODE_MAP.items():
-        if key.lower() in circuit_name.lower():
+        if key in name_lower:
             return code
     
-    # Default: first 3 letters uppercase
+    # Fallback: first 3 letters uppercase
     return circuit_name[:3].upper()
 
 

@@ -1,5 +1,5 @@
 {
-  "race": "SIL",
+  "race": "AUS",
   "prediction_year": 2026,
   "model_type": "database_ml",
   "weather": {
@@ -8,15 +8,29 @@
   },
   "results": [
     {
-      "code": "NOR",
-      "name": "Lando Norris",
-      "team": "McLaren",
-      "win_probability": 22.4,
-      "podium_probability": 55.9,
+      "code": "VER",
+      "name": "Max Verstappen",
+      "team": "Red Bull Racing",
+      "win_probability": 21.6,
+      "podium_probability": 54.0,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
         "circuit_avg": 1.0,
+        "recent_form": 1.8,
+        "team_score": 0.88
+      }
+    },
+    {
+      "code": "NOR",
+      "name": "Lando Norris",
+      "team": "McLaren",
+      "win_probability": 16.0,
+      "podium_probability": 39.9,
+      "confidence": 200.0,
+      "wet_boost": false,
+      "features": {
+        "circuit_avg": 2.0,
         "recent_form": 5.6,
         "team_score": 1.0
       }
@@ -25,36 +39,36 @@
       "code": "PIA",
       "name": "Oscar Piastri",
       "team": "McLaren",
-      "win_probability": 15.7,
-      "podium_probability": 39.3,
+      "win_probability": 9.5,
+      "podium_probability": 23.7,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
-        "circuit_avg": 2.0,
+        "circuit_avg": 5.0,
         "recent_form": 6.8,
         "team_score": 1.0
       }
     },
     {
-      "code": "VER",
-      "name": "Max Verstappen",
-      "team": "Red Bull Racing",
-      "win_probability": 11.8,
-      "podium_probability": 29.5,
+      "code": "LEC",
+      "name": "Charles Leclerc",
+      "team": "Ferrari",
+      "win_probability": 8.7,
+      "podium_probability": 21.8,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
-        "circuit_avg": 5.0,
-        "recent_form": 1.8,
-        "team_score": 0.88
+        "circuit_avg": 3.0,
+        "recent_form": 7.4,
+        "team_score": 0.98
       }
     },
     {
       "code": "HAM",
       "name": "Lewis Hamilton",
       "team": "Ferrari",
-      "win_probability": 6.4,
-      "podium_probability": 16.0,
+      "win_probability": 6.0,
+      "podium_probability": 15.0,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -67,40 +81,26 @@
       "code": "RUS",
       "name": "George Russell",
       "team": "Mercedes",
-      "win_probability": 4.8,
-      "podium_probability": 11.9,
+      "win_probability": 5.7,
+      "podium_probability": 14.2,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
-        "circuit_avg": 10.0,
+        "circuit_avg": 6.0,
         "recent_form": 4.8,
         "team_score": 0.7
-      }
-    },
-    {
-      "code": "LEC",
-      "name": "Charles Leclerc",
-      "team": "Ferrari",
-      "win_probability": 4.4,
-      "podium_probability": 10.9,
-      "confidence": 200.0,
-      "wet_boost": false,
-      "features": {
-        "circuit_avg": 14.0,
-        "recent_form": 7.4,
-        "team_score": 0.98
       }
     },
     {
       "code": "ANT",
       "name": "Kimi Antonelli",
       "team": "Mercedes",
-      "win_probability": 3.0,
-      "podium_probability": 7.5,
+      "win_probability": 3.2,
+      "podium_probability": 7.9,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
-        "circuit_avg": 16.0,
+        "circuit_avg": 13.0,
         "recent_form": 6.2,
         "team_score": 0.7
       }
@@ -109,42 +109,42 @@
       "code": "HAD",
       "name": "Isack Hadjar",
       "team": "Red Bull Racing",
-      "win_probability": 2.8,
-      "podium_probability": 6.9,
+      "win_probability": 2.7,
+      "podium_probability": 6.8,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
-        "circuit_avg": 17.0,
+        "circuit_avg": 16.0,
         "recent_form": 12.4,
         "team_score": 0.88
       }
     },
     {
-      "code": "HUL",
-      "name": "Nico Hulkenberg",
-      "team": "Audi",
-      "win_probability": 2.4,
-      "podium_probability": 6.0,
+      "code": "LIN",
+      "name": "Arvid Lindblad",
+      "team": "Racing Bulls",
+      "win_probability": 2.2,
+      "podium_probability": 5.5,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
-        "circuit_avg": 3.0,
-        "recent_form": 12.8,
-        "team_score": 0.0
+        "circuit_avg": 10.0,
+        "recent_form": 10.0,
+        "team_score": 0.07
       }
     },
     {
-      "code": "ALO",
-      "name": "Fernando Alonso",
-      "team": "Aston Martin",
-      "win_probability": 2.3,
-      "podium_probability": 5.8,
+      "code": "BEA",
+      "name": "Oliver Bearman",
+      "team": "Haas",
+      "win_probability": 2.2,
+      "podium_probability": 5.4,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
         "circuit_avg": 9.0,
-        "recent_form": 11.2,
-        "team_score": 0.14
+        "recent_form": 10.2,
+        "team_score": 0.09
       }
     }
   ],

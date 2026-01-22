@@ -260,6 +260,54 @@ def predict_race(race_code, prediction_year=None, lookback_years=3):
     if prediction_year is None:
         prediction_year = datetime.now().year + 1
     
+    # First, try to load pre-computed prediction from file
+    predictions_dir = os.path.join(os.path.dirname(__file__), '..', 'predictions', str(prediction_year))
+    
+    # Map common race codes to our generated file codes
+    code_map = {
+        'AUT': 'SPI',  # Austria -> Spielberg
+        'CHN': 'SHA',  # China -> Shanghai  
+        'HUN': 'BUD',  # Hungary -> Budapest
+        'ITA': 'MON',  # Italy -> Monza
+        'NED': 'ZAN',  # Netherlands -> Zandvoort
+        'GBR': 'SIL',  # Britain -> Silverstone
+        'BEL': 'SPA',  # Belgium -> Spa
+        'ESP': 'BAR',  # Spain -> Barcelona (old)
+        'AZE': 'BAK',  # Azerbaijan -> Baku
+        'SGP': 'MAR',  # Singapore -> Marina Bay
+        'USA': 'AUS',  # United States -> Austin
+        'BRA': 'SÃO',  # Brazil -> São Paulo
+        'QAT': 'LUS',  # Qatar -> Lusail
+        'UAE': 'YAS',  # Abu Dhabi -> Yas Marina
+        'SAU': 'JED',  # Saudi Arabia -> Jeddah
+        'BHR': 'SAK',  # Bahrain -> Sakhir
+        'JPN': 'SUZ',  # Japan -> Suzuka
+        'CAN': 'MTL',  # Canada -> Montreal
+        'MCO': 'MCO',  # Monaco -> Monaco
+        'MEX': 'MEX',  # Mexico -> Mexico City
+        'LAS': 'LAS',  # Las Vegas
+        'MIA': 'MIA',  # Miami
+        'AUS': 'AUS',  # For Austin (USA GP) - might conflict with Australian
+    }
+    
+    # Try mapped code first, then original
+    file_code = code_map.get(race_code.upper(), race_code.upper())
+    prediction_file = os.path.join(predictions_dir, f'{file_code}.json')
+    
+    # Also try original code if mapped doesn't exist
+    if not os.path.exists(prediction_file):
+        prediction_file = os.path.join(predictions_dir, f'{race_code.upper()}.json')
+    
+    if os.path.exists(prediction_file):
+        try:
+            with open(prediction_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                print(f"✓ Loaded prediction from {prediction_file}")
+                return data
+        except Exception as e:
+            print(f"Error loading prediction file: {e}")
+    
+    # Fallback to computing prediction
     result = extract_features(race_code, prediction_year, lookback_years)
     if not result:
         return {"error": "Could not extract features"}

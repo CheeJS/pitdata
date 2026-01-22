@@ -40,7 +40,7 @@ export default function Standings() {
         const colors = {
             "Red Bull Racing": "#3671C6", "Mercedes": "#6CD3BF", "Ferrari": "#E8002D",
             "McLaren": "#FF8000", "Aston Martin": "#229971", "Alpine": "#0093CC",
-            "Williams": "#64C4FF", "RB": "#6692FF", "Kick Sauber": "#52E252",
+            "Williams": "#64C4FF", "RB": "#6692FF", "Audi": "#808080",
             "Haas F1 Team": "#B6BABD", "Racing Bulls": "#6692FF"
         };
         return colors[team] || colors[Object.keys(colors).find(k => team?.includes(k))] || "#666";

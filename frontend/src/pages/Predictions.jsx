@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Trophy, Activity, Zap, AlertTriangle, MapPin, Calendar, CheckCircle2, ChevronRight,
     BarChart3, Brain, Lock, Info, Timer, Sun, CloudRain, Flame, Target, TrendingUp,
-    Medal, Star, XCircle, Gauge, Users, Award, Sparkles, Clock
+    Medal, Star, XCircle, Gauge, Users, Award, Sparkles, Clock, MessageSquare, Send
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -127,6 +127,12 @@ export default function Predictions() {
 
     // UI State
     const [showAllDrivers, setShowAllDrivers] = useState(false);
+    const [showPredictionForm, setShowPredictionForm] = useState(false);
+
+    // Discussion State
+    const [comments, setComments] = useState([]);
+    const [newComment, setNewComment] = useState('');
+    const [nickname, setNickname] = useState(localStorage.getItem('f1_nickname') || '');
 
     // Mock User Stats (kept for UI flavor)
     const [userStats] = useState({
@@ -169,7 +175,7 @@ export default function Predictions() {
             .catch(err => console.error("Error fetching races", err));
     }, []); // Run once on mount (ignoring clientId dep to avoid double fetch)
 
-    // 2. Fetch Stats when Race Changes
+    // 2. Fetch Stats and Comments when Race Changes
     useEffect(() => {
         if (!selectedRace) return;
         setLoading(true);
@@ -184,7 +190,36 @@ export default function Predictions() {
             .then(res => setStats(res.data))
             .catch(err => console.error(err))
             .finally(() => setLoading(false));
+
+        // Fetch comments for this race
+        fetchComments();
     }, [selectedRace]);
+
+    const fetchComments = async () => {
+        if (!selectedRace) return;
+        try {
+            const res = await axios.get(`http://localhost:5000/api/predictions/comments?race_id=${selectedRace.id}`);
+            setComments(res.data || []);
+        } catch (err) {
+            console.error(err);
+            setComments([]);
+        }
+    };
+
+    const postComment = async () => {
+        if (!newComment.trim() || !nickname.trim()) return;
+        try {
+            await axios.post('http://localhost:5000/api/predictions/comments', {
+                race_id: selectedRace.id,
+                client_id: clientId,
+                nickname: nickname,
+                content: newComment
+            });
+            setNewComment('');
+            localStorage.setItem('f1_nickname', nickname);
+            fetchComments();
+        } catch (err) { console.error(err); }
+    };
 
     // Derived States
     // Top Contenders: Sort by 'probability' (or just pick top 6 from list)
@@ -197,8 +232,9 @@ export default function Predictions() {
         // Dev: Allow unlocking via URL param ?unlock=true
         if (typeof window !== 'undefined' && window.location.search.includes('unlock=true')) return true;
 
-        if (!selectedRace || !selectedRace.predictions) return true; // Default open if unknown
-        return selectedRace.predictions.is_open;
+        // Default to open for 2026 season (future races)
+        if (!selectedRace || !selectedRace.predictions) return true;
+        return selectedRace.predictions.is_open ?? true;
     }, [selectedRace]);
 
     // Helpers
@@ -251,16 +287,17 @@ export default function Predictions() {
             safetyCar
         };
         setUserVote(votePayload);
+        setShowPredictionForm(false); // Hide the form after submission
 
         try {
             await axios.post('http://localhost:5000/api/predictions/vote', {
                 race_id: selectedRace.id,
                 client_id: clientId,
-                value: votePayload // Sending full payload
+                value: votePayload
             });
             refreshStats();
         } catch (e) { console.error(e); }
-        setTimeout(() => setShowResults(true), 2000);
+        setTimeout(() => setShowResults(true), 1000);
     };
 
     const refreshStats = async () => {
@@ -301,265 +338,309 @@ export default function Predictions() {
             </AnimatePresence>
 
             {/* HEADER */}
-            <header className="relative overflow-hidden rounded-2xl bg-[#09090B] border border-[#222] min-h-[220px] md:min-h-[280px] mx-3 md:mx-6 mt-3 md:mt-6 shrink-0 flex flex-col justify-end p-6 md:p-10 group">
+            <header className="relative overflow-hidden rounded-xl bg-[#0B0B0F] border border-[#2A2A30] min-h-[180px] md:min-h-[220px] mx-3 md:mx-6 mt-3 md:mt-6 shrink-0 flex flex-col justify-end p-5 md:p-8">
                 <div className="absolute inset-0 z-0">
                     <img
                         src={`https://flagcdn.com/w1280/${selectedRace.code?.slice(0, 2) || 'un'}.png`}
                         alt=""
-                        className="w-full h-full object-cover opacity-15"
+                        className="w-full h-full object-cover opacity-10"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-[#09090B]/80 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0B0B0F] via-[#0B0B0F]/90 to-transparent" />
                 </div>
 
-                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                     <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-3 mb-3">
                             {isPredictionWindowOpen ? (
-                                <span className="px-3 py-1 rounded-full bg-green-500/10 text-xs font-bold text-green-400 border border-green-500/20 uppercase tracking-wider flex items-center gap-2">
-                                    <Clock size={12} /> Predictions Open
+                                <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-[11px] font-semibold text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">
+                                    Open
                                 </span>
                             ) : (
-                                <span className="px-3 py-1 rounded-full bg-red-500/10 text-xs font-bold text-red-500 border border-red-500/20 uppercase tracking-wider flex items-center gap-2">
-                                    <Lock size={12} /> Predictions Closed
+                                <span className="px-2.5 py-1 rounded-md bg-red-500/10 text-[11px] font-semibold text-red-500 border border-red-500/20 uppercase tracking-wide">
+                                    Closed
                                 </span>
                             )}
-                            <span className="text-gray-400 text-sm font-medium tracking-wide border-l border-gray-700 pl-3">
+                            <span className="text-gray-500 text-xs font-medium">
                                 {selectedRace.date}
                             </span>
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-black text-white italic uppercase tracking-tighter leading-[0.9]">
+                        <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight">
                             {selectedRace.name}
                         </h1>
+                        <p className="text-gray-500 text-sm mt-1">Make your race predictions</p>
                     </div>
-                    <div className="flex flex-col items-end gap-3 z-20">
+                    <div className="z-20">
                         <select
-                            className="bg-black/50 backdrop-blur-md border border-white/10 text-white text-sm rounded-lg py-3 px-4 outline-none focus:border-f1-red"
+                            className="bg-[#15151E] border border-[#2A2A30] text-white text-sm rounded-lg py-2.5 px-4 outline-none focus:border-white/30"
                             value={selectedRace.id}
                             onChange={e => setSelectedRace(races.find(r => r.id == e.target.value))}
                         >
-                            {races.map(r => <option key={r.id} value={r.id}>{r.name} GP</option>)}
+                            {races.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                         </select>
                     </div>
                 </div>
             </header>
 
             {/* MAIN CONTENT */}
-            <div className="flex flex-col lg:flex-row gap-4 md:gap-6 flex-1 min-h-0 overflow-hidden p-3 md:p-6">
+            <div className="flex flex-col gap-4 md:gap-6 flex-1 min-h-0 overflow-hidden p-3 md:p-6">
 
-                {/* LEFT: INPUT */}
-                <div className={cn("flex-1 lg:flex-[1.5] bg-[#15151E] rounded-2xl border border-[#2A2A30] flex flex-col p-4 md:p-6 overflow-y-auto custom-scrollbar", locked && "opacity-90 pointer-events-none")}>
-                    {/* PODIUM */}
-                    <div className="mb-6">
-                        <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
-                            <Trophy size={18} className="text-yellow-500" /> Podium Prediction
-                        </h3>
-                        <div className="flex justify-center items-end gap-4 bg-[#0B0B0F] rounded-xl p-6 relative">
-                            <PodiumSlot position={2} driver={podium[2]} color={podium[2] ? driverMap[podium[2]]?.color : '#666'} onRemove={() => removePodium(2)} isLocked={locked} />
-                            <PodiumSlot position={1} driver={podium[1]} color={podium[1] ? driverMap[podium[1]]?.color : '#666'} onRemove={() => removePodium(1)} isLocked={locked} />
-                            <PodiumSlot position={3} driver={podium[3]} color={podium[3] ? driverMap[podium[3]]?.color : '#666'} onRemove={() => removePodium(3)} isLocked={locked} />
-                        </div>
+                {/* MAKE PREDICTION BUTTON */}
+                {!locked && !showPredictionForm && (
+                    <button
+                        onClick={() => setShowPredictionForm(true)}
+                        className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-4 rounded-xl transition-all flex items-center justify-center gap-2"
+                    >
+                        Make Your Prediction
+                    </button>
+                )}
+
+                {/* USER PREDICTION FORM (Collapsible) */}
+                <AnimatePresence>
+                    {showPredictionForm && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className={cn("bg-[#15151E] rounded-xl border border-[#2A2A30] overflow-hidden", locked && "opacity-90 pointer-events-none")}
+                        >
+                            <div className="p-4 md:p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-sm font-semibold text-white">Your Prediction</h3>
+                                    {!locked && (
+                                        <button onClick={() => setShowPredictionForm(false)} className="text-gray-500 hover:text-white text-sm">
+                                            Cancel
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* PODIUM */}
+                                <div className="mb-6">
+                                    <div className="text-xs font-semibold text-gray-500 uppercase mb-3">Podium</div>
+                                    <div className="flex justify-center items-end gap-4 bg-[#0B0B0F] rounded-lg p-4">
+                                        <PodiumSlot position={2} driver={podium[2]} color={podium[2] ? driverMap[podium[2]]?.color : '#666'} onRemove={() => removePodium(2)} isLocked={locked} />
+                                        <PodiumSlot position={1} driver={podium[1]} color={podium[1] ? driverMap[podium[1]]?.color : '#666'} onRemove={() => removePodium(1)} isLocked={locked} />
+                                        <PodiumSlot position={3} driver={podium[3]} color={podium[3] ? driverMap[podium[3]]?.color : '#666'} onRemove={() => removePodium(3)} isLocked={locked} />
+                                    </div>
+                                </div>
+
+                                {/* DRIVER SELECTION */}
+                                <div className="mb-6">
+                                    <div className="text-xs font-semibold text-gray-500 uppercase mb-3">Select Drivers</div>
+                                    <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                                        {contenders.map(code => {
+                                            const pPos = Object.entries(podium).find(([p, d]) => d === code)?.[0];
+                                            return (
+                                                <DriverCard key={code} code={code} meta={driverMap[code]} isSelected={!!pPos} isLocked={locked} onSelect={() => selectDriver(code)} selectedFor={pPos} />
+                                            )
+                                        })}
+                                    </div>
+                                    {!showAllDrivers && !locked && (
+                                        <button onClick={() => setShowAllDrivers(true)} className="w-full mt-3 py-2 rounded-lg border border-dashed border-[#2A2A30] text-gray-500 text-xs hover:bg-[#1A1A24]">
+                                            Show Full Grid
+                                        </button>
+                                    )}
+                                    <AnimatePresence>
+                                        {showAllDrivers && (
+                                            <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-3 overflow-hidden">
+                                                {activeDrivers.filter(d => !contenders.includes(d.code)).map(d => {
+                                                    const pPos = Object.entries(podium).find(([p, code]) => code === d.code)?.[0];
+                                                    return (
+                                                        <DriverCard key={d.code} type="field" code={d.code} meta={d} isSelected={!!pPos} isLocked={locked} onSelect={() => selectDriver(d.code)} selectedFor={pPos} />
+                                                    )
+                                                })}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
+                                {/* EXTRAS */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                                    <div className="bg-[#0B0B0F] rounded-lg p-3 border border-[#2A2A30]">
+                                        <div className="text-[10px] font-semibold text-gray-500 uppercase mb-2">Winning Gap</div>
+                                        <div className="flex flex-col gap-1">
+                                            {['< 5s', '5-10s', '> 10s'].map(gap => (
+                                                <button key={gap} onClick={() => !locked && setWinningGap(gap)} disabled={locked}
+                                                    className={cn("py-1.5 rounded text-xs font-medium transition-all", winningGap === gap ? "bg-white text-black" : "text-gray-500 hover:text-white")}
+                                                >{gap}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-[#0B0B0F] rounded-lg p-3 border border-[#2A2A30]">
+                                        <div className="text-[10px] font-semibold text-gray-500 uppercase mb-2">Pit Stops</div>
+                                        <div className="flex flex-col gap-1">
+                                            {[1, 2, 3].map(stops => (
+                                                <button key={stops} onClick={() => !locked && setPitStrategy(prev => ({ ...prev, stops }))} disabled={locked}
+                                                    className={cn("py-1.5 rounded text-xs font-medium transition-all", pitStrategy.stops === stops ? "bg-white text-black" : "text-gray-500 hover:text-white")}
+                                                >{stops} Stop{stops > 1 ? 's' : ''}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-[#0B0B0F] rounded-lg p-3 border border-[#2A2A30]">
+                                        <div className="text-[10px] font-semibold text-gray-500 uppercase mb-2">Safety Car</div>
+                                        <div className="flex flex-col gap-1">
+                                            {['Yes', 'No'].map(opt => (
+                                                <button key={opt} onClick={() => !locked && setSafetyCar(prev => ({ ...prev, enabled: opt === 'Yes' }))} disabled={locked}
+                                                    className={cn("py-1.5 rounded text-xs font-medium transition-all", (safetyCar.enabled ? 'Yes' : 'No') === opt ? "bg-white text-black" : "text-gray-500 hover:text-white")}
+                                                >{opt}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-[#0B0B0F] rounded-lg p-3 border border-[#2A2A30]">
+                                        <div className="text-[10px] font-semibold text-gray-500 uppercase mb-2">First DNF</div>
+                                        <div className="grid grid-cols-3 gap-1 max-h-20 overflow-y-auto">
+                                            {activeDrivers.slice(0, 6).map(d => (
+                                                <button key={d.code} onClick={() => !locked && setDnfPredictions(prev => prev.includes(d.code) ? [] : [d.code])} disabled={locked}
+                                                    className={cn("py-1 rounded text-[9px] font-bold transition-all", dnfPredictions.includes(d.code) ? "bg-white text-black" : "text-gray-500 hover:text-white")}
+                                                >{d.code}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {!locked && (
+                                    <button onClick={confirmVote} disabled={!podium[1]} className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                        Lock In Prediction
+                                    </button>
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* COMMUNITY PREDICTIONS - Main Content */}
+                <div className="bg-[#15151E] rounded-xl border border-[#2A2A30] p-5 flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-semibold text-white">Community Predictions</h3>
+                        {stats?.total_votes > 0 && <span className="text-sm text-gray-500">{stats.total_votes} votes</span>}
                     </div>
 
-                    {/* DRIVERS */}
-                    <div className="mb-6">
-                        <div className="flex justify-between items-center mb-3">
-                            <span className="text-sm text-gray-400">Select Drivers</span>
-                            {locked && <span className="text-xs text-f1-red flex items-center gap-1"><Lock size={10} /> Locked</span>}
+                    {!stats || stats.total_votes === 0 ? (
+                        <div className="text-center text-gray-500 py-16 flex-1 flex flex-col items-center justify-center">
+                            <p className="text-lg mb-2">No predictions yet</p>
+                            <p className="text-sm">Be the first to predict this race!</p>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {/* Show Contenders First */}
-                            {contenders.map(code => {
-                                const pPos = Object.entries(podium).find(([p, d]) => d === code)?.[0];
-                                return (
-                                    <DriverCard key={code} code={code} meta={driverMap[code]} isSelected={!!pPos} isLocked={locked} onSelect={() => selectDriver(code)} selectedFor={pPos} />
-                                )
-                            })}
-                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {/* PREDICTED WINNER */}
+                            <div className="bg-[#0B0B0F] rounded-xl p-4 border border-[#2A2A30]">
+                                <div className="text-xs font-semibold text-gray-500 uppercase mb-4">Predicted Winner</div>
+                                {stats.podium[1].slice(0, 5).map((p, i) => (
+                                    <div key={p.code} className="mb-3">
+                                        <div className="flex justify-between items-center text-sm mb-1">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-1 h-4 rounded-full" style={{ backgroundColor: driverMap[p.code]?.color || '#666' }} />
+                                                <span className="font-semibold text-white">{p.code}</span>
+                                            </div>
+                                            <span className="font-bold text-white">{p.percent}%</span>
+                                        </div>
+                                        <div className="h-2 bg-[#1A1A24] rounded-full overflow-hidden">
+                                            <motion.div initial={{ width: 0 }} animate={{ width: `${p.percent}%` }} className="h-full rounded-full" style={{ backgroundColor: driverMap[p.code]?.color || '#666' }} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
 
-                        {/* Show Others Button */}
-                        {!showAllDrivers && !locked && (
-                            <button onClick={() => setShowAllDrivers(true)} className="w-full mt-3 py-2 rounded-lg border border-dashed border-[#2A2A30] text-gray-500 text-xs font-bold hover:bg-[#1A1A24]">
-                                Show Full Grid
-                            </button>
-                        )}
-
-                        <AnimatePresence>
-                            {showAllDrivers && (
-                                <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3 overflow-hidden">
-                                    {activeDrivers.filter(d => !contenders.includes(d.code)).map(d => {
-                                        const pPos = Object.entries(podium).find(([p, code]) => code === d.code)?.[0];
+                            {/* WINNING MARGIN */}
+                            <div className="bg-[#0B0B0F] rounded-xl p-4 border border-[#2A2A30]">
+                                <div className="text-xs font-semibold text-gray-500 uppercase mb-4">Winning Margin</div>
+                                <div className="space-y-3">
+                                    {['< 5s', '5-10s', '> 10s'].map(gap => {
+                                        const count = stats.winningGap[gap] || 0;
+                                        const pct = Math.round((count / stats.total_votes) * 100) || 0;
                                         return (
-                                            <DriverCard key={d.code} type="field" code={d.code} meta={d} isSelected={!!pPos} isLocked={locked} onSelect={() => selectDriver(d.code)} selectedFor={pPos} />
+                                            <div key={gap} className="flex items-center justify-between">
+                                                <span className="text-sm text-gray-400">{gap}</span>
+                                                <span className="text-lg font-bold text-white">{pct}%</span>
+                                            </div>
                                         )
                                     })}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
-                    {/* EXTRAS (Keep existing UI for Pit, Gap, SC but disable if locked) */}
-                    <div className="space-y-4 mb-6">
-                        {/* Winning Margin */}
-                        <div className="bg-[#0B0B0F] rounded-xl p-4 border border-[#2A2A30]">
-                            <h4 className="text-sm font-bold text-green-400 flex items-center gap-2 mb-3"><Timer size={14} /> Winning Margin</h4>
-                            <div className="flex bg-[#1A1A24] p-1 rounded-lg">
-                                {['< 5s', '5-10s', '> 10s'].map(gap => (
-                                    <button key={gap} onClick={() => !locked && setWinningGap(gap)} disabled={locked}
-                                        className={cn("flex-1 py-2 rounded-md text-xs font-bold transition-all", winningGap === gap ? "bg-green-500 text-black" : "text-gray-400 hover:text-white")}
-                                    >{gap}</button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* PIT STRATEGY */}
-                        <div className="bg-[#0B0B0F] rounded-xl p-4 border border-[#2A2A30]">
-                            <h4 className="text-sm font-bold text-blue-400 flex items-center gap-2 mb-3"><Activity size={14} /> Pit Stops</h4>
-                            <div className="flex bg-[#1A1A24] p-1 rounded-lg">
-                                {[1, 2, 3].map(stops => (
-                                    <button key={stops} onClick={() => !locked && setPitStrategy(prev => ({ ...prev, stops }))} disabled={locked}
-                                        className={cn("flex-1 py-2 rounded-md text-xs font-bold transition-all", pitStrategy.stops === stops ? "bg-blue-500 text-black" : "text-gray-400 hover:text-white")}
-                                    >{stops} Stop{stops > 1 ? 's' : ''}</button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* SAFETY CAR */}
-                        <div className="bg-[#0B0B0F] rounded-xl p-4 border border-[#2A2A30]">
-                            <h4 className="text-sm font-bold text-orange-400 flex items-center gap-2 mb-3"><AlertTriangle size={14} /> Safety Car</h4>
-                            <div className="flex bg-[#1A1A24] p-1 rounded-lg">
-                                {['Yes', 'No'].map(opt => (
-                                    <button key={opt} onClick={() => !locked && setSafetyCar(prev => ({ ...prev, enabled: opt === 'Yes' }))} disabled={locked}
-                                        className={cn("flex-1 py-2 rounded-md text-xs font-bold transition-all", (safetyCar.enabled ? 'Yes' : 'No') === opt ? "bg-orange-500 text-black" : "text-gray-400 hover:text-white")}
-                                    >{opt}</button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* DNF */}
-                        <div className="bg-[#0B0B0F] rounded-xl p-4 border border-[#2A2A30]">
-                            <h4 className="text-sm font-bold text-red-500 flex items-center gap-2 mb-3"><XCircle size={14} /> First DNF</h4>
-                            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-32 overflow-y-auto custom-scrollbar pr-2">
-                                {activeDrivers.map(d => (
-                                    <button key={d.code} onClick={() => !locked && setDnfPredictions(prev => prev.includes(d.code) ? [] : [d.code])} disabled={locked}
-                                        className={cn("py-1 rounded text-[10px] font-bold border transition-all", dnfPredictions.includes(d.code) ? "bg-red-500 border-red-500 text-white" : "border-[#2A2A30] text-gray-500 hover:border-gray-500")}
-                                    >
-                                        {d.code}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {!locked && (
-                        <button onClick={confirmVote} disabled={!podium[1]} className="w-full bg-f1-red hover:bg-red-600 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2">
-                            <Lock size={18} /> Lock In Prediction
-                        </button>
-                    )}
-                </div>
-
-                {/* RIGHT: COMMUNITY STATS (Dynamic) */}
-                <div className="flex-1 flex flex-col gap-4">
-                    <div className="bg-[#15151E] rounded-3xl border border-[#2A2A30] p-5 flex-1 flex flex-col min-h-0">
-                        <h3 className="text-sm font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-                            <BarChart3 size={14} /> Community Predictions {stats?.total_votes > 0 && <span className="ml-auto text-xs text-gray-500">{stats.total_votes} votes</span>}
-                        </h3>
-                        <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar">
-                            {!stats || stats.total_votes === 0 ? (
-                                <div className="text-center text-gray-500 py-10">
-                                    <p>No community data yet.</p>
-                                    <p className="text-xs">Be the first to predict!</p>
                                 </div>
-                            ) : (
-                                <>
-                                    {/* WINNER STATS */}
-                                    <div>
-                                        <div className="text-[10px] text-gray-500 uppercase mb-2">Predicted Winner</div>
-                                        {/* Display Top 5 P1 Picks */}
-                                        {stats.podium[1].slice(0, 5).map((p, i) => (
-                                            <div key={p.code} className="group mb-2">
-                                                <div className="flex justify-between items-center text-xs mb-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-1 h-3 rounded-full" style={{ backgroundColor: driverMap[p.code]?.color || '#666' }} />
-                                                        <span className="font-bold text-white">{p.code}</span>
-                                                    </div>
-                                                    <span className="font-bold text-f1-red">{p.percent}%</span>
-                                                </div>
-                                                <div className="h-1.5 bg-[#0B0B0F] rounded-full overflow-hidden">
-                                                    <motion.div initial={{ width: 0 }} animate={{ width: `${p.percent}%` }} className="h-full bg-f1-red rounded-full" />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
+                            </div>
 
-                                    {/* WINNING GAP */}
-                                    <div className="pt-3 border-t border-[#2A2A30]">
-                                        <div className="text-[10px] text-gray-500 uppercase mb-2">Winning Margin</div>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {['< 5s', '5-10s', '> 10s'].map(gap => {
-                                                const count = stats.winningGap[gap] || 0;
-                                                const pct = Math.round((count / stats.total_votes) * 100) || 0;
-                                                return (
-                                                    <div key={gap} className="bg-[#0B0B0F] rounded-lg p-2 text-center">
-                                                        <div className="text-xs text-gray-400">{gap}</div>
-                                                        <div className="text-sm font-bold text-green-400">{pct}%</div>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
+                            {/* SAFETY CAR & PIT STOPS */}
+                            <div className="bg-[#0B0B0F] rounded-xl p-4 border border-[#2A2A30]">
+                                <div className="text-xs font-semibold text-gray-500 uppercase mb-4">Race Factors</div>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-400">Safety Car</span>
+                                        <span className="text-lg font-bold text-white">{Math.round((stats.safetyCar.yes / stats.total_votes) * 100) || 0}% Yes</span>
                                     </div>
-
-                                    {/* SAFETY CAR */}
-                                    <div className="pt-3 border-t border-[#2A2A30]">
-                                        <div className="text-[10px] text-gray-500 uppercase mb-2">Safety Car Probability</div>
+                                    <div className="border-t border-[#2A2A30] pt-4">
+                                        <div className="text-xs text-gray-500 mb-2">Pit Strategy</div>
                                         <div className="flex gap-2">
-                                            <div className="flex-1 bg-[#0B0B0F] rounded-lg p-2 text-center">
-                                                <div className="text-xs text-gray-400">Yes</div>
-                                                <div className="text-lg font-bold text-orange-400">{Math.round((stats.safetyCar.yes / stats.total_votes) * 100) || 0}%</div>
-                                            </div>
-                                            <div className="flex-1 bg-[#0B0B0F] rounded-lg p-2 text-center">
-                                                <div className="text-xs text-gray-400">No</div>
-                                                <div className="text-lg font-bold text-gray-600">{Math.round((stats.safetyCar.no / stats.total_votes) * 100) || 0}%</div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* PIT STRATEGY */}
-                                    <div className="pt-3 border-t border-[#2A2A30]">
-                                        <div className="text-[10px] text-gray-500 uppercase mb-2">Pit Stops Distribution</div>
-                                        <div className="grid grid-cols-3 gap-2">
                                             {[1, 2, 3].map(stops => {
                                                 const count = stats.pitStrategy?.stop_dist?.[stops] || 0;
                                                 const pct = Math.round((count / stats.total_votes) * 100) || 0;
                                                 return (
-                                                    <div key={stops} className="bg-[#0B0B0F] rounded-lg p-2 text-center">
-                                                        <div className="text-xs text-gray-400">{stops} Stop{stops > 1 ? 's' : ''}</div>
-                                                        <div className="text-sm font-bold text-blue-400">{pct}%</div>
+                                                    <div key={stops} className="flex-1 bg-[#1A1A24] rounded-lg p-2 text-center">
+                                                        <div className="text-xs text-gray-500">{stops}S</div>
+                                                        <div className="text-sm font-bold text-white">{pct}%</div>
                                                     </div>
                                                 )
                                             })}
                                         </div>
                                     </div>
-
-
-
-                                    {/* DNF */}
-                                    <div className="pt-3 border-t border-[#2A2A30]">
-                                        <div className="text-[10px] text-gray-500 uppercase mb-2">Top DNF Risk</div>
-                                        {Object.entries(stats.dnfPredictions || {})
-                                            .sort(([, a], [, b]) => b - a)
-                                            .slice(0, 3)
-                                            .map(([code, count]) => (
-                                                <div key={code} className="flex justify-between items-center mb-1 bg-[#0B0B0F] p-2 rounded">
-                                                    <span className="text-xs font-bold text-white">{code}</span>
-                                                    <span className="text-xs font-bold text-red-500">{Math.round((count / stats.total_votes) * 100)}%</span>
-                                                </div>
-                                            ))
-                                        }
-                                        {Object.keys(stats.dnfPredictions || {}).length === 0 && <div className="text-xs text-center text-gray-600 italic py-2">No DNFs predicted</div>}
-                                    </div>
-                                </>
-                            )}
+                                </div>
+                            </div>
                         </div>
+                    )}
+                </div>
+
+                {/* DISCUSSION SECTION */}
+                <div className="bg-[#15151E] rounded-xl border border-[#2A2A30] p-5 mt-4">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-2">
+                            <MessageSquare size={14} />
+                            Discussion
+                        </h3>
+                        <span className="text-xs text-gray-600">{comments.length} comments</span>
+                    </div>
+
+                    {/* Comment Input */}
+                    <div className="flex gap-3 mb-4">
+                        <input
+                            type="text"
+                            placeholder="Nickname"
+                            value={nickname}
+                            onChange={e => setNickname(e.target.value)}
+                            className="w-24 bg-[#0B0B0F] border border-[#2A2A30] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-white/30"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Share your thoughts..."
+                            value={newComment}
+                            onChange={e => setNewComment(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && postComment()}
+                            className="flex-1 bg-[#0B0B0F] border border-[#2A2A30] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-white/30"
+                        />
+                        <button
+                            onClick={postComment}
+                            disabled={!newComment.trim() || !nickname.trim()}
+                            className="bg-white hover:bg-gray-100 text-black px-4 py-2 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <Send size={16} />
+                        </button>
+                    </div>
+
+                    {/* Comments List */}
+                    <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
+                        {comments.length === 0 ? (
+                            <div className="text-center text-gray-600 py-8 text-sm">
+                                No comments yet. Be the first to share your thoughts!
+                            </div>
+                        ) : (
+                            comments.map((c, i) => (
+                                <div key={c.id || i} className="bg-[#0B0B0F] rounded-lg p-3 border border-[#2A2A30]">
+                                    <div className="flex justify-between items-start mb-1">
+                                        <span className="text-xs font-semibold text-white">{c.nickname}</span>
+                                        <span className="text-[10px] text-gray-600">
+                                            {c.timestamp ? new Date(c.timestamp).toLocaleString() : ''}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-400">{c.content}</p>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </div>

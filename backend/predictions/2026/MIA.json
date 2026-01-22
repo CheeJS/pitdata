@@ -11,8 +11,8 @@
       "code": "PIA",
       "name": "Oscar Piastri",
       "team": "McLaren",
-      "win_probability": 19.5,
-      "podium_probability": 48.7,
+      "win_probability": 19.4,
+      "podium_probability": 48.6,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -26,7 +26,7 @@
       "name": "Lando Norris",
       "team": "McLaren",
       "win_probability": 18.0,
-      "podium_probability": 45.1,
+      "podium_probability": 45.0,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -40,7 +40,7 @@
       "name": "Max Verstappen",
       "team": "Red Bull Racing",
       "win_probability": 13.2,
-      "podium_probability": 33.0,
+      "podium_probability": 32.9,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -54,7 +54,7 @@
       "name": "George Russell",
       "team": "Mercedes",
       "win_probability": 7.0,
-      "podium_probability": 17.6,
+      "podium_probability": 17.5,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -96,7 +96,7 @@
       "name": "Kimi Antonelli",
       "team": "Mercedes",
       "win_probability": 4.1,
-      "podium_probability": 10.2,
+      "podium_probability": 10.1,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -110,7 +110,7 @@
       "name": "Isack Hadjar",
       "team": "Red Bull Racing",
       "win_probability": 3.0,
-      "podium_probability": 7.6,
+      "podium_probability": 7.5,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
@@ -134,17 +134,17 @@
       }
     },
     {
-      "code": "BOT",
-      "name": "Valtteri Bottas",
-      "team": "Cadillac",
+      "code": "LIN",
+      "name": "Arvid Lindblad",
+      "team": "Racing Bulls",
       "win_probability": 2.0,
-      "podium_probability": 4.9,
+      "podium_probability": 5.1,
       "confidence": 200.0,
       "wet_boost": false,
       "features": {
         "circuit_avg": 10.0,
         "recent_form": 10.0,
-        "team_score": 0.0
+        "team_score": 0.07
       }
     }
   ],
