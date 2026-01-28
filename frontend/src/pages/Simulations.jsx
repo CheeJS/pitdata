@@ -4,6 +4,7 @@ import axios from 'axios';
 import { motion } from 'framer-motion';
 import { Trophy, Calendar, Zap, Timer, ChevronRight, Activity, TrendingUp, AlertTriangle, Calculator, Map, Info, Dna, RefreshCw, Clock, Play, BarChart3, Brain } from 'lucide-react';
 import { cn } from '../lib/utils';
+import CountdownTimer from '../components/ui/CountdownTimer';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Label, ComposedChart, Area, BarChart, Bar, Cell } from 'recharts';
 
 // ============================================================
@@ -228,48 +229,7 @@ function ChampionshipCalculator() {
     );
 }
 
-// Countdown Timer Component
-function CountdownTimer({ targetDate }) {
-    const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const now = new Date();
-            const target = new Date(targetDate);
-            const diff = target - now;
-
-            if (diff <= 0) {
-                setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-                return;
-            }
-
-            setTimeLeft({
-                days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-                hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-                minutes: Math.floor((diff / (1000 * 60)) % 60),
-                seconds: Math.floor((diff / 1000) % 60)
-            });
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [targetDate]);
-
-    return (
-        <div className="flex gap-3 mt-4">
-            {[
-                { value: timeLeft.days, label: 'Days' },
-                { value: timeLeft.hours, label: 'Hrs' },
-                { value: timeLeft.minutes, label: 'Min' },
-                { value: timeLeft.seconds, label: 'Sec' }
-            ].map((item) => (
-                <div key={item.label} className="bg-black/40 px-3 py-2 rounded-none text-center min-w-[50px]">
-                    <div className="text-xl font-mono font-bold text-black">{String(item.value).padStart(2, '0')}</div>
-                    <div className="text-[9px] uppercase text-gray-600 font-bold">{item.label}</div>
-                </div>
-            ))}
-        </div>
-    );
-}
 
 
 // ============================================================

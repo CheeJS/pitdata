@@ -135,3 +135,93 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ========== ANIMATIONS ========== */
+
+/* Skeleton shimmer effect */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Countdown flip animation */
+@keyframes flip-in {
+  0% {
+    transform: rotateX(90deg);
+    opacity: 0;
+  }
+
+  100% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes flip-out {
+  0% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: rotateX(-90deg);
+    opacity: 0;
+  }
+}
+
+/* Racing stripe animation for hero section */
+@keyframes racing-stripe {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Glow pulse for active elements */
+@keyframes glow-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+  }
+}
+
+/* Utility classes for animations */
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}
+
+.animate-flip-in {
+  animation: flip-in 0.3s ease-out forwards;
+  transform-style: preserve-3d;
+}
+
+.animate-flip-out {
+  animation: flip-out 0.3s ease-in forwards;
+  transform-style: preserve-3d;
+}
+
+.animate-racing-stripe {
+  background-size: 200% 200%;
+  animation: racing-stripe 3s ease infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}

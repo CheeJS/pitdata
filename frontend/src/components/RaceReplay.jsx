@@ -763,19 +763,19 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 {/* Row 2: Playback Controls */}
                 <div className="flex items-center gap-3 px-4 py-3 border-t-2 border-black bg-gray-100">
                     {/* Play/Pause */}
-                    <button onClick={() => setRaceTime(0)} className="p-2 text-gray-600 hover:text-black">
-                        <RotateCcw size={18} />
+                    <button onClick={() => setRaceTime(0)} className="p-2 text-gray-600 hover:text-black hover:bg-gray-200 rounded">
+                        <RotateCcw size={20} />
                     </button>
                     <button
                         disabled={!!error}
                         onClick={() => !error && setIsPlaying(!isPlaying)}
-                        className={cn("w-12 h-12 flex items-center justify-center bg-f1-red border-2 border-black text-black shrink-0 shadow-hard-sm active:translate-y-1 active:shadow-none transition-all", !!error && "opacity-50 cursor-not-allowed")}
+                        className={cn("w-14 h-14 flex items-center justify-center bg-f1-red border-2 border-black text-black shrink-0 shadow-hard active:translate-y-1 active:shadow-none transition-all", !!error && "opacity-50 cursor-not-allowed")}
                     >
-                        {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
+                        {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
                     </button>
 
                     {/* Progress Bar - Full Width */}
-                    <div className="flex-1 flex items-center gap-2">
+                    <div className="flex-1 flex flex-col justify-center gap-1">
                         <input
                             type="range"
                             min="0"
@@ -789,14 +789,18 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                 setRaceEvents([]);
                                 prevPositionsRef.current = {};
                             }}
-                            className={cn("flex-1 accent-f1-red h-2 bg-[#222] rounded-none appearance-none cursor-pointer", !!error && "opacity-50 cursor-not-allowed")}
+                            className={cn("w-full accent-f1-red h-4 bg-[#222] rounded-none appearance-none cursor-pointer border border-black", !!error && "opacity-50 cursor-not-allowed")}
                         />
+                        <div className="flex justify-between text-[10px] font-mono text-gray-500 font-bold">
+                            <span>{new Date(raceTime * 1000).toISOString().substr(11, 8)}</span>
+                            <span>{new Date(maxTime * 1000).toISOString().substr(11, 8)}</span>
+                        </div>
                     </div>
 
                     {/* Lap Counter */}
-                    <div className="text-center shrink-0 pl-2">
-                        <div className="text-[10px] text-gray-600 uppercase font-heading">Lap</div>
-                        <div className="text-lg font-heading font-bold text-black">{activeDriverState?.lap || 1}/{replayData?.totalLaps || '—'}</div>
+                    <div className="text-right shrink-0 pl-2 min-w-[60px]">
+                        <div className="text-[9px] text-gray-600 uppercase font-heading tracking-widest">Lap</div>
+                        <div className="text-2xl font-heading font-black text-black leading-none">{activeDriverState?.lap || 1}<span className="text-gray-400 text-lg">/{replayData?.totalLaps || '—'}</span></div>
                     </div>
                 </div>
 
@@ -824,126 +828,142 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 </div>
             </div>
 
-            {/* ===== DESKTOP TOP BAR ===== */}
-            <div className="hidden md:flex flex-wrap items-center justify-between gap-2 bg-white border-b border-black px-3 md:px-4 py-2 shrink-0">
-                <div className="flex items-center gap-2 md:gap-3">
-                    <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="bg-transparent text-gray-600 font-bold text-xs focus:outline-none cursor-pointer border-none">
-                        {AVAILABLE_YEARS.map(y => <option key={y} value={y} className="bg-gray-100">{y}</option>)}
-                    </select>
-                    <select value={raceId} onChange={(e) => {
-                        const newId = parseInt(e.target.value);
-                        setRaceId(newId);
-                        setReplayData(null);
-                        setRaceTime(0);
+            <div className="hidden md:flex flex-wrap items-center justify-between gap-2 bg-white border-b-2 border-black px-3 py-1 shrink-0 shadow-sm relative z-20 h-14 overflow-hidden">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 bg-gray-100 border-2 border-black px-2 py-1 shadow-hard-sm">
+                        <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="bg-transparent text-black font-heading font-bold text-lg focus:outline-none cursor-pointer border-none appearance-none pl-1">
+                            {AVAILABLE_YEARS.map(y => <option key={y} value={y} className="bg-gray-100">{y}</option>)}
+                        </select>
+                        <ChevronDown size={14} className="text-black" />
+                    </div>
 
-                        prevPositionsRef.current = {};
-                    }}
-                        className="bg-transparent text-black font-bold text-xs md:text-sm focus:outline-none cursor-pointer border-none max-w-[120px] md:max-w-none truncate">
-                        {raceList.map(r => <option key={r.id} value={r.id} className="bg-gray-100">{r.name}</option>)}
-                    </select>
-                    <div className={cn("px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                    <div className="flex items-center gap-2 bg-gray-100 border-2 border-black px-2 py-1 shadow-hard-sm min-w-[200px]">
+                        <select value={raceId} onChange={(e) => {
+                            const newId = parseInt(e.target.value);
+                            setRaceId(newId);
+                            setReplayData(null);
+                            setRaceTime(0);
+                            prevPositionsRef.current = {};
+                        }}
+                            className="bg-transparent text-black font-bold font-body text-base w-full focus:outline-none cursor-pointer border-none truncate">
+                            {raceList.map(r => <option key={r.id} value={r.id} className="bg-gray-100">{r.name}</option>)}
+                        </select>
+                        <ChevronDown size={14} className="text-black shrink-0" />
+                    </div>
+
+                    <div className={cn("px-3 py-1 border-2 border-black font-heading text-xs font-bold uppercase tracking-wider shadow-hard-sm",
                         getStatusClasses(currentStatus))}>
                         {currentStatus}
                     </div>
                 </div>
 
                 {/* CENTRAL TICKER: Race Control Messages */}
-                <div className="flex-1 flex items-center justify-center mx-4 min-h-[32px] overflow-hidden">
+                <div className="flex-1 flex items-center justify-center mx-2 overflow-hidden bg-black/5 border-x border-black/10 px-2 max-w-md">
                     <AnimatePresence mode="popLayout">
                         {visibleEvents.filter(e => {
-                            // 1. ALWAYS SHOW: Safety Cars, Red Flags, VSC
                             if (e.type === 'SC' || (e.type === 'FLAG' && ['RED', 'SC', 'VSC'].includes(e.flagType))) return true;
-
-                            // 2. NEVER SHOW: Routine Green/Yellow Flags in ticker (noisy)
                             if (e.type === 'FLAG' && ['GREEN', 'YELLOW'].includes(e.flagType)) return false;
-
-                            // 3. SHOW ALL GENERIC MESSAGES (Penalties, Investigations, Notes, etc.)
-                            // This ensures we don't accidentally hide important info by over-filtering
                             return e.category === 'MESSAGE' || (e.type !== 'FLAG' && e.type !== 'SC' && !['OVERTAKE', 'PIT', 'LOST'].includes(e.type));
                         }).slice(-1).map((e) => (
                             <motion.div
                                 key={e.id}
-                                initial={{ opacity: 0, y: 10 }}
+                                initial={{ opacity: 0, y: 15 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 text-center md:text-left"
+                                exit={{ opacity: 0, y: -15 }}
+                                className="flex flex-col md:flex-row items-center justify-center gap-2 text-center md:text-left w-full"
                             >
-                                {e.type === 'SC' ? <AlertTriangle size={12} className="text-orange-400 shrink-0" /> :
-                                    (e.type === 'FLAG' && e.flagType === 'RED') ? <Flag size={12} className="text-red-500 fill-red-500 shrink-0" /> :
-                                        (e.type === 'FLAG' && e.flagType === 'YELLOW') ? <Flag size={12} className="text-yellow-400 fill-yellow-400 shrink-0" /> :
-                                            (e.category === 'Penalty') ? <AlertCircle size={12} className="text-red-400 shrink-0" /> :
-                                                <InfoIcon size={12} className="text-gray-600 shrink-0" />}
+                                {e.type === 'SC' ? <AlertTriangle size={14} className="text-orange-500 shrink-0" /> :
+                                    (e.type === 'FLAG' && e.flagType === 'RED') ? <Flag size={14} className="text-f1-red fill-f1-red shrink-0" /> :
+                                        (e.type === 'FLAG' && e.flagType === 'YELLOW') ? <Flag size={14} className="text-yellow-500 fill-yellow-500 shrink-0" /> :
+                                            (e.category === 'Penalty') ? <AlertCircle size={14} className="text-f1-red shrink-0" /> :
+                                                <InfoIcon size={14} className="text-gray-600 shrink-0" />}
 
-                                <span className={cn(
-                                    "text-xs font-bold uppercase shrink-0",
-                                    (e.type === 'SC' || e.category === 'SafetyCar') ? "text-orange-400" :
-                                        (e.type === 'FLAG' && e.flagType === 'RED') ? "text-red-500" :
-                                            (e.type === 'FLAG' && e.flagType === 'YELLOW') ? "text-yellow-400" :
-                                                (e.category === 'Penalty') ? "text-red-400" : "text-gray-300",
-                                    (e.message && e.message.length > 80) ? "hidden lg:block" : ""
-                                )}>
-                                    {e.type === 'SC' ? 'SAFETY CAR' :
-                                        (e.type === 'FLAG' && ['RED', 'GREEN', 'YELLOW'].includes(e.flagType)) ? `${e.flagType} FLAG` :
-                                            (e.type === 'FLAG') ? 'RACE CONTROL' :
-                                                (e.category || 'INFO')}
-                                </span>
-                                <span className="text-xs text-gray-600 whitespace-normal leading-tight max-w-[280px] md:max-w-[500px] line-clamp-2">
-                                    {e.message || e.status}
-                                </span>
+                                <div className="flex flex-col md:flex-row items-baseline gap-1 min-w-0">
+                                    <span className={cn(
+                                        "text-xs font-heading font-bold uppercase shrink-0 tracking-wider",
+                                        (e.type === 'SC' || e.category === 'SafetyCar') ? "text-orange-600" :
+                                            (e.type === 'FLAG' && e.flagType === 'RED') ? "text-f1-red" :
+                                                (e.type === 'FLAG' && e.flagType === 'YELLOW') ? "text-yellow-600" :
+                                                    (e.category === 'Penalty') ? "text-f1-red" : "text-black"
+                                    )}>
+                                        {e.type === 'SC' ? 'SAFETY CAR' :
+                                            (e.type === 'FLAG' && ['RED', 'GREEN', 'YELLOW'].includes(e.flagType)) ? `${e.flagType} FLAG` :
+                                                (e.type === 'FLAG') ? 'RACE CONTROL' :
+                                                    (e.category || 'INFO')}
+                                    </span>
+                                    <span className="text-xs font-bold text-gray-700 truncate">
+                                        {e.message || e.status}
+                                    </span>
+                                </div>
                             </motion.div>
                         ))}
                     </AnimatePresence>
                 </div>
 
-                {currentWeather && (
-                    <div className="flex items-center gap-3 text-[10px] text-gray-600">
-                        <span><Thermometer size={10} className="inline mr-1" />{currentWeather.temp}°C</span>
-                        <span className={currentWeather.rain ? "text-blue-400" : ""}><Droplets size={10} className="inline mr-1" />{currentWeather.rain ? "WET" : "DRY"}</span>
+                <div className="flex items-center gap-3">
+                    {/* Clock */}
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#151515] border-2 border-gray-600 shadow-sm">
+                        <div className="flex flex-col items-end leading-none">
+                            <span className="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-0.5">Local Time</span>
+                            <span className="text-sm font-heading font-white text-white tracking-widest">
+                                {localTime ? localTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'}
+                            </span>
+                        </div>
                     </div>
-                )}
 
-                <div className="flex items-center gap-1 md:gap-2">
-                    {/* Local Race Time Clock */}
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded border border-gray-600 mx-2">
-                        <Clock size={14} className="text-gray-400" />
-                        <span className="text-xs font-mono font-bold text-white">
-                            {localTime ? localTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'}
+                    <div className="h-8 w-px bg-black/20 mx-1" />
+
+                    {/* Lap Counter - Desktop */}
+                    <div className="flex flex-col items-end leading-none mr-2">
+                        <span className="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Lap</span>
+                        <span className="text-2xl font-heading font-black text-black">
+                            {activeDriverState?.lap || 1}<span className="text-gray-400 text-lg">/{replayData?.totalLaps || '—'}</span>
                         </span>
                     </div>
 
-                    <span className="text-xs text-gray-700 font-mono hidden sm:inline">L{activeDriverState?.lap || 1}/{replayData?.totalLaps || '—'}</span>
-                    <button onClick={() => setRaceTime(0)} className="p-1 text-gray-600 hover:text-black"><RotateCcw size={14} /></button>
-                    <div className="hidden sm:flex bg-gray-700 rounded p-0.5">
-                        {[1, 5, 20, 50].map(s => (
-                            <button key={s} onClick={() => setSpeed(s)} className={cn("px-2 py-1 text-xs font-bold rounded", speed === s ? "bg-white text-black" : "text-gray-300 hover:text-white")}>{s}x</button>
-                        ))}
+                    {/* Playback Controls */}
+                    <div className="flex items-center gap-2 bg-gray-100 border-2 border-black p-1 shadow-hard-sm">
+                        <button onClick={() => setRaceTime(0)} className="p-1.5 text-gray-600 hover:text-black hover:bg-gray-200 rounded"><RotateCcw size={16} /></button>
+
+                        <div className="hidden xl:flex bg-white border border-gray-300 mx-1">
+                            {[1, 5, 20, 50].map(s => (
+                                <button key={s} onClick={() => setSpeed(s)} className={cn("px-2 py-1 text-[10px] font-bold transition-colors border-r border-gray-200 last:border-r-0", speed === s ? "bg-black text-white" : "text-gray-500 hover:text-black")}>{s}x</button>
+                            ))}
+                        </div>
+
+                        <button disabled={!!error} onClick={() => !error && setIsPlaying(!isPlaying)} className={cn("w-10 h-10 flex items-center justify-center bg-f1-red border border-black text-black shadow-sm active:translate-y-[1px] active:shadow-none transition-all", !!error && "opacity-50 cursor-not-allowed")}>
+                            {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-0.5" />}
+                        </button>
                     </div>
-                    <button disabled={!!error} onClick={() => !error && setIsPlaying(!isPlaying)} className={cn("w-7 h-7 flex items-center justify-center bg-f1-red rounded text-black", !!error && "opacity-50 cursor-not-allowed")}>
-                        {isPlaying ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" className="ml-0.5" />}
-                    </button>
+                </div>
+
+                {/* Full Width Progress Bar (Bottom of Header) */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 group cursor-pointer">
+                    <div className="absolute inset-0 bg-gray-200" />
+                    <div
+                        className="absolute top-0 bottom-0 left-0 bg-f1-red transition-all duration-75"
+                        style={{ width: `${(raceTime / maxTime) * 100}%` }}
+                    />
                     <input
                         type="range"
                         min="0"
                         max={maxTime}
                         step="1"
                         value={raceTime}
-                        disabled={!!error}
                         onChange={(e) => {
                             setRaceTime(parseFloat(e.target.value));
                             setIsPlaying(false);
-                            // Clear position history on scrub to prevent artifacts
                             prevPositionsRef.current = {};
                         }}
-                        className={cn("w-16 sm:w-24 accent-f1-red h-1 bg-[#2A2A30] rounded appearance-none cursor-pointer", !!error && "opacity-50 cursor-not-allowed")}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     />
-                    <span className="text-[10px] text-gray-600 font-mono w-14 hidden sm:inline">{new Date(raceTime * 1000).toISOString().substr(11, 8)}</span>
                 </div>
             </div>
 
             {/* ===== MOBILE LAYOUT ===== */}
-            <div className="md:hidden flex-1 flex flex-col overflow-hidden" style={{ minHeight: 'calc(100vh - 180px)' }}>
+            <div className="md:hidden flex-1 flex flex-col overflow-hidden" style={{ minHeight: 'calc(100vh - 220px)' }}>
                 {/* Full-screen Track Map - Clean View */}
-                <div className="flex-1 relative bg-gray-50" style={{ minHeight: '350px' }}>
+                <div className="flex-1 relative bg-gray-50" style={{ minHeight: '250px' }}>
                     {/* Mini Leaderboard Toggle - Top Right */}
                     <button
                         onClick={() => setShowLeaderboard(!showLeaderboard)}
@@ -966,14 +986,12 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                 {currentPositions.slice(0, 5).map((d) => {
                                     const meta = replayData?.drivers?.[d.driver];
                                     return (
-                                        <div
-                                            key={d.driver}
-                                            onClick={() => setActiveDriver(d.driver)}
+                                        <div key={d.driver}
                                             className={cn(
-                                                "flex items-center gap-2 px-3 py-1.5 border-b border-[#1a1a1a] last:border-b-0 cursor-pointer",
-                                                activeDriver === d.driver && "bg-white/10"
-                                            )}
-                                        >
+                                                "flex items-center justify-between py-0.5 px-2 border-b border-gray-100 group hover:bg-black hover:text-white transition-colors cursor-pointer",
+                                                d.gapToLeader === 0 && "bg-yellow-50/50",
+                                                d.status === 'DNF' && "opacity-50 grayscale"
+                                            )}    >
                                             <span className={cn(
                                                 "w-4 text-center font-bold text-xs",
                                                 d.rank === 1 ? "text-f1-red" : d.rank <= 3 ? "text-black" : "text-gray-600"
@@ -1087,36 +1105,63 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
             </div>
 
             {/* ===== DESKTOP LAYOUT ===== */}
-            <div className="hidden md:flex flex-1" style={{ overflow: 'hidden', minHeight: '400px' }}>
+            <div className="hidden md:flex flex-1 min-h-0" style={{ overflow: 'hidden' }}>
                 {/* LEFT: LEADERBOARD */}
-                <div className="w-56 bg-white border-r border-black flex flex-col min-h-0">
-                    <div className="p-2 border-b border-black text-[9px] font-bold uppercase text-gray-600 shrink-0">Standings</div>
-                    <div className="flex-1 overflow-y-auto min-h-0">
+                {/* LEFT: LEADERBOARD */}
+                <div className="w-48 bg-white border-r-2 border-black flex flex-col min-h-0 shrink-0 z-10">
+                    <div className="p-1.5 border-b-2 border-black bg-gray-100/50 flex justify-between items-center shrink-0">
+                        <span className="text-[9px] font-heading font-bold uppercase tracking-wider text-black">Live Standings</span>
+                        <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                            <span className="text-[9px] font-bold text-red-500 uppercase">LIVE</span>
+                        </div>
+                    </div>
+                    <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-gray-400">
                         {currentPositions.length === 0 ? (
-                            <div className="p-4 text-center text-gray-600 text-xs">
-                                <div className="text-gray-600 mb-1">No position data</div>
-                                <div className="text-[10px]">Select a race with telemetry</div>
+                            <div className="p-8 text-center text-gray-400 text-xs italic">
+                                No telemetry data loaded
                             </div>
                         ) : (
                             <AnimatePresence>
                                 {currentPositions.map((d) => {
                                     const meta = replayData?.drivers?.[d.driver] || F1_2026_GRID.find(g => g.driver === d.driver);
                                     const posChange = positionChangesRef.current[d.driver];
+                                    const isDNF = d.status === 'DNF' || d.status === 'OUT';
+
                                     return (
                                         <motion.div key={d.driver} layout transition={{ type: "spring", stiffness: 200, damping: 25 }}
                                             onClick={() => setActiveDriver(d.driver)}
-                                            className={cn("flex items-center gap-2 px-2 py-1 cursor-pointer border-l-[3px]",
-                                                activeDriver === d.driver ? "bg-white/10" : "hover:bg-white/5")}
-                                            style={{ borderLeftColor: meta?.color || '#444' }}>
-                                            <div className="w-5 text-center relative">
-                                                <span className={cn("font-black text-sm", d.rank === 1 ? "text-f1-red" : d.rank <= 3 ? "text-black" : "text-gray-700")}>{d.rank}</span>
-                                                {posChange && <span className={cn("absolute -top-1 -right-1 text-[9px] font-bold", posChange > 0 ? "text-green-600" : "text-red-600")}>{posChange > 0 ? '▲' : '▼'}</span>}
+                                            className={cn("flex items-center gap-1.5 px-2 py-1 cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors relative group",
+                                                activeDriver === d.driver ? "bg-black/5" : "")}
+                                        >
+                                            {/* Active Marker */}
+                                            {activeDriver === d.driver && <div className="absolute left-0 top-0 bottom-0 w-1 bg-f1-red" />}
+
+                                            {/* Rank */}
+                                            <div className="w-5 text-center relative shrink-0">
+                                                <span className={cn("font-heading font-black text-sm",
+                                                    d.rank === 1 ? "text-f1-red" : isDNF ? "text-gray-300 decoration-line-through" : "text-black")}>
+                                                    {d.rank}
+                                                </span>
+                                                {posChange && <span className={cn("absolute -top-1 -right-1 text-[8px] font-bold", posChange > 0 ? "text-green-600" : "text-red-600")}>{posChange > 0 ? '▲' : '▼'}</span>}
                                             </div>
-                                            <span className={cn("flex-1 font-bold text-xs truncate", activeDriver === d.driver ? "text-black" : "text-gray-600")}>{d.driver}</span>
-                                            <span className={cn("text-[10px] font-mono w-12 text-right", (d.status === 'DNF' || d.status === 'OUT') ? "text-red-600" : d.interval && d.interval < 1 ? "text-orange-600" : "text-gray-700")}>
-                                                {(d.status === 'DNF' || d.status === 'OUT') ? 'OUT' : d.interval ? `+${d.interval.toFixed(1)}` : '—'}
-                                            </span>
-                                            <TyreIcon compound={d.tyre} />
+
+                                            {/* Team Color Strip */}
+                                            <div className="w-0.5 h-5 rounded-none shrink-0" style={{ backgroundColor: meta?.color || '#ccc' }} />
+
+                                            {/* Driver Name */}
+                                            <div className="flex-1 min-w-0">
+                                                <span className={cn("font-bold text-xs block truncate", activeDriver === d.driver ? "text-black" : "text-gray-700", isDNF && "text-gray-400")}>{d.driver}</span>
+                                                <span className="text-[8px] text-gray-500 truncate block">{meta?.team}</span>
+                                            </div>
+
+                                            {/* Interval/Tyre */}
+                                            <div className="text-right shrink-0 flex items-center gap-1">
+                                                <span className={cn("text-[10px] font-mono font-bold", (isDNF) ? "text-red-500" : d.interval && d.interval < 1 ? "text-orange-600" : "text-gray-700")}>
+                                                    {(isDNF) ? 'OUT' : d.interval ? `+${d.interval.toFixed(1)}` : 'LDR'}
+                                                </span>
+                                                <TyreIcon compound={d.tyre} size="sm" />
+                                            </div>
                                         </motion.div>
                                     )
                                 })}
@@ -1126,26 +1171,30 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 </div>
 
                 {/* CENTER: SVG TRACK MAP */}
-                <div className="flex-1 relative overflow-hidden bg-white min-h-0">
-                    <div className="absolute top-4 left-4 z-10">
-                        <div className="text-lg font-heading font-black text-black uppercase">{currentRaceName}</div>
-                        <div className="text-sm text-gray-700 mt-0.5">Lap {activeDriverState?.lap || 1} / {replayData?.totalLaps || '—'}</div>
+                <div className="flex-1 relative overflow-hidden bg-white min-h-0 group">
+                    <div className="absolute top-4 left-4 z-10 pointer-events-none">
+                        <div className="text-3xl md:text-5xl font-heading font-black text-black uppercase tracking-tight italic leading-none opacity-20 group-hover:opacity-100 transition-opacity duration-500">{currentRaceName}</div>
+                        <div className="flex items-baseline gap-2 mt-2">
+                            <div className="text-sm font-bold text-gray-400 uppercase tracking-widest">Lap</div>
+                            <div className="text-4xl font-heading font-black text-black leading-none">{activeDriverState?.lap || 1}</div>
+                            <div className="text-xl font-heading font-bold text-gray-300">/ {replayData?.totalLaps || '—'}</div>
+                        </div>
                     </div>
 
                     {error ? (
-                        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center flex-col text-center z-50 bg-gray-100">
+                        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center flex-col text-center z-50 bg-gray-100 pt-20">
                             {/* Grid pattern background */}
                             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-                            <div className="relative z-10 px-8">
+                            <div className="relative z-10 px-8 max-w-2xl">
                                 <AlertTriangle size={64} className="mb-4 text-yellow-500 mx-auto" />
-                                <h3 className="text-2xl font-bold text-black mb-3">REPLAY UNAVAILABLE</h3>
-                                <p className="text-gray-300 max-w-md text-lg mb-4">{error}</p>
+                                <h3 className="text-4xl font-heading font-black text-black mb-4 uppercase tracking-wide">REPLAY UNAVAILABLE</h3>
+                                <p className="text-gray-700 max-w-md mx-auto text-lg mb-6 font-medium">{error}</p>
                                 {year >= 2026 ? (
-                                    <div className="mt-6 p-5 bg-f1-red/5 border border-f1-red/20 rounded-none max-w-lg mx-auto backdrop-blur-sm">
-                                        <div className="text-f1-red text-sm font-bold mb-3 flex items-center gap-2 justify-center uppercase tracking-wider">
+                                    <div className="mt-6 p-6 bg-white border-2 border-black rounded-none max-w-lg mx-auto shadow-hard">
+                                        <div className="text-f1-red text-base font-bold mb-3 flex items-center gap-2 justify-center uppercase tracking-wider">
                                             Available Replays
                                         </div>
-                                        <div className="text-sm text-gray-300">
+                                        <div className="text-base text-gray-700 font-medium">
                                             Select from the year selector above to watch past race replays
                                         </div>
                                     </div>
@@ -1173,145 +1222,136 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 </div>
 
                 {/* RIGHT: INFO PANEL - Hidden on mobile */}
-                <div className="hidden md:block w-64 bg-white border-l border-black relative" style={{ overflow: 'hidden' }}>
+                <div className="hidden md:block w-64 bg-white border-l-2 border-black relative z-10" style={{ overflow: 'hidden' }}>
                     <div className="absolute inset-0 flex flex-col">
                         {/* Selected Driver Card */}
                         {activeDriverState && (
-                            <div className="p-3 border-b border-black shrink-0">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <div className="w-1.5 h-8 rounded-none" style={{ backgroundColor: replayData?.drivers?.[activeDriver]?.color || '#fff' }} />
-                                    <div className="flex-1">
-                                        <div className="font-bold text-black text-base">{activeDriver}</div>
-                                        <div className="text-xs text-gray-600">{replayData?.drivers?.[activeDriver]?.team}</div>
+                            <div className="p-4 border-b-2 border-black shrink-0 bg-gray-50/50">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-2 h-10 border border-black" style={{ backgroundColor: replayData?.drivers?.[activeDriver]?.color || '#fff' }} />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-heading font-black text-black text-xl truncate leading-none mb-0.5">{activeDriver}</div>
+                                        <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">{replayData?.drivers?.[activeDriver]?.team}</div>
                                     </div>
-                                    <TyreIcon compound={activeDriverState.tyre} size="lg" />
+                                    <div className="scale-125 origin-right">
+                                        <TyreIcon compound={activeDriverState.tyre} size="lg" />
+                                    </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <div className="flex-1 bg-gray-100 border border-gray-300 rounded-none p-2 text-center">
-                                        <div className="text-2xl font-heading font-black text-black">{activeDriverState.rank}</div>
-                                        <div className="text-[10px] text-gray-600 uppercase font-bold">Pos</div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div className="bg-white border-2 border-black p-2 text-center shadow-hard-sm">
+                                        <div className="text-3xl font-heading font-black text-black leading-none">{activeDriverState.rank}</div>
+                                        <div className="text-[9px] text-gray-500 uppercase font-bold tracking-wider mt-1">Pos</div>
                                     </div>
-                                    <div className="flex-1 bg-gray-100 border border-gray-300 rounded-none p-2 text-center">
-                                        <div className="text-2xl font-heading font-black text-black">{activeDriverState.lap}</div>
-                                        <div className="text-[10px] text-gray-600 uppercase font-bold">Lap</div>
+                                    <div className="bg-white border-2 border-black p-2 text-center shadow-hard-sm">
+                                        <div className="text-3xl font-heading font-black text-black leading-none">{activeDriverState.lap}</div>
+                                        <div className="text-[9px] text-gray-500 uppercase font-bold tracking-wider mt-1">Lap</div>
                                     </div>
-                                    <div className="flex-1 bg-gray-100 border border-gray-300 rounded-none p-2 text-center">
-                                        <div className="text-lg font-heading font-black text-orange-600">
-                                            {activeDriverState.interval ? `+${activeDriverState.interval.toFixed(1)}` : '—'}
+                                    <div className="bg-white border-2 border-black p-2 text-center shadow-hard-sm overflow-hidden">
+                                        <div className="text-xl font-heading font-black text-f1-red leading-tight pt-1">
+                                            {activeDriverState.interval ? `+${activeDriverState.interval.toFixed(1)}` : 'LDR'}
                                         </div>
-                                        <div className="text-[10px] text-gray-600 uppercase font-bold">Gap</div>
+                                        <div className="text-[9px] text-gray-500 uppercase font-bold tracking-wider mt-1">Gap</div>
                                     </div>
                                 </div>
                             </div>
                         )}
 
                         {/* Battles */}
-                        <div className="p-3 border-b border-black shrink-0">
-                            <div className="text-xs font-bold uppercase text-gray-700 mb-2 flex items-center gap-1">
-                                <Circle size={8} className="text-orange-500 fill-orange-500" /> Battles
+                        <div className="p-3 border-b-2 border-black shrink-0 bg-gray-50">
+                            <div className="text-[10px] font-bold uppercase text-gray-700 mb-2 flex items-center gap-1 tracking-wider">
+                                <Circle size={8} className="text-orange-500 fill-orange-500" /> Close Battles
                             </div>
                             {battles.length > 0 ? (
-                                <div className="space-y-1.5">
+                                <div className="space-y-2">
                                     {battles.map(b => {
                                         const ahead = currentPositions.find(x => x.rank === b.rank - 1);
                                         if (!ahead) return null;
                                         return (
-                                            <div key={b.driver} className="flex items-center justify-between bg-orange-100 border border-orange-300 rounded px-2 py-1.5">
+                                            <div key={b.driver} className="flex items-center justify-between bg-white border border-black shadow-hard-sm px-2 py-1.5 rounded-none">
                                                 <span className="text-xs font-bold text-black">{ahead.driver}</span>
-                                                <span className="text-xs font-mono font-bold text-orange-600">{b.interval?.toFixed(2)}s</span>
+                                                <span className="text-xs font-heading font-black text-f1-red">{b.interval?.toFixed(2)}s</span>
                                                 <span className="text-xs font-bold text-black">{b.driver}</span>
                                             </div>
                                         )
                                     })}
                                 </div>
                             ) : (
-                                <div className="text-xs text-gray-500 italic">No close battles</div>
+                                <div className="text-xs text-gray-400 italic text-center py-2">No active battles</div>
                             )}
                         </div>
 
                         {/* Events Feed */}
-                        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                            <div className="p-2 text-xs font-bold uppercase text-gray-700 flex items-center justify-between shrink-0 border-b border-black">
-                                <span className="flex items-center gap-1"><Timer size={12} /> Race Feed</span>
-                                <span className="text-[10px] font-mono text-gray-600">{visibleEvents.length} events</span>
+                        <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-gray-100">
+                            <div className="p-2 text-[10px] font-bold uppercase text-gray-500 flex items-center justify-between shrink-0 border-b border-black/10 bg-gray-200">
+                                <span className="flex items-center gap-1">Race Feed</span>
+                                <span className="font-mono">{visibleEvents.length}</span>
                             </div>
-                            <div ref={feedRef} className="flex-1 overflow-y-auto px-2 pt-2 pb-4 min-h-0 scroll-smooth">
-                                <div className="space-y-1.5">
+                            <div ref={feedRef} className="flex-1 overflow-y-auto px-3 pt-3 pb-4 min-h-0 scrollbar-thin scrollbar-thumb-gray-400">
+                                <div className="space-y-3">
 
                                     {visibleEvents.filter(e => ['OVERTAKE', 'LOST', 'PIT', 'SC', 'FLAG'].includes(e.type)).reverse().map((e) => (
-                                        <motion.div key={e.id} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                                        <motion.div key={e.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                                             className={cn(
-                                                "flex items-center gap-2 rounded px-2.5 py-2 border-2",
-                                                e.type === 'OVERTAKE' && "bg-green-100 border-green-500",
-                                                e.type === 'LOST' && "bg-red-100 border-red-400",
-                                                e.type === 'PIT' && "bg-gray-100 border-gray-400",
-                                                e.type === 'SC' && "bg-yellow-200 border-yellow-500",
-                                                (e.type === 'FLAG' && e.flagType === 'RED') && "bg-red-200 border-red-600",
-                                                (e.type === 'FLAG' && e.flagType === 'GREEN') && "bg-green-100 border-green-500",
-                                                (e.type === 'FLAG' && e.flagType === 'YELLOW') && "bg-yellow-100 border-yellow-500",
-                                                (e.type === 'FLAG' && !['RED', 'GREEN', 'YELLOW'].includes(e.flagType)) && "bg-gray-100 border-gray-400"
+                                                "flex flex-col gap-1 relative pl-3 py-1 border-l-2",
+                                                e.type === 'OVERTAKE' && "border-green-500",
+                                                e.type === 'LOST' && "border-red-500",
+                                                e.type === 'PIT' && "border-gray-500",
+                                                e.type === 'SC' && "border-orange-500",
+                                                (e.type === 'FLAG' && e.flagType === 'RED') && "border-f1-red",
+                                                (e.type === 'FLAG' && e.flagType === 'GREEN') && "border-green-500",
+                                                (e.type === 'FLAG' && e.flagType === 'YELLOW') && "border-yellow-500",
+                                                (e.type === 'FLAG' && !['RED', 'GREEN', 'YELLOW'].includes(e.flagType)) && "border-gray-400"
                                             )}>
-                                            {e.type === 'OVERTAKE' && <ArrowUp size={12} className="text-green-700 shrink-0" />}
-                                            {e.type === 'LOST' && <ArrowDown size={12} className="text-red-700 shrink-0" />}
-                                            {e.type === 'PIT' && <Wrench size={12} className="text-gray-700 shrink-0" />}
-                                            {e.type === 'SC' && <AlertTriangle size={12} className="text-yellow-700 shrink-0" />}
-                                            {(e.type === 'FLAG' && e.flagType === 'GREEN') && <Flag size={12} className="text-green-700 shrink-0" />}
-                                            {(e.type === 'FLAG' && e.flagType === 'YELLOW') && <Flag size={12} className="text-yellow-700 shrink-0" />}
-                                            {(e.type === 'FLAG' && !['RED', 'GREEN', 'YELLOW'].includes(e.flagType)) && <Zap size={12} className="text-gray-700 shrink-0" />}
+                                            <div className="flex items-center justify-between">
+                                                <span className={cn("text-[9px] font-bold uppercase tracking-wider",
+                                                    e.type === 'OVERTAKE' ? "text-green-700" :
+                                                        e.type === 'LOST' ? "text-red-700" :
+                                                            e.type === 'PIT' ? "text-gray-600" :
+                                                                e.type === 'SC' ? "text-orange-600" : "text-black"
+                                                )}>
+                                                    {e.type}
+                                                </span>
+                                                {(e.type !== 'PIT' && e.lap) && <span className="text-[9px] font-mono text-gray-400">L{e.lap}</span>}
+                                            </div>
 
-                                            <div className="flex-1 text-xs">
+                                            <div className="text-xs leading-tight">
                                                 {e.type === 'OVERTAKE' && (
-                                                    <>
-                                                        <span className="font-bold text-green-800">{e.driver}</span>
-                                                        <span className="text-gray-700"> moves up to P{e.endPos}</span>
-                                                    </>
+                                                    <span>
+                                                        <span className="font-bold text-black">{e.driver}</span>
+                                                        <span className="text-gray-600"> passed for P{e.endPos}</span>
+                                                    </span>
                                                 )}
                                                 {e.type === 'LOST' && (
-                                                    <>
-                                                        <span className="font-bold text-red-800">{e.driver}</span>
-                                                        <span className="text-gray-700"> drops {e.positions} pos</span>
-                                                    </>
+                                                    <span>
+                                                        <span className="font-bold text-black">{e.driver}</span>
+                                                        <span className="text-gray-600"> lost {e.positions} places</span>
+                                                    </span>
                                                 )}
                                                 {e.type === 'PIT' && (
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="font-bold text-black tracking-wider">{e.driver}</span>
-                                                            <span className="text-[10px] text-gray-600 uppercase tracking-widest">PIT STOP</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 bg-black/40 rounded px-1.5 py-1 mt-0.5 border border-white/5">
-                                                            <div className="flex items-center gap-1">
-                                                                <TyreIcon compound={e.fromTyre} size="sm" />
-                                                                <ArrowRight size={8} className="text-gray-600" />
-                                                                <TyreIcon compound={e.toTyre} size="sm" />
-                                                            </div>
-                                                            {/* Optional: Add pit duration if available in generic data */}
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className="font-bold text-black">{e.driver}</span>
+                                                        <div className="flex items-center gap-1 bg-white border border-black px-1 rounded-sm shadow-sm">
+                                                            <TyreIcon compound={e.fromTyre} size="sm" />
+                                                            <ArrowRight size={8} className="text-black" />
+                                                            <TyreIcon compound={e.toTyre} size="sm" />
                                                         </div>
                                                     </div>
                                                 )}
                                                 {e.type === 'SC' && (
-                                                    <span className="font-bold text-yellow-800 tracking-wider">
-                                                        {e.message === 'VSC' ? 'VIRTUAL SAFETY CAR' : 'SAFETY CAR DEPLOYED'}
+                                                    <span className="font-heading font-bold text-black text-sm uppercase">
+                                                        {e.message === 'VSC' ? 'Virtual Safety Car' : 'Safety Car'}
                                                     </span>
                                                 )}
-                                                {(e.type === 'FLAG' && e.flagType === 'RED') && (
-                                                    <span className="font-bold text-red-800 tracking-wider">RED FLAG</span>
+                                                {(e.type === 'FLAG') && (
+                                                    <span className="font-heading font-bold text-black text-sm uppercase">
+                                                        {e.flagType} Flag
+                                                    </span>
                                                 )}
-                                                {(e.type === 'FLAG' && e.flagType === 'GREEN') && (
-                                                    <span className="font-bold text-green-800 tracking-wider">GREEN FLAG</span>
-                                                )}
-                                                {(e.type === 'FLAG' && e.flagType === 'YELLOW') && (
-                                                    <span className="font-bold text-yellow-700 tracking-wider">YELLOW FLAG</span>
-                                                )}
-                                                {(e.type === 'FLAG' && !['RED', 'GREEN', 'YELLOW'].includes(e.flagType)) && (
-                                                    <span className="font-bold text-gray-700 tracking-wider">{e.message}</span>
-                                                )}
-
                                             </div>
-                                            {(e.type !== 'PIT' && e.lap) && <span className="text-[10px] text-gray-700 shrink-0 bg-gray-200 px-1.5 py-0.5 rounded font-bold">L{e.lap}</span>}
                                         </motion.div>
                                     ))}
                                     {visibleEvents.length === 0 && (
-                                        <div className="text-[9px] text-gray-600 italic text-center py-4">Events will appear here...</div>
+                                        <div className="text-[10px] text-gray-400 italic text-center py-8">Waiting for race start...</div>
                                     )}
                                 </div>
                             </div>
@@ -1395,14 +1435,15 @@ function SVGTrackMap({ map, positions, activeDriver, drivers, showAllLabels = fa
                     const pos = toScreen(corner.x, corner.y);
                     return (
                         <g key={`corner-${i}`} transform={`translate(${pos.x}, ${pos.y})`}>
-                            <circle r={10} fill="white" stroke="black" strokeWidth={2} />
+                            <circle r={12} fill="white" stroke="black" strokeWidth={2} />
                             <text
                                 x={0}
-                                y={4}
+                                y={5}
                                 fill="black"
-                                fontSize="9"
+                                fontSize="10"
                                 fontWeight="bold"
                                 textAnchor="middle"
+                                fontFamily="monospace"
                             >
                                 {corner.number}
                             </text>
@@ -1437,23 +1478,24 @@ function SVGTrackMap({ map, positions, activeDriver, drivers, showAllLabels = fa
                     const isActive = p.driver === activeDriver;
                     const isTop10 = p.rank <= 10;
                     const showLabel = isActive || (showAllLabels && isTop10);
-                    const w = isActive ? 16 : 10;
-                    const h = isActive ? 6 : 4;
+                    const w = isActive ? 24 : 14;
+                    const h = isActive ? 10 : 6;
 
                     return (
                         (p.status !== 'DNF' && p.status !== 'OUT' && !(p.lap === 0 && p.isInPit)) && ( // Hide if DNF or DNS (lap 0 in pit)
                             <g key={p.driver} transform={`translate(${pos.x}, ${pos.y}) rotate(${angle}) translate(0, ${yOffset})`}>
-                                {isActive && <ellipse cx={0} cy={0} rx={14} ry={10} fill={color} opacity={0.3} />}
+                                {isActive && <ellipse cx={0} cy={0} rx={20} ry={14} fill={color} opacity={0.3} />}
                                 <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={2} fill={color} stroke={isPit ? 'black' : 'black'} strokeWidth={isPit ? 2 : 1.5} />
                                 {showLabel && (
                                     <text
-                                        x={14}
-                                        y={4}
+                                        x={16}
+                                        y={5}
                                         fill="white"
-                                        fontSize={isActive ? "10" : "8"}
+                                        fontSize={isActive ? "14" : "11"}
                                         fontWeight="bold"
+                                        fontFamily="monospace"
                                         transform={`rotate(${-angle})`}
-                                        style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
+                                        style={{ textShadow: '0 0 4px rgba(0,0,0,1), 0 0 2px rgba(0,0,0,1)' }}
                                     >
                                         {p.driver}
                                     </text>

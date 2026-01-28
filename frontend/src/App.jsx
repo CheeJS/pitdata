@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Flag, Trophy, Calendar, ChevronRight, ChevronUp, ChevronDown, Activity, Zap, Timer, MapPin, BarChart, Brain, Menu, X, Thermometer, MessageSquare, Clock } from 'lucide-react';
 import axios from 'axios';
 import { cn } from './lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 import RaceReplay from './components/RaceReplay';
 import TelemetryAnalysis from './components/TelemetryAnalysis';
 import Standings from './pages/Standings';
@@ -12,6 +13,8 @@ import History from './pages/History';
 import RaceControlFeed from './components/RaceControlFeed';
 import Paddock from './pages/Paddock';
 import DriverSprite from './components/DriverSprite';
+import { DashboardSkeleton, PageTransition } from './components/ui/Skeleton';
+import CountdownTimer from './components/ui/CountdownTimer';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -141,25 +144,38 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 pt-14 pb-16 md:pb-0 md:pt-0 md:ml-20 lg:ml-64 p-4 md:p-8 lg:p-12 overflow-y-auto">
-        <div className="max-w-7xl mx-auto">
-          {loading ? (
-            <div className="flex h-[50vh] items-center justify-center flex-col gap-4">
-              <div className="w-16 h-16 border-4 border-black border-t-f1-red animate-spin" />
-              <div className="text-xl font-heading animate-pulse">LOADING...</div>
-            </div>
-          ) : (
-            <>
-              {activeTab === 'dashboard' && <DashboardView data={raceData} standingsData={standingsData} />}
-              {activeTab === 'replay' && <RaceReplay raceId={raceData?.raceId} />}
-              {activeTab === 'analysis' && <TelemetryAnalysis raceId={raceData?.raceId} />}
-              {activeTab === 'standings' && <Standings />}
-              {activeTab === 'simulations' && <Simulations />}
-              {activeTab === 'history' && <History />}
-              {activeTab === 'predictions' && <Predictions />}
-              {activeTab === 'paddock' && <Paddock />}
-            </>
-          )}
+      <main className={cn(
+        "transition-all duration-300",
+        activeTab === 'replay'
+          ? "fixed inset-0 top-14 md:top-0 left-0 md:left-20 lg:left-64 overflow-y-auto z-0 bg-gray-200"
+          : "flex-1 pt-14 pb-16 md:pb-0 md:pt-0 md:ml-20 lg:ml-64 p-4 md:p-8 lg:p-12 overflow-y-auto min-h-screen"
+      )} style={activeTab === 'replay' ? { height: '100dvh' } : {}}>
+        <div className={cn(
+          "mx-auto transition-all duration-300",
+          activeTab === 'replay' ? "w-full h-full max-w-none" : "max-w-7xl"
+        )}>
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <DashboardSkeleton key="loading" />
+            ) : (
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.25, ease: 'easeInOut' }}
+              >
+                {activeTab === 'dashboard' && <DashboardView data={raceData} standingsData={standingsData} />}
+                {activeTab === 'replay' && <RaceReplay raceId={raceData?.raceId} />}
+                {activeTab === 'analysis' && <TelemetryAnalysis raceId={raceData?.raceId} />}
+                {activeTab === 'standings' && <Standings />}
+                {activeTab === 'simulations' && <Simulations />}
+                {activeTab === 'history' && <History />}
+                {activeTab === 'predictions' && <Predictions />}
+                {activeTab === 'paddock' && <Paddock />}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
 
@@ -176,19 +192,27 @@ export default function App() {
 
 function NavItem({ icon, label, active, onClick }) {
   return (
-    <button
+    <motion.button
       onClick={onClick}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.98 }}
       className={cn(
-        "w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-3 transition-all duration-100 group relative border-b-2 border-transparent hover:bg-black hover:text-white",
+        "w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-3 transition-all duration-200 group relative border-b-2 border-transparent",
         active
-          ? "bg-f1-red text-white border-black font-bold shadow-hard-sm"
-          : "text-gray-600 hover:shadow-hard-sm"
+          ? "bg-f1-red text-white border-black font-bold shadow-hard-sm animate-glow-pulse"
+          : "text-gray-600 hover:bg-black hover:text-white hover:shadow-[0_0_15px_rgba(255,0,0,0.3)] hover:shadow-hard-sm"
       )}
     >
       {active && <div className="hidden lg:block absolute right-2 w-2 h-2 bg-white" />}
-      {React.cloneElement(icon, { size: 20, className: active ? "text-white" : "text-black group-hover:text-white" })}
+      <motion.span
+        className="inline-flex"
+        whileHover={{ rotate: active ? 0 : 10 }}
+        transition={{ duration: 0.2 }}
+      >
+        {React.cloneElement(icon, { size: 20, className: active ? "text-white" : "text-black group-hover:text-white transition-colors duration-200" })}
+      </motion.span>
       <span className="hidden lg:block font-heading tracking-wide text-sm pt-1">{label}</span>
-    </button>
+    </motion.button>
   )
 }
 
@@ -372,13 +396,22 @@ function DashboardView({ data, standingsData }) {
         {/* ========== CINEMATIC HERO ========== */}
         <header className="relative overflow-hidden bg-white border-4 border-black min-h-[320px] group shadow-hard">
 
-          {/* Background Effects */}
+          {/* Background Effects - Enhanced with gradients */}
           <div className="absolute inset-0 z-0">
             <div className="absolute inset-0 bg-f1-light opacity-90" />
+            {/* Animated racing stripe gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-f1-red/5 to-transparent animate-racing-stripe" />
+            {/* Diagonal accent stripe */}
+            <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-f1-red/10 via-f1-red/5 to-transparent" />
+            {/* Bottom edge glow */}
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/5 to-transparent" />
+            {/* Grid pattern */}
             <div className="absolute inset-0 opacity-10" style={{
               backgroundImage: 'linear-gradient(#000 2px, transparent 2px), linear-gradient(90deg, #000 2px, transparent 2px)',
               backgroundSize: '32px 32px'
             }} />
+            {/* Corner accent */}
+            <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-f1-red/10 to-transparent rounded-br-full" />
           </div>
 
           {/* Content */}
@@ -403,8 +436,8 @@ function DashboardView({ data, standingsData }) {
                 </div>
 
                 {/* Main Content */}
-                <div className="flex-1 flex items-end justify-between gap-8 mt-8">
-                  <div className="flex-1">
+                <div className="flex-1 flex items-center justify-between gap-8 mt-8 flex-wrap">
+                  <div>
                     <div className="text-black text-sm font-medium mb-2 flex items-center gap-2">
                       <MapPin size={14} className="text-f1-red" />
                       {data.circuit}
@@ -423,7 +456,7 @@ function DashboardView({ data, standingsData }) {
                     </div>
 
                     <div className="text-gray-500 text-xs uppercase tracking-widest mb-3 font-bold">Lights Out In</div>
-                    <div className="flex items-center gap-3 text-black">
+                    <div className="flex items-center justify-end gap-3 text-black">
                       <CountdownTimer targetDate={data.date} large />
                     </div>
                   </div>
@@ -757,72 +790,6 @@ function WeekendSchedule({ sessions }) {
   )
 }
 
-function CountdownTimer({ targetDate, large = false }) {
-  const [timeLeft, setTimeLeft] = React.useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-
-  React.useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date().getTime();
-      const distance = new Date(targetDate).getTime() - now;
-
-      if (distance < 0) {
-        clearInterval(timer);
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      } else {
-        setTimeLeft({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000)
-        });
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [targetDate]);
-
-  if (large) {
-    return (
-      <>
-        <div className="flex flex-col items-center">
-          <span className="text-4xl lg:text-6xl font-black font-mono text-black leading-none">{timeLeft.days}</span>
-          <span className="text-[10px] uppercase font-bold text-gray-500 tracking-widest mt-1">Days</span>
-        </div>
-        <span className="text-2xl lg:text-4xl font-bold text-gray-600 mt-2">:</span>
-        <div className="flex flex-col items-center">
-          <span className="text-4xl lg:text-6xl font-black font-mono text-white leading-none">{String(timeLeft.hours).padStart(2, '0')}</span>
-          <span className="text-[10px] uppercase font-bold text-gray-500 tracking-widest mt-1">Hrs</span>
-        </div>
-        <span className="text-2xl lg:text-4xl font-bold text-gray-600 mt-2">:</span>
-        <div className="flex flex-col items-center">
-          <span className="text-4xl lg:text-6xl font-black font-mono text-white leading-none">{String(timeLeft.minutes).padStart(2, '0')}</span>
-          <span className="text-[10px] uppercase font-bold text-gray-500 tracking-widest mt-1">Mins</span>
-        </div>
-      </>
-    )
-  }
-
-  return (
-    <>
-      <div className="bg-[#1a1a1a] rounded p-2 text-center border border-[#333]">
-        <div className="text-xl font-bold font-mono text-white leading-none">{timeLeft.days}</div>
-        <div className="text-[8px] uppercase text-gray-500 mt-1">Days</div>
-      </div>
-      <div className="bg-[#1a1a1a] rounded p-2 text-center border border-[#333]">
-        <div className="text-xl font-bold font-mono text-white leading-none">{timeLeft.hours}</div>
-        <div className="text-[8px] uppercase text-gray-500 mt-1">Hrs</div>
-      </div>
-      <div className="bg-[#1a1a1a] rounded p-2 text-center border border-[#333]">
-        <div className="text-xl font-bold font-mono text-white leading-none">{timeLeft.minutes}</div>
-        <div className="text-[8px] uppercase text-gray-500 mt-1">Mins</div>
-      </div>
-      <div className="bg-[#1a1a1a] rounded p-2 text-center border border-[#333]">
-        <div className="text-xl font-bold font-mono text-white leading-none">{timeLeft.seconds}</div>
-        <div className="text-[8px] uppercase text-gray-500 mt-1">Secs</div>
-      </div>
-    </>
-  );
-}
 
 // Timezone Utilities
 const TIMEZONES = {
@@ -888,36 +855,46 @@ function TimeDisplay({ date, circuit }) {
 
   // Format My Time (Local Browser Time)
   const myTime = raceDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const myDate = raceDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
 
   // Format Track Time
   let trackTime = 'Unknown';
-  let trackDate = '';
   try {
     trackTime = raceDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: trackTimezone });
-    trackDate = raceDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', timeZone: trackTimezone });
   } catch (e) {
-    console.error("Timezone error:", e);
     trackTime = "--:--";
   }
 
   return (
     <div
-      className="flex items-center gap-2 cursor-pointer group bg-black/40 hover:bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-none border border-white/10 transition-all"
       onClick={() => setShowLocal(!showLocal)}
-      title="Click to toggle between Your Time and Track Time"
+      className="group relative bg-[#EDEDED] border-2 border-black px-2 py-1 shadow-hard-sm cursor-pointer hover:bg-white transition-colors select-none flex items-center gap-3"
+      title="Click to switch timezone"
     >
-      <Clock size={12} className="text-gray-400 group-hover:text-white transition-colors" />
-      <div className="flex flex-col leading-none">
-        <span className="text-[10px] uppercase font-bold text-gray-500 mb-0.5">
-          {showLocal ? "Your Time" : "Track Time"}
-        </span>
-        <span className="text-sm font-bold text-white font-mono">
-          {showLocal ? `${myTime}` : `${trackTime}`}
-        </span>
+      {/* Icon Area */}
+      <div className="flex flex-col items-center justify-center border-r-2 border-black/10 pr-2">
+        <Clock size={16} className="text-black group-hover:text-f1-red transition-colors" />
       </div>
-      <div className="text-[10px] text-gray-500 border-l border-white/10 pl-2 ml-1">
-        {showLocal ? "Switch to Track" : "Switch to Local"}
+
+      {/* Time Data */}
+      <div className="flex flex-col">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 font-heading">
+            {showLocal ? "Local Time" : "Track Time"}
+          </span>
+          {/* Pixel Indicator */}
+          <div className="flex gap-0.5">
+            <div className={cn("w-1 h-1 bg-black", showLocal ? "bg-f1-red" : "opacity-20")} />
+            <div className={cn("w-1 h-1 bg-black", !showLocal ? "bg-f1-red" : "opacity-20")} />
+          </div>
+        </div>
+        <div className="text-2xl font-black font-heading text-black leading-none mt-0.5">
+          {showLocal ? myTime : trackTime}
+        </div>
+      </div>
+
+      {/* Hover Hint */}
+      <div className="hidden group-hover:flex absolute -bottom-5 right-0 bg-black text-white text-[8px] px-1 py-0.5 font-bold uppercase tracking-wider">
+        Switch
       </div>
     </div>
   );

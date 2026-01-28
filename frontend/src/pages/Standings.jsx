@@ -98,19 +98,52 @@ export default function Standings() {
                                         {data.drivers.map((d, i) => {
                                             const gap = leaderPoints - d.points;
                                             const eliminated = gap > maxPointsRemaining;
+                                            const isPodium = i < 3;
+                                            const teamColor = getTeamColor(d.team);
                                             return (
-                                                <tr key={d.code} className={cn("hover:bg-yellow-100 transition-none", eliminated && "opacity-50 grayscale")}>
-                                                    <td className="p-3 text-xl font-heading">{i + 1}</td>
+                                                <tr
+                                                    key={d.code}
+                                                    className={cn(
+                                                        "transition-all duration-200 border-l-4 group",
+                                                        eliminated && "opacity-50 grayscale",
+                                                        isPodium ? "hover:shadow-[inset_0_0_30px_rgba(255,0,0,0.1)]" : "hover:bg-yellow-50"
+                                                    )}
+                                                    style={{
+                                                        borderLeftColor: teamColor,
+                                                        backgroundColor: isPodium ? `${teamColor}08` : undefined
+                                                    }}
+                                                >
+                                                    <td className="p-3 text-xl font-heading">
+                                                        <span className={cn(
+                                                            isPodium && "text-f1-red",
+                                                            i === 0 && "text-2xl"
+                                                        )}>
+                                                            {i + 1}
+                                                        </span>
+                                                    </td>
                                                     <td className="p-3">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-3 h-3 border border-black" style={{ backgroundColor: getTeamColor(d.team) }} />
+                                                            <div
+                                                                className={cn(
+                                                                    "w-3 h-8 border border-black transition-all duration-200",
+                                                                    isPodium && "group-hover:shadow-[0_0_10px_currentColor]"
+                                                                )}
+                                                                style={{ backgroundColor: teamColor, color: teamColor }}
+                                                            />
                                                             <div>
-                                                                <div className="text-xl font-heading leading-tight">{d.name}</div>
-                                                                <div className="text-sm font-body uppercase">{d.team}</div>
+                                                                <div className={cn(
+                                                                    "text-xl font-heading leading-tight",
+                                                                    i === 0 && "text-2xl"
+                                                                )}>{d.name}</div>
+                                                                <div className="text-sm font-body uppercase text-gray-600">{d.team}</div>
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="p-3 text-right text-xl font-heading">{d.points}</td>
+                                                    <td className="p-3 text-right text-xl font-heading">
+                                                        <span className={cn(i === 0 && "text-2xl font-black")}>
+                                                            {d.points}
+                                                        </span>
+                                                    </td>
                                                     <td className="p-3 text-right text-lg font-mono">
                                                         {i > 0 ? `-${gap}` : '—'}
                                                     </td>
@@ -137,19 +170,53 @@ export default function Standings() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y-2 divide-gray-200">
-                                        {data.constructors?.map((c, i) => (
-                                            <tr key={c.name} className="hover:bg-yellow-100 transition-none">
-                                                <td className="p-3 text-xl font-heading">{i + 1}</td>
-                                                <td className="p-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-4 h-4 border border-black" style={{ backgroundColor: getTeamColor(c.name) }} />
-                                                        <span className="text-xl font-heading">{c.name}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="p-3 text-right text-xl font-heading">{c.points}</td>
-                                                <td className="p-3 text-right text-lg font-mono">{c.wins}</td>
-                                            </tr>
-                                        ))}
+                                        {data.constructors?.map((c, i) => {
+                                            const isPodium = i < 3;
+                                            const teamColor = getTeamColor(c.name);
+                                            return (
+                                                <tr
+                                                    key={c.name}
+                                                    className={cn(
+                                                        "transition-all duration-200 border-l-4 group",
+                                                        isPodium ? "hover:shadow-[inset_0_0_30px_rgba(255,0,0,0.1)]" : "hover:bg-yellow-50"
+                                                    )}
+                                                    style={{
+                                                        borderLeftColor: teamColor,
+                                                        backgroundColor: isPodium ? `${teamColor}08` : undefined
+                                                    }}
+                                                >
+                                                    <td className="p-3 text-xl font-heading">
+                                                        <span className={cn(
+                                                            isPodium && "text-f1-red",
+                                                            i === 0 && "text-2xl"
+                                                        )}>
+                                                            {i + 1}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <div
+                                                                className={cn(
+                                                                    "w-4 h-10 border border-black transition-all duration-200",
+                                                                    isPodium && "group-hover:shadow-[0_0_10px_currentColor]"
+                                                                )}
+                                                                style={{ backgroundColor: teamColor, color: teamColor }}
+                                                            />
+                                                            <span className={cn(
+                                                                "text-xl font-heading",
+                                                                i === 0 && "text-2xl"
+                                                            )}>{c.name}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3 text-right text-xl font-heading">
+                                                        <span className={cn(i === 0 && "text-2xl font-black")}>
+                                                            {c.points}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-3 text-right text-lg font-mono">{c.wins}</td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
