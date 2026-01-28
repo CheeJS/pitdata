@@ -234,7 +234,27 @@ def prediction_stats():
     from services.voting_service import get_vote_stats
     race_id = request.args.get('race_id')
     data = get_vote_stats(race_id)
+    data = get_vote_stats(race_id)
     return jsonify(data)
+
+@app.route('/api/predictions/comments', methods=['GET'])
+def prediction_comments():
+    from services.voting_service import get_comments
+    race_id = request.args.get('race_id')
+    data = get_comments(race_id)
+    return jsonify(data)
+
+@app.route('/api/predictions/comments', methods=['POST'])
+def post_prediction_comment():
+    from services.voting_service import post_comment
+    data = request.json
+    res = post_comment(
+        data.get('race_id'),
+        data.get('client_id'),
+        data.get('nickname'),
+        data.get('content')
+    )
+    return jsonify(res)
 
 
 # --- AI PREDICTIONS ENDPOINT ---

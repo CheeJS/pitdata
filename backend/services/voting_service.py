@@ -20,6 +20,15 @@ class Prediction(Base):
     value = Column(Text) # JSON string
     timestamp = Column(DateTime, default=datetime.utcnow)
 
+class Comment(Base):
+    __tablename__ = 'comments'
+    id = Column(Integer, primary_key=True)
+    race_id = Column(String)
+    client_id = Column(String)
+    nickname = Column(String)
+    content = Column(String)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
 # dedicated DB for votes to separate from ETL data
 # dedicated DB for votes to separate from ETL data
 # In production, we use the same DATABASE_URL for simplicity (Postgres schema or tables)
@@ -171,3 +180,37 @@ def get_vote_stats(race_id):
 
 # Auto-init on import
 init_db()
+
+def post_comment(race_id, client_id, nickname, content):
+    session = SessionLocal()
+    try:
+        comment = Comment(
+            race_id=str(race_id),
+            client_id=client_id,
+            nickname=nickname,
+            content=content
+        )
+        session.add(comment)
+        session.commit()
+        return {"status": "success", "id": comment.id}
+    except Exception as e:
+        session.rollback()
+        return {"error": str(e)}
+    finally:
+        session.close()
+
+def get_comments(race_id):
+    session = SessionLocal()
+    try:
+        comments = session.query(Comment).filter_by(race_id=str(race_id)).order_by(Comment.timestamp.desc()).all()
+        return [{
+            "id": c.id,
+            "nickname": c.nickname,
+            "content": c.content,
+            "timestamp": c.timestamp.isoformat()
+        } for c in comments]
+    except Exception as e:
+        print(f"Comments Error: {e}")
+        return []
+    finally:
+        session.close()
