@@ -1,89 +1,95 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-    darkMode: ["class"],
-    content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-  theme: {
-  	extend: {
-  		colors: {
-  			f1: {
-  				red: '#E10600',
-  				dark: '#15151E',
-  				carbon: '#1F1F27',
-  				gray: '#38383F',
-  				light: '#F3F3F3'
-  			},
-  			team: {
-  				ferrari: '#E8002d',
-  				mclaren: '#FF8000',
-  				redbull: '#3671C6',
-  				mercedes: '#27F4D2',
-  				aston: '#225941',
-  				alpine: '#0093cc',
-  				williams: '#64C4FF',
-  				haas: '#B6BABD',
-  				sauber: '#52e252',
-  				rb: '#6692FF'
-  			},
-  			background: 'hsl(var(--background))',
-  			foreground: 'hsl(var(--foreground))',
-  			card: {
-  				DEFAULT: 'hsl(var(--card))',
-  				foreground: 'hsl(var(--card-foreground))'
-  			},
-  			popover: {
-  				DEFAULT: 'hsl(var(--popover))',
-  				foreground: 'hsl(var(--popover-foreground))'
-  			},
-  			primary: {
-  				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))'
-  			},
-  			secondary: {
-  				DEFAULT: 'hsl(var(--secondary))',
-  				foreground: 'hsl(var(--secondary-foreground))'
-  			},
-  			muted: {
-  				DEFAULT: 'hsl(var(--muted))',
-  				foreground: 'hsl(var(--muted-foreground))'
-  			},
-  			accent: {
-  				DEFAULT: 'hsl(var(--accent))',
-  				foreground: 'hsl(var(--accent-foreground))'
-  			},
-  			destructive: {
-  				DEFAULT: 'hsl(var(--destructive))',
-  				foreground: 'hsl(var(--destructive-foreground))'
-  			},
-  			border: 'hsl(var(--border))',
-  			input: 'hsl(var(--input))',
-  			ring: 'hsl(var(--ring))',
-  			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
-  			}
-  		},
-  		fontFamily: {
-  			heading: [
-  				'Outfit',
-  				'sans-serif'
-  			],
-  			body: [
-  				'Inter',
-  				'sans-serif'
-  			]
-  		},
-  		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
-  		}
-  	}
-  },
-  plugins: [require("tailwindcss-animate")],
+	darkMode: ["class"],
+	content: [
+		"./index.html",
+		"./src/**/*.{js,ts,jsx,tsx}",
+	],
+	theme: {
+		extend: {
+			colors: {
+				f1: {
+					red: '#FF0000', // Pure Red
+					dark: '#000000', // Pure Black
+					carbon: '#222222', // Dark Gray
+					gray: '#888888', // Med Gray
+					light: '#FFFFFF' // Pure White
+				},
+				team: {
+					ferrari: '#FF2800',
+					mclaren: '#FF8700',
+					redbull: '#0600EF',
+					mercedes: '#00D2BE',
+					aston: '#006F62',
+					alpine: '#0090FF',
+					williams: '#005AFF',
+					haas: '#FFFFFF',
+					sauber: '#52E252',
+					rb: '#1634CB'
+				},
+				background: 'hsl(var(--background))',
+				foreground: 'hsl(var(--foreground))',
+				card: {
+					DEFAULT: 'hsl(var(--card))',
+					foreground: 'hsl(var(--card-foreground))'
+				},
+				popover: {
+					DEFAULT: 'hsl(var(--popover))',
+					foreground: 'hsl(var(--popover-foreground))'
+				},
+				primary: {
+					DEFAULT: 'hsl(var(--primary))',
+					foreground: 'hsl(var(--primary-foreground))'
+				},
+				secondary: {
+					DEFAULT: 'hsl(var(--secondary))',
+					foreground: 'hsl(var(--secondary-foreground))'
+				},
+				muted: {
+					DEFAULT: 'hsl(var(--muted))',
+					foreground: 'hsl(var(--muted-foreground))'
+				},
+				accent: {
+					DEFAULT: 'hsl(var(--accent))',
+					foreground: 'hsl(var(--accent-foreground))'
+				},
+				destructive: {
+					DEFAULT: 'hsl(var(--destructive))',
+					foreground: 'hsl(var(--destructive-foreground))'
+				},
+				border: 'hsl(var(--border))',
+				input: 'hsl(var(--input))',
+				ring: 'hsl(var(--ring))',
+				chart: {
+					'1': 'hsl(var(--chart-1))',
+					'2': 'hsl(var(--chart-2))',
+					'3': 'hsl(var(--chart-3))',
+					'4': 'hsl(var(--chart-4))',
+					'5': 'hsl(var(--chart-5))'
+				}
+			},
+			fontFamily: {
+				heading: [
+					'"Press Start 2P"',
+					'cursive'
+				],
+				body: [
+					'"VT323"',
+					'monospace'
+				]
+			},
+			borderRadius: {
+				lg: '0px',
+				md: '0px',
+				sm: '0px',
+				DEFAULT: '0px'
+			},
+			boxShadow: {
+				'hard': '4px 4px 0px 0px rgba(0,0,0,1)',
+				'hard-sm': '2px 2px 0px 0px rgba(0,0,0,1)',
+				'hard-lg': '8px 8px 0px 0px rgba(0,0,0,1)',
+			}
+		}
+	},
+	plugins: [require("tailwindcss-animate")],
 }

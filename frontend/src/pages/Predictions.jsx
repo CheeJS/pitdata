@@ -32,7 +32,7 @@ const PodiumSlot = ({ position, driver, color, onRemove, isLocked }) => {
                         className="relative"
                     >
                         <div
-                            className="w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-lg border-2 shadow-lg"
+                            className="w-16 h-16 rounded-none flex items-center justify-center text-black font-bold text-lg border-2 shadow-lg"
                             style={{ backgroundColor: color + '30', borderColor: color }}
                         >
                             {driver}
@@ -40,7 +40,7 @@ const PodiumSlot = ({ position, driver, color, onRemove, isLocked }) => {
                         {!isLocked && (
                             <button
                                 onClick={onRemove}
-                                className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs hover:bg-red-600"
+                                className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-none flex items-center justify-center text-black text-xs hover:bg-red-600"
                             >
                                 ×
                             </button>
@@ -49,13 +49,13 @@ const PodiumSlot = ({ position, driver, color, onRemove, isLocked }) => {
                 ) : (
                     <motion.div
                         key="empty"
-                        className="w-16 h-16 rounded-xl border-2 border-dashed border-[#2A2A30] flex items-center justify-center text-gray-600 text-xs"
+                        className="w-16 h-16 rounded-none border-2 border-dashed border-black flex items-center justify-center text-gray-600 text-xs"
                     >
                         P{position}
                     </motion.div>
                 )}
             </AnimatePresence>
-            <div className={cn("w-20 rounded-t-lg flex flex-col items-center justify-end bg-gradient-to-t", heights[position], medalColors[position])}>
+            <div className={cn("w-20 rounded-none-lg flex flex-col items-center justify-end bg-gradient-to-t", heights[position], medalColors[position])}>
                 <span className="text-black font-bold text-sm mb-1">{labels[position]}</span>
             </div>
         </div>
@@ -77,17 +77,17 @@ const DriverCard = ({ code, meta, isSelected, isLocked, onSelect, type = 'conten
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className={cn(
-                "relative text-left transition-all overflow-hidden bg-[#0B0B0F] border",
-                isSelected ? "border-current bg-[#1A1A24]" : "border-[#2A2A30] hover:border-gray-600",
-                isContender ? "p-4 rounded-xl border-2" : "p-3 rounded-lg opacity-80 hover:opacity-100",
+                "relative text-left transition-all overflow-hidden bg-white border",
+                isSelected ? "border-current bg-gray-100" : "border-black hover:border-gray-600",
+                isContender ? "p-4 rounded-none border-2" : "p-3 rounded-none opacity-80 hover:opacity-100",
                 isLocked && !isSelected && "opacity-50 grayscale"
             )}
             style={{ borderColor: isSelected ? color : undefined }}
         >
             <div className="relative z-10 flex justify-between items-start">
                 <div className="flex flex-col">
-                    <span className={cn("font-bold text-white block", isContender ? "text-2xl" : "text-lg")}>{code}</span>
-                    <span className={cn("text-gray-500 font-bold uppercase", isContender ? "text-xs tracking-wider" : "text-[10px]")}>
+                    <span className={cn("font-bold text-black block", isContender ? "text-2xl" : "text-lg")}>{code}</span>
+                    <span className={cn("text-gray-600 font-bold uppercase", isContender ? "text-xs tracking-wider" : "text-[10px]")}>
                         {teamName}
                     </span>
                 </div>
@@ -96,7 +96,7 @@ const DriverCard = ({ code, meta, isSelected, isLocked, onSelect, type = 'conten
                         P{selectedFor}
                     </span>
                 )}
-                {isSelected && isLocked && !selectedFor && <CheckCircle2 className="text-white" size={isContender ? 24 : 16} />}
+                {isSelected && isLocked && !selectedFor && <CheckCircle2 className="text-black" size={isContender ? 24 : 16} />}
             </div>
             <div className="absolute bottom-0 left-0 w-full h-1" style={{ backgroundColor: color }} />
         </motion.button>
@@ -309,12 +309,12 @@ export default function Predictions() {
     // AI Prediction Mock (Static for now, could be dynamic later)
     const aiPrediction = { winner: "VER", p2: "NOR", p3: "LEC", confidence: 78, safetyCar: false, winningGap: "8.5s" };
 
-    if (!selectedRace) return <div className="p-8 text-white animate-pulse">Loading Grand Prix Data...</div>;
+    if (!selectedRace) return <div className="p-8 text-black animate-pulse">Loading Grand Prix Data...</div>;
 
     const locked = !!userVote || !isPredictionWindowOpen;
 
     return (
-        <div className="h-full flex flex-col animate-in fade-in duration-500 overflow-hidden">
+        <div className="h-full flex flex-col overflow-hidden bg-gray-200 relative">
             {/* RESULT OVERLAY (Keep existing logic) */}
             <AnimatePresence>
                 {showResults && userVote && (
@@ -325,53 +325,53 @@ export default function Predictions() {
                     >
                         <motion.div
                             initial={{ scale: 0.8, y: 50 }} animate={{ scale: 1, y: 0 }}
-                            className="bg-[#15151E] rounded-3xl border border-[#2A2A30] p-8 max-w-md text-center"
+                            className="bg-white rounded-none border border-black p-8 max-w-md text-center"
                             onClick={e => e.stopPropagation()}
                         >
                             <Sparkles size={64} className="text-yellow-500 mx-auto mb-4" />
-                            <h2 className="text-2xl font-bold text-white mb-2">Prediction Locked!</h2>
-                            <p className="text-gray-400 mb-6">Good luck! Check the results after the race.</p>
-                            <button onClick={() => setShowResults(false)} className="w-full bg-f1-red hover:bg-red-600 text-white font-bold py-3 rounded-xl">Continue</button>
+                            <h2 className="text-2xl font-bold text-black mb-2">Prediction Locked!</h2>
+                            <p className="text-gray-600 mb-6">Good luck! Check the results after the race.</p>
+                            <button onClick={() => setShowResults(false)} className="w-full bg-f1-red hover:bg-red-600 text-black font-bold py-3 rounded-none">Continue</button>
                         </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
             {/* HEADER */}
-            <header className="relative overflow-hidden rounded-xl bg-[#0B0B0F] border border-[#2A2A30] min-h-[180px] md:min-h-[220px] mx-3 md:mx-6 mt-3 md:mt-6 shrink-0 flex flex-col justify-end p-5 md:p-8">
+            <header className="relative overflow-hidden rounded-none bg-white border border-black min-h-[180px] md:min-h-[220px] mx-3 md:mx-6 mt-3 md:mt-6 shrink-0 flex flex-col justify-end p-5 md:p-8">
                 <div className="absolute inset-0 z-0">
                     <img
                         src={`https://flagcdn.com/w1280/${selectedRace.code?.slice(0, 2) || 'un'}.png`}
                         alt=""
                         className="w-full h-full object-cover opacity-10"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0B0B0F] via-[#0B0B0F]/90 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/50 to-transparent" />
                 </div>
 
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                     <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
                             {isPredictionWindowOpen ? (
-                                <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-[11px] font-semibold text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">
+                                <span className="px-2.5 py-1 rounded-none bg-emerald-500/10 text-[11px] font-semibold text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">
                                     Open
                                 </span>
                             ) : (
-                                <span className="px-2.5 py-1 rounded-md bg-red-500/10 text-[11px] font-semibold text-red-500 border border-red-500/20 uppercase tracking-wide">
+                                <span className="px-2.5 py-1 rounded-none bg-red-500/10 text-[11px] font-semibold text-red-500 border border-red-500/20 uppercase tracking-wide">
                                     Closed
                                 </span>
                             )}
-                            <span className="text-gray-500 text-xs font-medium">
+                            <span className="text-gray-600 text-xs font-medium">
                                 {selectedRace.date}
                             </span>
                         </div>
-                        <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight">
+                        <h1 className="text-3xl md:text-5xl font-bold text-black tracking-tight">
                             {selectedRace.name}
                         </h1>
-                        <p className="text-gray-500 text-sm mt-1">Make your race predictions</p>
+                        <p className="text-gray-600 text-sm mt-1">Make your race predictions</p>
                     </div>
                     <div className="z-20">
                         <select
-                            className="bg-[#15151E] border border-[#2A2A30] text-white text-sm rounded-lg py-2.5 px-4 outline-none focus:border-white/30"
+                            className="bg-white border border-black text-black text-sm rounded-none py-2.5 px-4 outline-none focus:border-white/30"
                             value={selectedRace.id}
                             onChange={e => setSelectedRace(races.find(r => r.id == e.target.value))}
                         >
@@ -388,7 +388,7 @@ export default function Predictions() {
                 {!locked && !showPredictionForm && (
                     <button
                         onClick={() => setShowPredictionForm(true)}
-                        className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-4 rounded-xl transition-all flex items-center justify-center gap-2"
+                        className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-4 rounded-none transition-all flex items-center justify-center gap-2"
                     >
                         Make Your Prediction
                     </button>
@@ -401,13 +401,13 @@ export default function Predictions() {
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            className={cn("bg-[#15151E] rounded-xl border border-[#2A2A30] overflow-hidden", locked && "opacity-90 pointer-events-none")}
+                            className={cn("bg-white rounded-none border border-black overflow-hidden", locked && "opacity-90 pointer-events-none")}
                         >
                             <div className="p-4 md:p-6">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-sm font-semibold text-white">Your Prediction</h3>
+                                    <h3 className="text-sm font-semibold text-black">Your Prediction</h3>
                                     {!locked && (
-                                        <button onClick={() => setShowPredictionForm(false)} className="text-gray-500 hover:text-white text-sm">
+                                        <button onClick={() => setShowPredictionForm(false)} className="text-gray-600 hover:text-black text-sm">
                                             Cancel
                                         </button>
                                     )}
@@ -415,8 +415,8 @@ export default function Predictions() {
 
                                 {/* PODIUM */}
                                 <div className="mb-6">
-                                    <div className="text-xs font-semibold text-gray-500 uppercase mb-3">Podium</div>
-                                    <div className="flex justify-center items-end gap-4 bg-[#0B0B0F] rounded-lg p-4">
+                                    <div className="text-xs font-semibold text-gray-600 uppercase mb-3">Podium</div>
+                                    <div className="flex justify-center items-end gap-4 bg-white rounded-none p-4">
                                         <PodiumSlot position={2} driver={podium[2]} color={podium[2] ? driverMap[podium[2]]?.color : '#666'} onRemove={() => removePodium(2)} isLocked={locked} />
                                         <PodiumSlot position={1} driver={podium[1]} color={podium[1] ? driverMap[podium[1]]?.color : '#666'} onRemove={() => removePodium(1)} isLocked={locked} />
                                         <PodiumSlot position={3} driver={podium[3]} color={podium[3] ? driverMap[podium[3]]?.color : '#666'} onRemove={() => removePodium(3)} isLocked={locked} />
@@ -425,7 +425,7 @@ export default function Predictions() {
 
                                 {/* DRIVER SELECTION */}
                                 <div className="mb-6">
-                                    <div className="text-xs font-semibold text-gray-500 uppercase mb-3">Select Drivers</div>
+                                    <div className="text-xs font-semibold text-gray-600 uppercase mb-3">Select Drivers</div>
                                     <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                                         {contenders.map(code => {
                                             const pPos = Object.entries(podium).find(([p, d]) => d === code)?.[0];
@@ -435,7 +435,7 @@ export default function Predictions() {
                                         })}
                                     </div>
                                     {!showAllDrivers && !locked && (
-                                        <button onClick={() => setShowAllDrivers(true)} className="w-full mt-3 py-2 rounded-lg border border-dashed border-[#2A2A30] text-gray-500 text-xs hover:bg-[#1A1A24]">
+                                        <button onClick={() => setShowAllDrivers(true)} className="w-full mt-3 py-2 rounded-none border border-dashed border-black text-gray-600 text-xs hover:bg-gray-100">
                                             Show Full Grid
                                         </button>
                                     )}
@@ -455,42 +455,42 @@ export default function Predictions() {
 
                                 {/* EXTRAS */}
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                                    <div className="bg-[#0B0B0F] rounded-lg p-3 border border-[#2A2A30]">
-                                        <div className="text-[10px] font-semibold text-gray-500 uppercase mb-2">Winning Gap</div>
+                                    <div className="bg-white rounded-none p-3 border border-black">
+                                        <div className="text-[10px] font-semibold text-gray-600 uppercase mb-2">Winning Gap</div>
                                         <div className="flex flex-col gap-1">
                                             {['< 5s', '5-10s', '> 10s'].map(gap => (
                                                 <button key={gap} onClick={() => !locked && setWinningGap(gap)} disabled={locked}
-                                                    className={cn("py-1.5 rounded text-xs font-medium transition-all", winningGap === gap ? "bg-white text-black" : "text-gray-500 hover:text-white")}
+                                                    className={cn("py-1.5 rounded text-xs font-medium transition-all", winningGap === gap ? "bg-white text-black" : "text-gray-600 hover:text-black")}
                                                 >{gap}</button>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-[#0B0B0F] rounded-lg p-3 border border-[#2A2A30]">
-                                        <div className="text-[10px] font-semibold text-gray-500 uppercase mb-2">Pit Stops</div>
+                                    <div className="bg-white rounded-none p-3 border border-black">
+                                        <div className="text-[10px] font-semibold text-gray-600 uppercase mb-2">Pit Stops</div>
                                         <div className="flex flex-col gap-1">
                                             {[1, 2, 3].map(stops => (
                                                 <button key={stops} onClick={() => !locked && setPitStrategy(prev => ({ ...prev, stops }))} disabled={locked}
-                                                    className={cn("py-1.5 rounded text-xs font-medium transition-all", pitStrategy.stops === stops ? "bg-white text-black" : "text-gray-500 hover:text-white")}
+                                                    className={cn("py-1.5 rounded text-xs font-medium transition-all", pitStrategy.stops === stops ? "bg-white text-black" : "text-gray-600 hover:text-black")}
                                                 >{stops} Stop{stops > 1 ? 's' : ''}</button>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-[#0B0B0F] rounded-lg p-3 border border-[#2A2A30]">
-                                        <div className="text-[10px] font-semibold text-gray-500 uppercase mb-2">Safety Car</div>
+                                    <div className="bg-white rounded-none p-3 border border-black">
+                                        <div className="text-[10px] font-semibold text-gray-600 uppercase mb-2">Safety Car</div>
                                         <div className="flex flex-col gap-1">
                                             {['Yes', 'No'].map(opt => (
                                                 <button key={opt} onClick={() => !locked && setSafetyCar(prev => ({ ...prev, enabled: opt === 'Yes' }))} disabled={locked}
-                                                    className={cn("py-1.5 rounded text-xs font-medium transition-all", (safetyCar.enabled ? 'Yes' : 'No') === opt ? "bg-white text-black" : "text-gray-500 hover:text-white")}
+                                                    className={cn("py-1.5 rounded text-xs font-medium transition-all", (safetyCar.enabled ? 'Yes' : 'No') === opt ? "bg-white text-black" : "text-gray-600 hover:text-black")}
                                                 >{opt}</button>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-[#0B0B0F] rounded-lg p-3 border border-[#2A2A30]">
-                                        <div className="text-[10px] font-semibold text-gray-500 uppercase mb-2">First DNF</div>
+                                    <div className="bg-white rounded-none p-3 border border-black">
+                                        <div className="text-[10px] font-semibold text-gray-600 uppercase mb-2">First DNF</div>
                                         <div className="grid grid-cols-3 gap-1 max-h-20 overflow-y-auto">
                                             {activeDrivers.slice(0, 6).map(d => (
                                                 <button key={d.code} onClick={() => !locked && setDnfPredictions(prev => prev.includes(d.code) ? [] : [d.code])} disabled={locked}
-                                                    className={cn("py-1 rounded text-[9px] font-bold transition-all", dnfPredictions.includes(d.code) ? "bg-white text-black" : "text-gray-500 hover:text-white")}
+                                                    className={cn("py-1 rounded text-[9px] font-bold transition-all", dnfPredictions.includes(d.code) ? "bg-white text-black" : "text-gray-600 hover:text-black")}
                                                 >{d.code}</button>
                                             ))}
                                         </div>
@@ -498,7 +498,7 @@ export default function Predictions() {
                                 </div>
 
                                 {!locked && (
-                                    <button onClick={confirmVote} disabled={!podium[1]} className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <button onClick={confirmVote} disabled={!podium[1]} className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-3 rounded-none transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                                         Lock In Prediction
                                     </button>
                                 )}
@@ -508,49 +508,49 @@ export default function Predictions() {
                 </AnimatePresence>
 
                 {/* COMMUNITY PREDICTIONS - Main Content */}
-                <div className="bg-[#15151E] rounded-xl border border-[#2A2A30] p-5 flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
+                <div className="bg-white rounded-none border border-black p-5 flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-semibold text-white">Community Predictions</h3>
-                        {stats?.total_votes > 0 && <span className="text-sm text-gray-500">{stats.total_votes} votes</span>}
+                        <h3 className="text-lg font-semibold text-black">Community Predictions</h3>
+                        {stats?.total_votes > 0 && <span className="text-sm text-gray-600">{stats.total_votes} votes</span>}
                     </div>
 
                     {!stats || stats.total_votes === 0 ? (
-                        <div className="text-center text-gray-500 py-16 flex-1 flex flex-col items-center justify-center">
+                        <div className="text-center text-gray-600 py-16 flex-1 flex flex-col items-center justify-center">
                             <p className="text-lg mb-2">No predictions yet</p>
                             <p className="text-sm">Be the first to predict this race!</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {/* PREDICTED WINNER */}
-                            <div className="bg-[#0B0B0F] rounded-xl p-4 border border-[#2A2A30]">
-                                <div className="text-xs font-semibold text-gray-500 uppercase mb-4">Predicted Winner</div>
+                            <div className="bg-white rounded-none p-4 border border-black">
+                                <div className="text-xs font-semibold text-gray-600 uppercase mb-4">Predicted Winner</div>
                                 {stats.podium[1].slice(0, 5).map((p, i) => (
                                     <div key={p.code} className="mb-3">
                                         <div className="flex justify-between items-center text-sm mb-1">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-1 h-4 rounded-full" style={{ backgroundColor: driverMap[p.code]?.color || '#666' }} />
-                                                <span className="font-semibold text-white">{p.code}</span>
+                                                <div className="w-1 h-4 rounded-none" style={{ backgroundColor: driverMap[p.code]?.color || '#666' }} />
+                                                <span className="font-semibold text-black">{p.code}</span>
                                             </div>
-                                            <span className="font-bold text-white">{p.percent}%</span>
+                                            <span className="font-bold text-black">{p.percent}%</span>
                                         </div>
-                                        <div className="h-2 bg-[#1A1A24] rounded-full overflow-hidden">
-                                            <motion.div initial={{ width: 0 }} animate={{ width: `${p.percent}%` }} className="h-full rounded-full" style={{ backgroundColor: driverMap[p.code]?.color || '#666' }} />
+                                        <div className="h-2 bg-gray-100 rounded-none overflow-hidden">
+                                            <motion.div initial={{ width: 0 }} animate={{ width: `${p.percent}%` }} className="h-full rounded-none" style={{ backgroundColor: driverMap[p.code]?.color || '#666' }} />
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
                             {/* WINNING MARGIN */}
-                            <div className="bg-[#0B0B0F] rounded-xl p-4 border border-[#2A2A30]">
-                                <div className="text-xs font-semibold text-gray-500 uppercase mb-4">Winning Margin</div>
+                            <div className="bg-white rounded-none p-4 border border-black">
+                                <div className="text-xs font-semibold text-gray-600 uppercase mb-4">Winning Margin</div>
                                 <div className="space-y-3">
                                     {['< 5s', '5-10s', '> 10s'].map(gap => {
                                         const count = stats.winningGap[gap] || 0;
                                         const pct = Math.round((count / stats.total_votes) * 100) || 0;
                                         return (
                                             <div key={gap} className="flex items-center justify-between">
-                                                <span className="text-sm text-gray-400">{gap}</span>
-                                                <span className="text-lg font-bold text-white">{pct}%</span>
+                                                <span className="text-sm text-gray-600">{gap}</span>
+                                                <span className="text-lg font-bold text-black">{pct}%</span>
                                             </div>
                                         )
                                     })}
@@ -558,23 +558,23 @@ export default function Predictions() {
                             </div>
 
                             {/* SAFETY CAR & PIT STOPS */}
-                            <div className="bg-[#0B0B0F] rounded-xl p-4 border border-[#2A2A30]">
-                                <div className="text-xs font-semibold text-gray-500 uppercase mb-4">Race Factors</div>
+                            <div className="bg-white rounded-none p-4 border border-black">
+                                <div className="text-xs font-semibold text-gray-600 uppercase mb-4">Race Factors</div>
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-400">Safety Car</span>
-                                        <span className="text-lg font-bold text-white">{Math.round((stats.safetyCar.yes / stats.total_votes) * 100) || 0}% Yes</span>
+                                        <span className="text-sm text-gray-600">Safety Car</span>
+                                        <span className="text-lg font-bold text-black">{Math.round((stats.safetyCar.yes / stats.total_votes) * 100) || 0}% Yes</span>
                                     </div>
-                                    <div className="border-t border-[#2A2A30] pt-4">
-                                        <div className="text-xs text-gray-500 mb-2">Pit Strategy</div>
+                                    <div className="border-t border-black pt-4">
+                                        <div className="text-xs text-gray-600 mb-2">Pit Strategy</div>
                                         <div className="flex gap-2">
                                             {[1, 2, 3].map(stops => {
                                                 const count = stats.pitStrategy?.stop_dist?.[stops] || 0;
                                                 const pct = Math.round((count / stats.total_votes) * 100) || 0;
                                                 return (
-                                                    <div key={stops} className="flex-1 bg-[#1A1A24] rounded-lg p-2 text-center">
-                                                        <div className="text-xs text-gray-500">{stops}S</div>
-                                                        <div className="text-sm font-bold text-white">{pct}%</div>
+                                                    <div key={stops} className="flex-1 bg-gray-100 rounded-none p-2 text-center">
+                                                        <div className="text-xs text-gray-600">{stops}S</div>
+                                                        <div className="text-sm font-bold text-black">{pct}%</div>
                                                     </div>
                                                 )
                                             })}
@@ -587,9 +587,9 @@ export default function Predictions() {
                 </div>
 
                 {/* DISCUSSION SECTION */}
-                <div className="bg-[#15151E] rounded-xl border border-[#2A2A30] p-5 mt-4">
+                <div className="bg-white rounded-none border border-black p-5 mt-4">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-2">
                             <MessageSquare size={14} />
                             Discussion
                         </h3>
@@ -603,7 +603,7 @@ export default function Predictions() {
                             placeholder="Nickname"
                             value={nickname}
                             onChange={e => setNickname(e.target.value)}
-                            className="w-24 bg-[#0B0B0F] border border-[#2A2A30] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-white/30"
+                            className="w-24 bg-white border border-black rounded-none px-3 py-2 text-sm text-black placeholder-gray-400 focus:outline-none focus:border-white/30"
                         />
                         <input
                             type="text"
@@ -611,12 +611,12 @@ export default function Predictions() {
                             value={newComment}
                             onChange={e => setNewComment(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && postComment()}
-                            className="flex-1 bg-[#0B0B0F] border border-[#2A2A30] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-white/30"
+                            className="flex-1 bg-white border border-black rounded-none px-3 py-2 text-sm text-black placeholder-gray-400 focus:outline-none focus:border-white/30"
                         />
                         <button
                             onClick={postComment}
                             disabled={!newComment.trim() || !nickname.trim()}
-                            className="bg-white hover:bg-gray-100 text-black px-4 py-2 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="bg-white hover:bg-gray-100 text-black px-4 py-2 rounded-none font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Send size={16} />
                         </button>
@@ -630,14 +630,14 @@ export default function Predictions() {
                             </div>
                         ) : (
                             comments.map((c, i) => (
-                                <div key={c.id || i} className="bg-[#0B0B0F] rounded-lg p-3 border border-[#2A2A30]">
+                                <div key={c.id || i} className="bg-white rounded-none p-3 border border-black">
                                     <div className="flex justify-between items-start mb-1">
-                                        <span className="text-xs font-semibold text-white">{c.nickname}</span>
+                                        <span className="text-xs font-semibold text-black">{c.nickname}</span>
                                         <span className="text-[10px] text-gray-600">
                                             {c.timestamp ? new Date(c.timestamp).toLocaleString() : ''}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-gray-400">{c.content}</p>
+                                    <p className="text-sm text-gray-600">{c.content}</p>
                                 </div>
                             ))
                         )}

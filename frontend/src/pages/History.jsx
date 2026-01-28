@@ -74,7 +74,7 @@ export default function History() {
     }, [races]);
 
     return (
-        <div className="h-full flex flex-col overflow-hidden">
+        <div className="h-full flex flex-col overflow-hidden bg-gray-200">
             <AnimatePresence mode="wait">
                 {view === 'list' ? (
                     <motion.div
@@ -87,15 +87,15 @@ export default function History() {
                         {/* ===== MOBILE LIST VIEW (with timeline style) ===== */}
                         <div className="md:hidden flex-1 flex flex-col overflow-hidden">
                             {/* Header */}
-                            <div className="p-4 shrink-0 border-b border-[#222]">
+                            <div className="p-4 shrink-0 border-b border-black">
                                 <div className="flex items-center justify-between">
-                                    <h1 className="text-lg font-bold text-white">Race Archive</h1>
+                                    <h1 className="text-lg font-bold text-black">Race Archive</h1>
 
                                     {/* Year Selector */}
                                     <select
                                         value={selectedYear}
                                         onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                                        className="bg-[#111] border border-[#222] rounded-lg px-3 py-1.5 text-sm text-white"
+                                        className="bg-white border border-black rounded-none px-3 py-1.5 text-sm text-black"
                                     >
                                         {AVAILABLE_YEARS.map(year => (
                                             <option key={year} value={year}>{year}</option>
@@ -118,7 +118,7 @@ export default function History() {
                                             <div key={month} className="mb-6">
                                                 {/* Month Header */}
                                                 <div className="flex items-center gap-3 mb-3 sticky top-0 bg-[#0B0B0F]/95 backdrop-blur-sm py-2 z-10">
-                                                    <div className="w-8 h-8 rounded-full bg-[#111] border-2 border-[#222] flex items-center justify-center relative z-10">
+                                                    <div className="w-8 h-8 rounded-none bg-white border-2 border-black flex items-center justify-center relative z-10">
                                                         <Calendar size={12} className="text-gray-500" />
                                                     </div>
                                                     <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">{month}</span>
@@ -133,11 +133,11 @@ export default function History() {
                                                                 setSelectedRaceId(race.id);
                                                                 setView('detail');
                                                             }}
-                                                            className="w-full bg-[#111] border border-[#222] rounded-xl p-3 flex items-center justify-between text-left hover:border-f1-red/30 transition-colors"
+                                                            className="w-full bg-white border border-black rounded-none p-3 flex items-center justify-between text-left hover:border-f1-red/30 transition-colors"
                                                         >
                                                             <div className="flex items-center gap-3">
                                                                 <div className="text-center shrink-0 w-10">
-                                                                    <div className="text-lg font-bold text-white">{new Date(race.date).getDate()}</div>
+                                                                    <div className="text-lg font-bold text-black">{new Date(race.date).getDate()}</div>
                                                                     <div className="text-[9px] text-gray-500 uppercase">{new Date(race.date).toLocaleDateString('en-US', { month: 'short' })}</div>
                                                                 </div>
 
@@ -147,7 +147,7 @@ export default function History() {
                                                                 </div>
 
                                                                 <div>
-                                                                    <div className="text-sm font-medium text-white">{race.name}</div>
+                                                                    <div className="text-sm font-medium text-black">{race.name}</div>
                                                                     <div className="text-[10px] text-gray-500">{race.circuit}</div>
                                                                 </div>
                                                             </div>
@@ -167,18 +167,18 @@ export default function History() {
                             {/* Header */}
                             <div className="flex justify-between items-center mb-6 shrink-0">
                                 <div>
-                                    <h1 className="text-2xl font-bold text-white">Race Archive</h1>
-                                    <p className="text-gray-500 text-sm mt-1">Explore past race results</p>
+                                    <h1 className="text-4xl font-heading text-black uppercase">Race Archive</h1>
+                                    <p className="font-mono text-gray-600 mt-2">Explore past race results</p>
                                 </div>
 
                                 {/* Year Dropdown */}
                                 <div className="relative">
                                     <button
                                         onClick={() => setDropdownOpen(!dropdownOpen)}
-                                        className="flex items-center gap-2 bg-[#111] border border-[#222] hover:border-f1-red/50 px-4 py-2.5 rounded-lg transition-all"
+                                        className="flex items-center gap-2 bg-white border border-black hover:border-f1-red/50 px-4 py-2.5 rounded-none transition-all"
                                     >
                                         <Calendar size={16} className="text-f1-red" />
-                                        <span className="font-medium text-white">{selectedYear} Season</span>
+                                        <span className="font-medium text-black">{selectedYear} Season</span>
                                         <ChevronDown size={16} className={cn("text-gray-500 transition-transform", dropdownOpen && "rotate-180")} />
                                     </button>
 
@@ -188,7 +188,7 @@ export default function History() {
                                                 initial={{ opacity: 0, y: -10 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: -10 }}
-                                                className="absolute right-0 top-full mt-2 bg-[#111] border border-[#222] rounded-lg overflow-hidden shadow-xl z-50 min-w-[160px]"
+                                                className="absolute right-0 top-full mt-2 bg-white border border-black rounded-none overflow-hidden shadow-xl z-50 min-w-[160px]"
                                             >
                                                 {AVAILABLE_YEARS.map(year => (
                                                     <button
@@ -201,11 +201,11 @@ export default function History() {
                                                             "w-full px-4 py-3 text-left text-sm font-medium transition-colors flex items-center justify-between",
                                                             selectedYear === year
                                                                 ? "bg-f1-red/10 text-f1-red"
-                                                                : "text-gray-400 hover:bg-white/5 hover:text-white"
+                                                                : "text-gray-400 hover:bg-white/5 hover:text-black"
                                                         )}
                                                     >
                                                         {year} Season
-                                                        {selectedYear === year && <div className="w-2 h-2 rounded-full bg-f1-red" />}
+                                                        {selectedYear === year && <div className="w-2 h-2 rounded-none bg-f1-red" />}
                                                     </button>
                                                 ))}
                                             </motion.div>
@@ -225,7 +225,7 @@ export default function History() {
                                         {Object.entries(racesByMonth).map(([month, monthRaces], monthIdx) => (
                                             <div key={month} className="mb-8">
                                                 <div className="flex items-center gap-4 mb-4 sticky top-0 bg-[#0B0B0F]/95 backdrop-blur-sm py-2 z-10">
-                                                    <div className="w-10 h-10 rounded-full bg-[#111] border-2 border-[#222] flex items-center justify-center relative z-10">
+                                                    <div className="w-10 h-10 rounded-none bg-white border-2 border-black flex items-center justify-center relative z-10">
                                                         <Calendar size={16} className="text-gray-500" />
                                                     </div>
                                                     <span className="text-sm font-medium text-gray-400 uppercase tracking-wider">{month}</span>
@@ -265,7 +265,7 @@ export default function History() {
                     >
                         <button
                             onClick={() => { setView('list'); setSelectedRaceId(null); setRaceDetails(null); }}
-                            className="flex items-center gap-2 text-gray-500 hover:text-white mb-4 transition-colors w-fit text-sm"
+                            className="flex items-center gap-2 text-gray-500 hover:text-black mb-4 transition-colors w-fit text-sm"
                         >
                             <ChevronLeft size={16} /> Back
                         </button>
@@ -299,7 +299,7 @@ function TimelineRaceCard({ race, onClick, delay }) {
             onClick={onClick}
             className="w-full group"
         >
-            <div className="flex items-center gap-2 sm:gap-4 bg-[#15151E] hover:bg-[#1A1A24] border border-[#2A2A30] hover:border-f1-red/50 rounded-xl p-3 md:p-4 transition-all relative overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-4 bg-white border-2 border-black hover:border-f1-red/50 rounded-none p-3 md:p-4 transition-all relative overflow-hidden">
                 {/* Date Badge */}
                 <div className="flex-shrink-0 w-10 sm:w-14 text-center">
                     <div className="text-lg sm:text-2xl font-black text-white leading-none">{dayNum}</div>
@@ -335,11 +335,11 @@ function TimelineRaceCard({ race, onClick, delay }) {
                 {/* Status + Arrow */}
                 <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                     {isPast ? (
-                        <span className="text-[9px] sm:text-[10px] bg-green-500/10 text-green-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-green-500/20 font-bold uppercase">
+                        <span className="text-[9px] sm:text-[10px] bg-green-500/10 text-green-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-none border border-green-500/20 font-bold uppercase">
                             Completed
                         </span>
                     ) : (
-                        <span className="text-[9px] sm:text-[10px] bg-amber-500/10 text-amber-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-amber-500/20 font-bold uppercase">
+                        <span className="text-[9px] sm:text-[10px] bg-amber-500/10 text-amber-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-none border border-amber-500/20 font-bold uppercase">
                             Upcoming
                         </span>
                     )}
@@ -381,7 +381,7 @@ function RaceDetailView({ data }) {
     return (
         <div className="flex flex-col h-full gap-6">
             {/* Header */}
-            <div className="bg-[#15151E] rounded-2xl border border-[#2A2A30] p-6 flex justify-between items-end">
+            <div className="bg-white border-2 border-black p-6 flex justify-between items-end">
                 <div>
                     <h2 className="text-3xl font-black italic tracking-tighter uppercase mb-2">{data.raceName}</h2>
                     <div className="flex items-center gap-4 text-sm font-medium text-gray-400">
@@ -408,7 +408,7 @@ function RaceDetailView({ data }) {
                             "px-4 py-3 text-sm font-bold uppercase tracking-wider border-b-2 transition-colors",
                             activeTab === tab.id
                                 ? "border-f1-red text-white"
-                                : "border-transparent text-gray-500 hover:text-gray-300"
+                                : "border-transparent text-gray-500 hover:text-black"
                         )}
                     >
                         {tab.label}
@@ -417,10 +417,10 @@ function RaceDetailView({ data }) {
             </div>
 
             {/* Content */}
-            <div className="bg-[#15151E] rounded-xl border border-[#2A2A30] overflow-hidden flex-1 flex flex-col">
+            <div className="bg-white border-2 border-black overflow-hidden flex-1 flex flex-col">
                 <div className="overflow-auto custom-scrollbar flex-1">
                     <table className="w-full text-left border-collapse">
-                        <thead className="bg-[#0B0B0F] text-gray-400 text-xs uppercase font-bold tracking-wider sticky top-0 z-10 border-b border-[#2A2A30]">
+                        <thead className="bg-gray-100 text-black text-xs uppercase font-bold tracking-wider sticky top-0 z-10 border-b border-[#2A2A30]">
                             <tr>
                                 <th className="px-6 py-4 w-16">Pos</th>
                                 <th className="px-6 py-4">Driver</th>
@@ -429,19 +429,19 @@ function RaceDetailView({ data }) {
                                 {activeTab === 'R' && <th className="px-6 py-4 text-right">Pts</th>}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#2A2A30]">
+                        <tbody className="divide-y divide-black">
                             {sortedResults.map((row, i) => {
                                 const isPodium = i < 3 && (activeTab === 'R' || activeTab === 'S');
                                 const bgClass = isPodium ? 'bg-gradient-to-r from-white/5 to-transparent' : '';
 
                                 return (
-                                    <tr key={i} className={cn("hover:bg-white/5 transition-colors group", bgClass)}>
-                                        <td className="px-6 py-4 font-heading font-bold text-lg text-gray-500 group-hover:text-white">
+                                    <tr key={i} className={cn("hover:bg-gray-50 transition-colors group", bgClass)}>
+                                        <td className="px-6 py-4 font-heading font-bold text-lg text-gray-500 group-hover:text-black">
                                             {row.pos}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-1 h-8 rounded-full" style={{ backgroundColor: getTeamColor(row.team) }}></div>
+                                                <div className="w-1 h-8 rounded-none" style={{ backgroundColor: getTeamColor(row.team) }}></div>
                                                 <div>
                                                     <div className="font-bold text-white leading-tight">{row.driver}</div>
                                                     <div className="text-[10px] text-gray-500 uppercase">{row.code}</div>
@@ -451,7 +451,7 @@ function RaceDetailView({ data }) {
                                         <td className="px-6 py-4 text-sm text-gray-400">
                                             {row.team}
                                         </td>
-                                        <td className="px-6 py-4 text-right font-mono text-sm text-gray-300 group-hover:text-white">
+                                        <td className="px-6 py-4 text-right font-mono text-sm text-black group-hover:text-black">
                                             {row.time}
                                         </td>
                                         {activeTab === 'R' && (

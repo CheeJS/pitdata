@@ -1,12 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  html {
+    image-rendering: pixelated;
+    /* font-smoothing: none is not standard, using webkit alias */
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
-    @apply bg-f1-dark text-f1-light font-body antialiased;
+    @apply bg-f1-light text-f1-dark font-body antialiased;
+    font-family: 'VT323', monospace;
   }
 
   h1,
@@ -15,7 +23,8 @@
   h4,
   h5,
   h6 {
-    @apply font-heading uppercase tracking-wider;
+    font-family: 'Press Start 2P', cursive;
+    @apply uppercase tracking-widest leading-relaxed;
   }
 
   :root {
