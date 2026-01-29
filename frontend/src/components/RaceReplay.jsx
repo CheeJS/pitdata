@@ -726,7 +726,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
     if (loading) return <div className="text-gray-600 animate-pulse p-8">Loading...</div>;
 
     return (
-        <div className="h-full flex flex-col bg-gray-200 overflow-hidden relative" style={{ overflow: 'hidden', maxHeight: '100%' }}>
+        <div className="h-screen flex flex-col bg-gray-200 overflow-hidden relative" style={{ overflow: 'hidden', maxHeight: '100%' }}>
             {/* ===== MOBILE TOP BAR ===== */}
             <div className="md:hidden flex flex-col bg-white border-b-4 border-black shrink-0">
                 {/* Row 1: Race Selector */}
@@ -1010,17 +1010,17 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
 
                     {/* The Map */}
                     {error ? (
-                        <div className="h-full flex items-center justify-center flex-col p-8 text-center text-gray-600">
-                            <AlertTriangle size={48} className="mb-4 text-yellow-500" />
-                            <div className="font-bold text-black text-lg mb-2">Data Unavailable</div>
-                            <div className="text-sm text-gray-300 mb-4 max-w-md">{error}</div>
+                        <div className="h-full flex items-center justify-center flex-col p-4 text-center bg-[#1a1a1a] overflow-y-auto">
+                            <AlertTriangle size={48} className="mb-3 text-yellow-400 shrink-0" />
+                            <div className="font-bold text-white text-lg mb-2">REPLAY UNAVAILABLE</div>
+                            <div className="text-xs text-gray-300 mb-4 max-w-xs">{error}</div>
                             {year >= 2026 && (
-                                <div className="mt-4 p-4 bg-f1-red/5 border border-f1-red/20 rounded-none max-w-sm backdrop-blur-sm">
-                                    <div className="text-f1-red text-xs font-bold mb-2 flex items-center gap-2 justify-center uppercase tracking-wider">
-
+                                <div className="mt-2 p-3 bg-[#252525] border-2 border-f1-red rounded-none max-w-xs">
+                                    <div className="text-f1-red text-xs font-bold mb-1 flex items-center gap-2 justify-center uppercase tracking-wider">
+                                        <RotateCcw size={12} className="text-f1-red" />
                                         Available Replays
                                     </div>
-                                    <div className="text-xs text-gray-300">
+                                    <div className="text-[10px] text-gray-200">
                                         Select from the year selector above
                                     </div>
                                 </div>
@@ -1109,11 +1109,11 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 {/* LEFT: LEADERBOARD */}
                 {/* LEFT: LEADERBOARD */}
                 <div className="w-48 bg-white border-r-2 border-black flex flex-col min-h-0 shrink-0 z-10">
-                    <div className="p-1.5 border-b-2 border-black bg-gray-100/50 flex justify-between items-center shrink-0">
-                        <span className="text-[9px] font-heading font-bold uppercase tracking-wider text-black">Live Standings</span>
-                        <div className="flex items-center gap-1">
+                    <div className="p-2 border-b-2 border-black bg-gray-100/50 flex justify-between items-center shrink-0">
+                        <span className="text-[10px] font-heading font-bold uppercase tracking-wider text-black">Live Standings</span>
+                        <div className="flex items-center gap-1.5">
                             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                            <span className="text-[9px] font-bold text-red-500 uppercase">LIVE</span>
+                            <span className="text-[10px] font-bold text-red-500 uppercase">LIVE</span>
                         </div>
                     </div>
                     <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-gray-400">
@@ -1131,19 +1131,19 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                     return (
                                         <motion.div key={d.driver} layout transition={{ type: "spring", stiffness: 200, damping: 25 }}
                                             onClick={() => setActiveDriver(d.driver)}
-                                            className={cn("flex items-center gap-1.5 px-2 py-1 cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors relative group",
+                                            className={cn("flex items-center gap-2 px-2 py-1 cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors relative group",
                                                 activeDriver === d.driver ? "bg-black/5" : "")}
                                         >
                                             {/* Active Marker */}
                                             {activeDriver === d.driver && <div className="absolute left-0 top-0 bottom-0 w-1 bg-f1-red" />}
 
                                             {/* Rank */}
-                                            <div className="w-5 text-center relative shrink-0">
-                                                <span className={cn("font-heading font-black text-sm",
+                                            <div className="w-6 text-center relative shrink-0">
+                                                <span className={cn("font-heading font-black text-base",
                                                     d.rank === 1 ? "text-f1-red" : isDNF ? "text-gray-300 decoration-line-through" : "text-black")}>
                                                     {d.rank}
                                                 </span>
-                                                {posChange && <span className={cn("absolute -top-1 -right-1 text-[8px] font-bold", posChange > 0 ? "text-green-600" : "text-red-600")}>{posChange > 0 ? '▲' : '▼'}</span>}
+                                                {posChange && <span className={cn("absolute -top-1 -right-1 text-[9px] font-bold", posChange > 0 ? "text-green-600" : "text-red-600")}>{posChange > 0 ? '▲' : '▼'}</span>}
                                             </div>
 
                                             {/* Team Color Strip */}
@@ -1151,13 +1151,13 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
 
                                             {/* Driver Name */}
                                             <div className="flex-1 min-w-0">
-                                                <span className={cn("font-bold text-xs block truncate", activeDriver === d.driver ? "text-black" : "text-gray-700", isDNF && "text-gray-400")}>{d.driver}</span>
-                                                <span className="text-[8px] text-gray-500 truncate block">{meta?.team}</span>
+                                                <span className={cn("font-bold text-sm block truncate leading-tight", activeDriver === d.driver ? "text-black" : "text-gray-800", isDNF && "text-gray-400")}>{d.driver}</span>
+                                                <span className="text-[10px] text-gray-600 block uppercase tracking-wide font-semibold leading-snug">{meta?.team}</span>
                                             </div>
 
                                             {/* Interval/Tyre */}
-                                            <div className="text-right shrink-0 flex items-center gap-1">
-                                                <span className={cn("text-[10px] font-mono font-bold", (isDNF) ? "text-red-500" : d.interval && d.interval < 1 ? "text-orange-600" : "text-gray-700")}>
+                                            <div className="text-right shrink-0 flex items-center gap-1.5">
+                                                <span className={cn("text-xs font-mono font-bold min-w-[32px] text-right", (isDNF) ? "text-red-600" : d.interval && d.interval < 1 ? "text-orange-600" : "text-gray-800")}>
                                                     {(isDNF) ? 'OUT' : d.interval ? `+${d.interval.toFixed(1)}` : 'LDR'}
                                                 </span>
                                                 <TyreIcon compound={d.tyre} size="sm" />
@@ -1182,25 +1182,44 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                     </div>
 
                     {error ? (
-                        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center flex-col text-center z-50 bg-gray-100 pt-20">
-                            {/* Grid pattern background */}
-                            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-                            <div className="relative z-10 px-8 max-w-2xl">
-                                <AlertTriangle size={64} className="mb-4 text-yellow-500 mx-auto" />
-                                <h3 className="text-4xl font-heading font-black text-black mb-4 uppercase tracking-wide">REPLAY UNAVAILABLE</h3>
-                                <p className="text-gray-700 max-w-md mx-auto text-lg mb-6 font-medium">{error}</p>
-                                {year >= 2026 ? (
-                                    <div className="mt-6 p-6 bg-white border-2 border-black rounded-none max-w-lg mx-auto shadow-hard">
-                                        <div className="text-f1-red text-base font-bold mb-3 flex items-center gap-2 justify-center uppercase tracking-wider">
-                                            Available Replays
+                        <div className="absolute inset-0 z-50 bg-gray-100/95 backdrop-blur-sm overflow-y-auto">
+                            <div className="min-h-full flex flex-col items-center justify-center p-8 text-center relative">
+                                <div className="bg-white border-2 border-black p-8 shadow-hard max-w-lg w-full relative overflow-hidden">
+                                    {/* Background Striping Effect */}
+                                    <div className="absolute top-0 left-0 right-0 h-2 bg-black/5"></div>
+
+                                    <div className="relative z-10 flex flex-col items-center">
+                                        <div className="w-16 h-16 bg-f1-red/10 rounded-full flex items-center justify-center mb-4 border-2 border-black">
+                                            <AlertTriangle size={32} className="text-f1-red" />
                                         </div>
-                                        <div className="text-base text-gray-700 font-medium">
-                                            Select from the year selector above to watch past race replays
-                                        </div>
+
+                                        <h3 className="text-3xl font-heading font-black text-black mb-2 uppercase tracking-wide italic leading-none">
+                                            Replay Unavailable
+                                        </h3>
+
+                                        <div className="h-1 w-12 bg-f1-red mb-5 mt-2"></div>
+
+                                        <p className="text-gray-600 font-medium text-sm mb-6 max-w-sm leading-relaxed">
+                                            {error}
+                                        </p>
+
+                                        {year >= 2026 ? (
+                                            <div className="bg-gray-50 border-2 border-black p-4 w-full">
+                                                <div className="flex items-center justify-center gap-2 mb-2 text-black font-bold uppercase text-xs tracking-widest">
+                                                    <RotateCcw size={14} className="text-f1-red" />
+                                                    <span>Flashback</span>
+                                                </div>
+                                                <p className="text-xs text-black font-medium">
+                                                    Select <span className="font-bold border-b border-f1-red">2025</span> or <span className="font-bold border-b border-f1-red">2024</span> below to race.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-gray-400 mt-2 font-mono border-t border-gray-200 pt-2 w-full">
+                                                ID: {raceId} | NO_TELEMETRY
+                                            </p>
+                                        )}
                                     </div>
-                                ) : (
-                                    <p className="text-sm text-gray-600 mt-4">We are gradually adding historical telemetry data.</p>
-                                )}
+                                </div>
                             </div>
                         </div>
                     ) : replayData?.map ? (
@@ -1233,21 +1252,19 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                         <div className="font-heading font-black text-black text-xl truncate leading-none mb-0.5">{activeDriver}</div>
                                         <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">{replayData?.drivers?.[activeDriver]?.team}</div>
                                     </div>
-                                    <div className="scale-125 origin-right">
-                                        <TyreIcon compound={activeDriverState.tyre} size="lg" />
-                                    </div>
+                                    <TyreIcon compound={activeDriverState.tyre} size="lg" />
                                 </div>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <div className="bg-white border-2 border-black p-2 text-center shadow-hard-sm">
-                                        <div className="text-3xl font-heading font-black text-black leading-none">{activeDriverState.rank}</div>
+                                <div className="flex gap-2">
+                                    <div className="flex-1 bg-white border-2 border-black p-2 shadow-hard-sm flex flex-col items-center justify-center">
+                                        <div className="text-2xl font-heading font-black text-black leading-none">{activeDriverState.rank}</div>
                                         <div className="text-[9px] text-gray-500 uppercase font-bold tracking-wider mt-1">Pos</div>
                                     </div>
-                                    <div className="bg-white border-2 border-black p-2 text-center shadow-hard-sm">
-                                        <div className="text-3xl font-heading font-black text-black leading-none">{activeDriverState.lap}</div>
+                                    <div className="flex-1 bg-white border-2 border-black p-2 shadow-hard-sm flex flex-col items-center justify-center">
+                                        <div className="text-2xl font-heading font-black text-black leading-none">{activeDriverState.lap}</div>
                                         <div className="text-[9px] text-gray-500 uppercase font-bold tracking-wider mt-1">Lap</div>
                                     </div>
-                                    <div className="bg-white border-2 border-black p-2 text-center shadow-hard-sm overflow-hidden">
-                                        <div className="text-xl font-heading font-black text-f1-red leading-tight pt-1">
+                                    <div className="flex-[1.2] min-w-[70px] bg-white border-2 border-black p-2 shadow-hard-sm flex flex-col items-center justify-center">
+                                        <div className="text-base font-heading font-black text-f1-red leading-none">
                                             {activeDriverState.interval ? `+${activeDriverState.interval.toFixed(1)}` : 'LDR'}
                                         </div>
                                         <div className="text-[9px] text-gray-500 uppercase font-bold tracking-wider mt-1">Gap</div>
@@ -1282,9 +1299,9 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
 
                         {/* Events Feed */}
                         <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-gray-100">
-                            <div className="p-2 text-[10px] font-bold uppercase text-gray-500 flex items-center justify-between shrink-0 border-b border-black/10 bg-gray-200">
+                            <div className="p-2.5 text-xs font-bold uppercase text-gray-600 flex items-center justify-between shrink-0 border-b border-black/10 bg-gray-200">
                                 <span className="flex items-center gap-1">Race Feed</span>
-                                <span className="font-mono">{visibleEvents.length}</span>
+                                <span className="font-mono text-[10px]">{visibleEvents.length}</span>
                             </div>
                             <div ref={feedRef} className="flex-1 overflow-y-auto px-3 pt-3 pb-4 min-h-0 scrollbar-thin scrollbar-thumb-gray-400">
                                 <div className="space-y-3">
@@ -1303,7 +1320,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                                 (e.type === 'FLAG' && !['RED', 'GREEN', 'YELLOW'].includes(e.flagType)) && "border-gray-400"
                                             )}>
                                             <div className="flex items-center justify-between">
-                                                <span className={cn("text-[9px] font-bold uppercase tracking-wider",
+                                                <span className={cn("text-[10px] font-bold uppercase tracking-wider",
                                                     e.type === 'OVERTAKE' ? "text-green-700" :
                                                         e.type === 'LOST' ? "text-red-700" :
                                                             e.type === 'PIT' ? "text-gray-600" :
@@ -1311,7 +1328,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                                 )}>
                                                     {e.type}
                                                 </span>
-                                                {(e.type !== 'PIT' && e.lap) && <span className="text-[9px] font-mono text-gray-400">L{e.lap}</span>}
+                                                {(e.type !== 'PIT' && e.lap) && <span className="text-[10px] font-mono text-gray-500 font-semibold">L{e.lap}</span>}
                                             </div>
 
                                             <div className="text-xs leading-tight">
@@ -1510,13 +1527,13 @@ function SVGTrackMap({ map, positions, activeDriver, drivers, showAllLabels = fa
 // InfoIcon replaced with lucide-react import
 function TyreIcon({ compound, size = 'sm' }) {
     if (!compound) return null;
-    let color = '#888', letter = '?';
+    let bgColor = '#888', textColor = '#fff', letter = '?';
     const c = compound.toUpperCase();
-    if (c.includes('SOFT')) { color = '#FF3B30'; letter = 'S'; }
-    if (c.includes('MEDIUM')) { color = '#FFCC00'; letter = 'M'; }
-    if (c.includes('HARD')) { color = '#E5E5E5'; letter = 'H'; }
-    if (c.includes('INTER')) { color = '#34C759'; letter = 'I'; }
-    if (c.includes('WET')) { color = '#007AFF'; letter = 'W'; }
-    const sizeClass = size === 'lg' ? 'w-6 h-6 text-[10px]' : 'w-4 h-4 text-[8px]';
-    return <div className={cn("rounded-none flex items-center justify-center font-black border-2", sizeClass)} style={{ borderColor: color, color, backgroundColor: `${color}20` }}>{letter}</div>;
+    if (c.includes('SOFT')) { bgColor = '#FF3B30'; textColor = '#fff'; letter = 'S'; }
+    if (c.includes('MEDIUM')) { bgColor = '#FFCC00'; textColor = '#000'; letter = 'M'; }
+    if (c.includes('HARD')) { bgColor = '#E5E5E5'; textColor = '#000'; letter = 'H'; }
+    if (c.includes('INTER')) { bgColor = '#34C759'; textColor = '#fff'; letter = 'I'; }
+    if (c.includes('WET')) { bgColor = '#007AFF'; textColor = '#fff'; letter = 'W'; }
+    const sizeClass = size === 'lg' ? 'w-7 h-7 text-xs' : 'w-5 h-5 text-[9px]';
+    return <div className={cn("rounded-full flex items-center justify-center font-black border border-black shadow-sm", sizeClass)} style={{ backgroundColor: bgColor, color: textColor }}>{letter}</div>;
 }

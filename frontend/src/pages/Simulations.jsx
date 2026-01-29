@@ -6,6 +6,7 @@ import { Trophy, Calendar, Zap, Timer, ChevronRight, Activity, TrendingUp, Alert
 import { cn } from '../lib/utils';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Label, ComposedChart, Area, BarChart, Bar, Cell } from 'recharts';
+import API_BASE from '../config/api';
 
 // ============================================================
 // MAIN SIMULATIONS PAGE
@@ -20,7 +21,7 @@ export default function Simulations() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const racesRes = await axios.get(`http://localhost:5000/api/races?year=${year}`);
+                const racesRes = await axios.get(`${API_BASE}/api/races?year=${year}`);
                 setRaces(racesRes.data);
             } catch (e) {
                 console.error("Sim Error", e);
@@ -34,7 +35,7 @@ export default function Simulations() {
     if (loading) return <div className="p-8 text-black animate-pulse">Loading...</div>;
 
     return (
-        <div className="h-full flex flex-col overflow-hidden bg-gray-200">
+        <div className="h-full flex flex-col overflow-hidden bg-f1-light">
 
             {/* ===== MOBILE LAYOUT ===== */}
             <div className="md:hidden flex-1 flex flex-col overflow-hidden">
@@ -46,20 +47,20 @@ export default function Simulations() {
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex bg-white p-1 rounded-none border border-black">
+                    <div className="flex bg-white p-1 border-2 border-black shadow-hard-sm">
                         <button onClick={() => setActiveTab('simulator')}
-                            className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-none text-xs font-medium transition-all",
-                                activeTab === 'simulator' ? "bg-f1-red text-black" : "text-gray-600")}>
+                            className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-heading uppercase transition-all",
+                                activeTab === 'simulator' ? "bg-f1-red text-white" : "text-black hover:bg-gray-100")}>
                             <BarChart3 size={14} /> Race Sim
                         </button>
                         <button onClick={() => setActiveTab('strategy')}
-                            className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-none text-xs font-medium transition-all",
-                                activeTab === 'strategy' ? "bg-f1-red text-black" : "text-gray-600")}>
+                            className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-heading uppercase transition-all",
+                                activeTab === 'strategy' ? "bg-f1-red text-white" : "text-black hover:bg-gray-100")}>
                             <Activity size={14} /> Strategy
                         </button>
                         <button onClick={() => setActiveTab('ai')}
-                            className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-none text-xs font-medium transition-all",
-                                activeTab === 'ai' ? "bg-f1-red text-black" : "text-gray-600")}>
+                            className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-heading uppercase transition-all",
+                                activeTab === 'ai' ? "bg-f1-red text-white" : "text-black hover:bg-gray-100")}>
                             <Brain size={14} /> AI
                         </button>
                     </div>
@@ -84,24 +85,24 @@ export default function Simulations() {
                                 {year} SEASON
                             </span>
                         </div>
-                        <p className="font-mono text-gray-600 mt-2">Run race strategies based on varying conditions.</p>
+                        <p className="font-body text-gray-600 mt-2">Run race strategies based on varying conditions.</p>
                     </div>
                 </div>
 
-                <div className="flex bg-white p-1.5 rounded-none border border-black">
+                <div className="flex bg-white p-1.5 border-2 border-black shadow-hard-sm">
                     <button onClick={() => setActiveTab('simulator')}
-                        className={cn("flex items-center gap-2 px-5 py-2.5 rounded-none text-sm font-medium transition-all",
-                            activeTab === 'simulator' ? "bg-white text-black border border-black" : "text-gray-600 hover:text-black")}>
+                        className={cn("flex items-center gap-2 px-5 py-2.5 text-sm font-heading uppercase transition-all",
+                            activeTab === 'simulator' ? "bg-f1-red text-white" : "text-black hover:bg-gray-100")}>
                         <BarChart3 size={16} /> Monte Carlo
                     </button>
                     <button onClick={() => setActiveTab('strategy')}
-                        className={cn("flex items-center gap-2 px-5 py-2.5 rounded-none text-sm font-medium transition-all",
-                            activeTab === 'strategy' ? "bg-white text-black border border-black" : "text-gray-600 hover:text-black")}>
+                        className={cn("flex items-center gap-2 px-5 py-2.5 text-sm font-heading uppercase transition-all",
+                            activeTab === 'strategy' ? "bg-f1-red text-white" : "text-black hover:bg-gray-100")}>
                         <Activity size={16} /> Pit Strategy
                     </button>
                     <button onClick={() => setActiveTab('ai')}
-                        className={cn("flex items-center gap-2 px-5 py-2.5 rounded-none text-sm font-medium transition-all",
-                            activeTab === 'ai' ? "bg-white text-black border border-black" : "text-gray-600 hover:text-black")}>
+                        className={cn("flex items-center gap-2 px-5 py-2.5 text-sm font-heading uppercase transition-all",
+                            activeTab === 'ai' ? "bg-f1-red text-white" : "text-black hover:bg-gray-100")}>
                         <Brain size={16} /> AI Predictions
                     </button>
                 </div>
@@ -126,7 +127,7 @@ function ChampionshipCalculator() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        axios.get('http://localhost:5000/api/simulations/championship?year=2025')
+        axios.get(`${API_BASE}/api/simulations/championship?year=2025`)
             .then(res => setData(res.data))
             .catch(err => console.error(err))
             .finally(() => setLoading(false));
@@ -256,7 +257,7 @@ function RaceSimulator({ races, year }) {
     const runSimulation = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`http://localhost:5000/api/simulations/race-monte-carlo?race=${selectedRace}&sims=${numSims}&chaos=${chaos}&year=${year}`);
+            const res = await axios.get(`${API_BASE}/api/simulations/race-monte-carlo?race=${selectedRace}&sims=${numSims}&chaos=${chaos}&year=${year}`);
             setData(res.data);
             // Save to localStorage
             localStorage.setItem('f1_last_simulation', JSON.stringify({
@@ -280,41 +281,41 @@ function RaceSimulator({ races, year }) {
             <div className="lg:w-1/3 flex flex-col gap-4 shrink-0">
                 {/* LAST RUN BANNER */}
                 {lastRun && !data && (
-                    <div className="bg-white border border-black rounded-none p-4">
-                        <h4 className="text-xs font-bold uppercase text-gray-600 mb-2">Your Last Simulation</h4>
-                        <div className="text-sm text-gray-300">{lastRun.race}: {lastRun.top3.join(', ')}</div>
-                        <div className="text-[10px] text-gray-600 mt-1">{new Date(lastRun.timestamp).toLocaleString()}</div>
+                    <div className="bg-white border-2 border-black shadow-hard-sm p-4">
+                        <h4 className="text-xs font-heading uppercase text-black mb-2">Your Last Simulation</h4>
+                        <div className="text-sm text-gray-700">{lastRun.race}: {lastRun.top3.join(', ')}</div>
+                        <div className="text-xs text-gray-500 mt-1">{new Date(lastRun.timestamp).toLocaleString()}</div>
                     </div>
                 )}
 
 
                 {/* METHODOLOGY INFO */}
-                <div className="bg-white border border-black rounded-none p-5">
-                    <h4 className="text-xs font-bold uppercase text-gray-600 mb-3 flex items-center gap-2">
+                <div className="bg-white border-2 border-black shadow-hard-sm p-5">
+                    <h4 className="text-xs font-heading uppercase text-black mb-3 flex items-center gap-2">
                         <BarChart3 size={12} /> Monte Carlo Simulation
                     </h4>
-                    <div className="space-y-3 text-xs text-gray-600">
+                    <div className="space-y-3 text-sm text-gray-700">
                         <p>
                             We run <span className="text-black font-semibold">{numSims.toLocaleString()} virtual races</span> with randomized variables to calculate win probability distributions.
                         </p>
-                        <div className="bg-black/30 rounded-none p-3 space-y-2">
-                            <div className="text-[10px] font-bold uppercase text-gray-600 mb-1">Data Sources</div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-none bg-blue-500" />
+                        <div className="bg-gray-100 border border-black p-3 space-y-2">
+                            <div className="text-xs font-heading uppercase text-black mb-1">Data Sources</div>
+                            <div className="flex items-center gap-2 text-sm">
+                                <div className="w-1.5 h-1.5 bg-f1-red" />
                                 <span>2020-2025 Race Results (120+ races)</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-none bg-purple-500" />
+                            <div className="flex items-center gap-2 text-sm">
+                                <div className="w-1.5 h-1.5 bg-f1-red" />
                                 <span>2026 Driver Lineup (HAM/Ferrari, etc.)</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-none bg-emerald-500" />
+                            <div className="flex items-center gap-2 text-sm">
+                                <div className="w-1.5 h-1.5 bg-f1-red" />
                                 <span>Circuit-Specific Performance History</span>
                             </div>
                         </div>
-                        <div className="bg-black/30 rounded-none p-3">
-                            <div className="text-[10px] font-bold uppercase text-gray-600 mb-1">Factors Considered</div>
-                            <div className="grid grid-cols-2 gap-1 text-[11px]">
+                        <div className="bg-gray-100 border border-black p-3">
+                            <div className="text-xs font-heading uppercase text-black mb-1">Factors Considered</div>
+                            <div className="grid grid-cols-2 gap-1 text-sm">
                                 <span>Driver Strength</span>
                                 <span>DNF Probability</span>
                                 <span>Team Reliability</span>
@@ -325,13 +326,13 @@ function RaceSimulator({ races, year }) {
                 </div>
 
                 {/* CONFIG PANEL */}
-                <div className="bg-white border border-black rounded-none p-6 space-y-6">
+                <div className="bg-white border-2 border-black shadow-hard-sm p-6 space-y-6">
                     <div>
-                        <label className="text-xs font-bold uppercase text-gray-600 block mb-2">Select Race</label>
+                        <label className="text-xs font-heading uppercase text-black block mb-2">Select Race</label>
                         <select
                             value={selectedRace}
                             onChange={(e) => setSelectedRace(e.target.value)}
-                            className="w-full bg-white text-black text-sm font-bold border border-black rounded-none px-4 py-2 outline-none focus:border-f1-red"
+                            className="w-full bg-white text-black text-sm font-body border-2 border-black px-4 py-2 outline-none focus:border-f1-red"
                         >
                             {races.map(r => (
                                 <option key={r.id} value={r.code}>{r.name}</option>
@@ -340,29 +341,29 @@ function RaceSimulator({ races, year }) {
                     </div>
 
                     <div>
-                        <div className="flex justify-between text-xs font-bold uppercase text-gray-600 mb-2">
+                        <div className="flex justify-between text-xs font-heading uppercase text-black mb-2">
                             <span>Chaos Factor</span>
                             <span className="text-f1-red">{chaos}x</span>
                         </div>
                         <input
                             type="range" min="0.5" max="3.0" step="0.1"
                             value={chaos} onChange={e => setChaos(parseFloat(e.target.value))}
-                            className="w-full h-2 bg-gray-300 rounded-none accent-f1-red appearance-none cursor-pointer"
+                            className="w-full h-2 bg-gray-200 accent-f1-red appearance-none cursor-pointer"
                         />
-                        <div className="flex justify-between text-[10px] text-gray-600 mt-1">
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
                             <span>Predictable</span>
                             <span>Chaotic</span>
                         </div>
                     </div>
 
                     <div>
-                        <label className="text-xs font-bold uppercase text-gray-600 block mb-2">Simulations</label>
+                        <label className="text-xs font-heading uppercase text-black block mb-2">Simulations</label>
                         <div className="flex gap-2">
                             {[100, 500, 1000, 5000].map(n => (
                                 <button
                                     key={n}
                                     onClick={() => setNumSims(n)}
-                                    className={cn("flex-1 py-2 rounded text-xs font-bold uppercase transition-all", numSims === n ? "bg-f1-red text-black" : "bg-white text-gray-600 border border-black hover:text-black")}
+                                    className={cn("flex-1 py-2 text-xs font-heading uppercase transition-all border-2 border-black", numSims === n ? "bg-f1-red text-white" : "bg-white text-black hover:bg-gray-100")}
                                 >
                                     {n >= 1000 ? `${n / 1000}K` : n}
                                 </button>
@@ -375,7 +376,7 @@ function RaceSimulator({ races, year }) {
                         whileTap={{ scale: 0.98 }}
                         onClick={runSimulation}
                         disabled={loading}
-                        className="w-full bg-f1-red text-black py-4 rounded-none font-bold uppercase flex items-center justify-center gap-2 shadow-lg shadow-f1-red/20 disabled:opacity-50"
+                        className="w-full bg-f1-red text-white py-4 font-heading uppercase flex items-center justify-center gap-2 shadow-hard border-2 border-black disabled:opacity-50"
                     >
                         {loading ? <RefreshCw className="animate-spin" size={20} /> : <Play size={20} />}
                         {loading ? "Simulating..." : "Run Simulation"}
@@ -384,7 +385,7 @@ function RaceSimulator({ races, year }) {
             </div>
 
             {/* RIGHT: RESULTS */}
-            <div className="flex-1 bg-white rounded-none border border-black flex flex-col overflow-hidden">
+            <div className="flex-1 bg-white border-2 border-black shadow-hard flex flex-col overflow-hidden">
                 {!data ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-gray-600">
                         <BarChart3 size={64} className="opacity-20 mb-4" />
@@ -392,12 +393,12 @@ function RaceSimulator({ races, year }) {
                     </div>
                 ) : (
                     <>
-                        <div className="p-4 border-b border-black bg-black/20 flex justify-between items-center shrink-0">
+                        <div className="p-4 border-b-2 border-black bg-gray-100 flex justify-between items-center shrink-0">
                             <div>
-                                <h3 className="text-sm font-bold uppercase text-gray-600">2026 Win Probability</h3>
-                                <div className="text-[10px] text-gray-600">Based on 2023-2025 data (122 races)</div>
+                                <h3 className="text-sm font-heading uppercase text-black">2026 Win Probability</h3>
+                                <div className="text-xs text-gray-600">Based on 2023-2025 data (122 races)</div>
                             </div>
-                            <div className="text-xs text-gray-600">{data.simulations.toLocaleString()} sims • {data.avg_dnf_rate || data.dnf_rate}% DNF</div>
+                            <div className="text-sm font-body text-gray-700">{data.simulations.toLocaleString()} sims • {data.avg_dnf_rate || data.dnf_rate}% DNF</div>
                         </div>
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
                             {data.results.map((d, i) => {
@@ -408,7 +409,7 @@ function RaceSimulator({ races, year }) {
                                         initial={{ opacity: 0, width: 0 }}
                                         animate={{ opacity: 1, width: "100%" }}
                                         transition={{ delay: i * 0.05 }}
-                                        className="bg-white p-4 rounded-none border border-black flex items-center gap-4 relative overflow-hidden"
+                                        className="bg-white p-4 border-2 border-black shadow-hard-sm flex items-center gap-4 relative overflow-hidden"
                                     >
                                         {/* Background bar */}
                                         <motion.div
@@ -430,14 +431,14 @@ function RaceSimulator({ races, year }) {
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="text-xs text-gray-600 flex items-center gap-2">
+                                            <div className="text-sm text-gray-700 flex items-center gap-2">
                                                 {d.team}
-                                                <span className="text-[9px] text-gray-600">• {d.reliability}% reliable</span>
+                                                <span className="text-xs text-gray-600">• {d.reliability}% reliable</span>
                                             </div>
                                         </div>
                                         <div className="text-right z-10">
-                                            <div className="text-2xl font-mono font-bold text-black">{d.win_probability}%</div>
-                                            <div className="text-[10px] text-gray-600">Podium: {d.podium_probability}%</div>
+                                            <div className="text-2xl font-mono font-black text-black">{d.win_probability}%</div>
+                                            <div className="text-xs text-gray-600">Podium: {d.podium_probability}%</div>
                                         </div>
                                     </motion.div>
                                 );
@@ -483,7 +484,7 @@ function StrategyView({ races }) {
         params.append('grid_pos', gridPos);
         params.append('objective', objective);
 
-        axios.get(`http://localhost:5000/api/simulations/strategy?${params.toString()}`)
+        axios.get(`${API_BASE}/api/simulations/strategy?${params.toString()}`)
             .then(res => setData(res.data))
             .catch(err => console.error(err))
             .finally(() => setLoading(false));
@@ -569,7 +570,7 @@ function StrategyView({ races }) {
                     <div className="flex flex-wrap items-center gap-3 md:gap-6">
                         {/* Race Selector */}
                         <div>
-                            <label className="text-[10px] font-bold text-gray-600 uppercase block mb-1">Race Event</label>
+                            <label className="text-xs font-bold text-gray-700 uppercase block mb-1">Race Event</label>
                             <select
                                 value={selectedRace?.id || ''}
                                 onChange={(e) => setSelectedRace(races.find(r => r.id === parseInt(e.target.value)))}
@@ -583,7 +584,7 @@ function StrategyView({ races }) {
 
                         {/* Grid Pos */}
                         <div>
-                            <label className="text-[10px] font-bold text-gray-600 uppercase block mb-1">Start Pos</label>
+                            <label className="text-xs font-bold text-gray-700 uppercase block mb-1">Start Pos</label>
                             <select
                                 value={gridPos}
                                 onChange={(e) => setGridPos(parseInt(e.target.value))}
@@ -598,7 +599,7 @@ function StrategyView({ races }) {
 
                     {/* Objective */}
                     <div>
-                        <label className="text-[10px] font-bold text-gray-600 uppercase block mb-1">Strategy Goal</label>
+                        <label className="text-xs font-bold text-gray-700 uppercase block mb-1">Strategy Goal</label>
                         <select
                             value={objective}
                             onChange={(e) => setObjective(e.target.value)}
@@ -628,8 +629,8 @@ function StrategyView({ races }) {
                             <h4 className="text-xs font-bold uppercase text-gray-600 mb-2 flex items-center gap-2">
                                 <Activity size={12} /> How Strategy is Calculated
                             </h4>
-                            <p className="text-xs text-gray-600 leading-relaxed mb-3">
-                                We compare <span className="text-black">1-stop, 2-stop, and aggressive strategies</span> by modeling tire degradation curves and pit stop time losses for each compound.
+                            <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                                We compare <span className="text-black font-semibold">1-stop, 2-stop, and aggressive strategies</span> by modeling tire degradation curves and pit stop time losses for each compound.
                             </p>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[10px]">
                                 <div className="bg-black/40 rounded p-2">
@@ -660,65 +661,65 @@ function StrategyView({ races }) {
                 {/* INSIGHT + SCENARIO */}
                 <div className="flex flex-col xl:flex-row gap-6 mb-6 shrink-0">
                     {/* INSIGHT PANEL */}
-                    <div className="flex-[2] bg-gradient-to-r from-emerald-900/20 to-[#15151E] border border-emerald-500/30 rounded-none p-4">
+                    <div className="flex-[2] bg-white border-2 border-black shadow-hard p-4">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <div className="text-xs font-bold uppercase text-emerald-500 mb-1 flex items-center gap-2">
+                                <div className="text-xs font-heading uppercase text-f1-red mb-1 flex items-center gap-2">
                                     <Trophy size={12} /> Optimal Strategy
                                 </div>
-                                <h2 className="text-2xl font-bold text-black">{verdict.recommended}</h2>
+                                <h2 className="text-2xl font-heading text-black">{verdict.recommended}</h2>
                                 <div className="flex items-center gap-4 mt-2">
-                                    <div className="flex items-center gap-1.5 bg-black/40 px-2 py-0.5 rounded">
-                                        <Activity size={10} className="text-emerald-500" />
-                                        <span className="text-[10px] uppercase font-bold text-gray-600">Gain:</span>
-                                        <span className="text-xs font-bold text-emerald-400">+{verdict.delta}s</span>
+                                    <div className="flex items-center gap-1.5 bg-gray-100 border border-black px-2 py-0.5">
+                                        <Activity size={10} className="text-f1-red" />
+                                        <span className="text-xs uppercase font-heading text-gray-600">Gain:</span>
+                                        <span className="text-sm font-heading text-black">+{verdict.delta}s</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5 bg-black/40 px-2 py-0.5 rounded">
-                                        <div className={cn("w-2 h-2 rounded-none", verdict.risk === 'High' ? "bg-f1-red animate-pulse" : "bg-emerald-500")} />
-                                        <span className="text-[10px] uppercase font-bold text-gray-600">Risk:</span>
-                                        <span className={cn("text-xs font-bold", verdict.risk === 'High' ? "text-f1-red" : "text-emerald-500")}>{verdict.risk}</span>
+                                    <div className="flex items-center gap-1.5 bg-gray-100 border border-black px-2 py-0.5">
+                                        <div className={cn("w-2 h-2", verdict.risk === 'High' ? "bg-f1-red animate-pulse" : "bg-black")} />
+                                        <span className="text-xs uppercase font-heading text-gray-600">Risk:</span>
+                                        <span className={cn("text-sm font-heading", verdict.risk === 'High' ? "text-f1-red" : "text-black")}>{verdict.risk}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <p className="text-xs text-gray-300 italic">" {verdict.reason} "</p>
+                        <p className="text-sm text-gray-600 italic">" {verdict.reason} "</p>
                     </div>
 
                     {/* SCENARIO DECK */}
-                    <div className="flex-1 bg-white p-4 rounded-none border border-black space-y-4 min-w-[240px]">
+                    <div className="flex-1 bg-white p-4 border-2 border-black shadow-hard-sm space-y-4 min-w-[240px]">
                         <div className="flex justify-between items-center">
-                            <h4 className="text-xs font-bold uppercase text-gray-600 flex items-center gap-2">
+                            <h4 className="text-xs font-heading uppercase text-black flex items-center gap-2">
                                 <Calculator size={12} /> Scenario Lab
                             </h4>
-                            <button onClick={() => { setDegMult(1.0); setScLaps([]); setTraffic(false); }} className="text-[9px] text-f1-red uppercase font-bold hover:underline">Reset</button>
+                            <button onClick={() => { setDegMult(1.0); setScLaps([]); setTraffic(false); }} className="text-xs text-f1-red uppercase font-heading hover:underline">Reset</button>
                         </div>
 
                         {/* Traffic Toggle */}
                         <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] uppercase font-bold text-gray-600">Traffic</span>
-                            <button onClick={() => setTraffic(!traffic)} className={cn("flex-1 h-6 rounded relative", traffic ? "bg-f1-red/20" : "bg-[#2A2A30]")}>
-                                <div className={cn("absolute top-0.5 bottom-0.5 w-[48%] rounded shadow-sm transition-all", traffic ? "right-0.5 bg-f1-red" : "left-0.5 bg-gray-500")} />
+                            <span className="text-xs uppercase font-heading text-black">Traffic</span>
+                            <button onClick={() => setTraffic(!traffic)} className={cn("flex-1 h-6 relative border border-black", traffic ? "bg-f1-red/20" : "bg-gray-200")}>
+                                <div className={cn("absolute top-0.5 bottom-0.5 w-[48%] shadow-sm transition-all", traffic ? "right-0.5 bg-f1-red" : "left-0.5 bg-gray-400")} />
                             </button>
                         </div>
 
                         {/* Degradation Slider */}
                         <div>
-                            <div className="flex justify-between text-[10px] uppercase font-bold text-gray-600 mb-1">
+                            <div className="flex justify-between text-xs uppercase font-heading text-black mb-1">
                                 <span>Degradation</span>
                                 <span className={cn("font-mono", degMult > 1 ? "text-f1-red" : "text-black")}>{degMult}x</span>
                             </div>
                             <input
                                 type="range" min="0.8" max="1.5" step="0.1"
                                 value={degMult} onChange={(e) => setDegMult(parseFloat(e.target.value))}
-                                className="w-full h-1.5 bg-[#2A2A30] rounded-none accent-f1-red"
+                                className="w-full h-1.5 bg-gray-200 accent-f1-red"
                             />
                         </div>
 
                         {/* Safety Car */}
                         <div>
-                            <div className="flex justify-between text-[10px] uppercase font-bold text-gray-600 mb-1">
+                            <div className="flex justify-between text-xs uppercase font-heading text-black mb-1">
                                 <span>Safety Cars</span>
-                                <span className="text-amber-500">{scLaps.length} Active</span>
+                                <span className="text-f1-red font-heading">{scLaps.length} Active</span>
                             </div>
                             <div className="flex gap-2">
                                 <input
@@ -726,14 +727,14 @@ function StrategyView({ races }) {
                                     placeholder="Lap"
                                     value={newScLap}
                                     onChange={(e) => setNewScLap(e.target.value)}
-                                    className="flex-1 bg-white border border-black rounded px-2 py-1 text-xs text-black outline-none"
+                                    className="flex-1 bg-white border-2 border-black px-2 py-1 text-sm text-black outline-none"
                                 />
-                                <button onClick={addSafetyCar} className="bg-amber-500/20 text-amber-500 px-3 py-1 rounded text-xs font-bold">Add SC</button>
+                                <button onClick={addSafetyCar} className="bg-f1-red text-white px-3 py-1 text-xs font-heading uppercase border-2 border-black">Add SC</button>
                             </div>
                             {scLaps.length > 0 && (
                                 <div className="flex gap-1 mt-2 flex-wrap">
                                     {scLaps.map(lap => (
-                                        <button key={lap} onClick={() => removeSafetyCar(lap)} className="bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded text-xs">
+                                        <button key={lap} onClick={() => removeSafetyCar(lap)} className="bg-f1-red/10 text-f1-red px-2 py-0.5 text-xs border border-f1-red">
                                             L{lap} ×
                                         </button>
                                     ))}
@@ -746,12 +747,12 @@ function StrategyView({ races }) {
                 {/* STRATEGY CARDS */}
                 <div className="flex gap-4 mb-6 overflow-x-auto pb-2 shrink-0">
                     {data.strategies.map((strat, i) => (
-                        <div key={strat.name} className={cn("min-w-[200px] p-4 rounded-none border flex-shrink-0", strat.is_best ? "bg-emerald-500/10 border-emerald-500/30" : "bg-white border-black")}>
+                        <div key={strat.name} className={cn("min-w-[200px] p-4 border-2 flex-shrink-0", strat.is_best ? "bg-white border-f1-red shadow-hard" : "bg-white border-black shadow-hard-sm")}>
                             <div className="flex justify-between items-start mb-2">
-                                <h4 className="font-bold text-black text-sm">{strat.name}</h4>
-                                {strat.is_best && <span className="bg-emerald-500 text-black text-[8px] px-1.5 py-0.5 rounded font-bold">BEST</span>}
+                                <h4 className="font-heading text-black text-sm">{strat.name}</h4>
+                                {strat.is_best && <span className="bg-f1-red text-white text-[8px] px-1.5 py-0.5 font-heading uppercase">BEST</span>}
                             </div>
-                            <div className="text-xs text-gray-600 mb-2">{strat.pit_stops.length} stop{strat.pit_stops.length !== 1 ? 's' : ''}</div>
+                            <div className="text-sm text-gray-600 mb-2">{strat.pit_stops.length} stop{strat.pit_stops.length !== 1 ? 's' : ''}</div>
                             <div className="text-lg font-mono font-bold text-black">
                                 {strat.delta_to_best > 0 ? `+${strat.delta_to_best}s` : 'Fastest'}
                             </div>
@@ -764,8 +765,8 @@ function StrategyView({ races }) {
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={chartData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                            <XAxis dataKey="name" stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} label={{ value: 'Lap', position: 'bottom', fill: '#6b7280', fontSize: 10 }} />
-                            <YAxis stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} width={50} domain={['dataMin - 2', 'dataMax + 2']} label={{ value: 'Lap Time (s)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 10 }} />
+                            <XAxis dataKey="name" stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} label={{ value: 'Lap', position: 'bottom', fill: '#6b7280', fontSize: 11 }} />
+                            <YAxis stroke="#6b7280" fontSize={11} tickLine={false} axisLine={false} width={50} domain={['dataMin - 2', 'dataMax + 2']} label={{ value: 'Lap Time (s)', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }} />
                             <Tooltip
                                 contentStyle={{ backgroundColor: '#fff', borderColor: '#000', color: '#000', borderRadius: '8px' }}
                                 formatter={(value, name) => [value ? `${value.toFixed(1)}s` : 'Pit', name]}
@@ -804,7 +805,6 @@ function AIPredictions({ races, year }) {
             if (response.ok) {
                 const data = await response.json();
                 const elapsed = Math.round(performance.now() - startTime);
-                console.log(`✓ Prediction loaded in ${elapsed}ms from CDN`);
                 setData(data);
             } else {
                 throw new Error(`Failed to load prediction: ${response.status}`);
@@ -814,9 +814,8 @@ function AIPredictions({ races, year }) {
 
             // Fallback to API if CDN fails
             try {
-                const res = await axios.get(`http://localhost:5000/api/predictions/ai?race=${selectedRace}&year=${year}`);
+                const res = await axios.get(`${API_BASE}/api/predictions/ai?race=${selectedRace}&year=${year}`);
                 const elapsed = Math.round(performance.now() - startTime);
-                console.log(`⚙️ Prediction loaded in ${elapsed}ms from API`);
                 setData(res.data);
             } catch (apiError) {
                 console.error('Both sources failed:', apiError);
@@ -840,24 +839,24 @@ function AIPredictions({ races, year }) {
         <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-hidden">
             {/* LEFT: Config */}
             <div className="lg:w-1/3 flex flex-col gap-4 shrink-0">
-                <div className="bg-gradient-to-br from-purple-900/30 to-[#15151E] border border-purple-500/30 rounded-none p-6">
+                <div className="bg-white border-2 border-black shadow-hard p-6">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 rounded-none bg-purple-500/20 flex items-center justify-center">
-                            <Brain size={24} className="text-purple-400" />
+                        <div className="w-12 h-12 bg-f1-red/20 border border-black flex items-center justify-center">
+                            <Brain size={24} className="text-f1-red" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-black">AI Model</h2>
-                            <p className="text-xs text-gray-600">The model thinks...</p>
+                            <h2 className="text-lg font-heading text-black">AI Model</h2>
+                            <p className="text-sm text-gray-600">The model thinks...</p>
                         </div>
                     </div>
 
                     <div className="space-y-4">
                         <div>
-                            <label className="text-xs font-bold uppercase text-gray-600 block mb-2">Select Race</label>
+                            <label className="text-xs font-heading uppercase text-black block mb-2">Select Race</label>
                             <select
                                 value={selectedRace}
                                 onChange={(e) => setSelectedRace(e.target.value)}
-                                className="w-full bg-white text-black text-sm font-bold border border-black rounded-none px-4 py-2 outline-none focus:border-purple-500"
+                                className="w-full bg-white text-black text-sm font-body border-2 border-black px-4 py-2 outline-none focus:border-f1-red"
                             >
                                 {races.map(r => (
                                     <option key={r.id} value={r.code}>{r.name}</option>
@@ -866,38 +865,38 @@ function AIPredictions({ races, year }) {
                         </div>
 
                         {/* PRE-SEASON PREDICTION BANNER */}
-                        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-none p-4">
+                        <div className="bg-gray-100 border border-black p-4">
                             <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-none bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                                    <Info size={16} className="text-blue-400" />
+                                <div className="w-8 h-8 bg-f1-red/20 border border-black flex items-center justify-center shrink-0 mt-0.5">
+                                    <Info size={16} className="text-f1-red" />
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <h4 className="text-sm font-bold text-black">Pre-Season Prediction</h4>
-                                        <span className="bg-blue-500/20 text-blue-400 text-[10px] px-2 py-0.5 rounded-none font-bold uppercase">
+                                        <h4 className="text-sm font-heading text-black">Pre-Season Prediction</h4>
+                                        <span className="bg-f1-red/20 text-f1-red text-xs px-2 py-0.5 font-heading uppercase">
                                             Estimated Quali
                                         </span>
                                     </div>
-                                    <p className="text-xs text-gray-600 leading-relaxed">
-                                        Based on 2025 performance data and team strengths. <span className="text-blue-400 font-semibold">Predictions will be updated with actual qualifying times</span> after Saturday sessions.
+                                    <p className="text-sm text-gray-700 leading-relaxed">
+                                        Based on 2025 performance data and team strengths. <span className="text-f1-red font-semibold">Predictions will be updated with actual qualifying times</span> after Saturday sessions.
                                     </p>
                                 </div>
                             </div>
                         </div>
 
                         {data && (
-                            <div className="bg-black/30 rounded-none p-4 space-y-2">
-                                <div className="flex items-center justify-between text-xs">
+                            <div className="bg-gray-100 border border-black p-4 space-y-2">
+                                <div className="flex items-center justify-between text-sm">
                                     <span className="text-gray-600">Model Type</span>
-                                    <span className="text-purple-400 font-mono">{data.model_type}</span>
+                                    <span className="text-black font-mono">{data.model_type}</span>
                                 </div>
-                                <div className="flex items-center justify-between text-xs">
+                                <div className="flex items-center justify-between text-sm">
                                     <span className="text-gray-600">Prediction Year</span>
                                     <span className="text-black font-bold">{data.prediction_year}</span>
                                 </div>
-                                <div className="flex items-center justify-between text-xs">
+                                <div className="flex items-center justify-between text-sm">
                                     <span className="text-gray-600">Data Confidence</span>
-                                    <span className={cn("font-bold", data.model_confidence >= 70 ? "text-emerald-400" : data.model_confidence >= 40 ? "text-amber-400" : "text-red-400")}>
+                                    <span className={cn("font-bold", data.model_confidence >= 70 ? "text-black" : data.model_confidence >= 40 ? "text-gray-600" : "text-f1-red")}>
                                         {data.model_confidence}%
                                     </span>
                                 </div>
@@ -907,44 +906,44 @@ function AIPredictions({ races, year }) {
                 </div>
 
                 {/* METHODOLOGY PANEL */}
-                <div className="bg-white border border-black rounded-none p-4">
-                    <h4 className="text-xs font-bold uppercase text-gray-600 mb-3 flex items-center gap-2">
+                <div className="bg-white border-2 border-black shadow-hard-sm p-4">
+                    <h4 className="text-xs font-heading uppercase text-black mb-3 flex items-center gap-2">
                         <Brain size={12} /> AI Model Methodology
                     </h4>
 
                     {/* Feature Weights */}
                     <div className="space-y-2 mb-4">
-                        <div className="text-[10px] font-bold uppercase text-gray-600">Feature Weights</div>
+                        <div className="text-xs font-heading uppercase text-black">Feature Weights</div>
                         <div className="space-y-1.5">
                             {[
-                                { name: 'Qualifying Position', weight: 30, color: 'bg-purple-500' },
-                                { name: 'Circuit History', weight: 25, color: 'bg-blue-500' },
-                                { name: 'Recent Form (Last 5)', weight: 20, color: 'bg-emerald-500' },
-                                { name: 'Team Strength', weight: 15, color: 'bg-amber-500' },
-                                { name: 'Championship Pos', weight: 10, color: 'bg-gray-500' },
+                                { name: 'Qualifying Position', weight: 30 },
+                                { name: 'Circuit History', weight: 25 },
+                                { name: 'Recent Form (Last 5)', weight: 20 },
+                                { name: 'Team Strength', weight: 15 },
+                                { name: 'Championship Pos', weight: 10 },
                             ].map(f => (
-                                <div key={f.name} className="flex items-center gap-2 text-[11px]">
-                                    <div className="w-16 text-gray-600">{f.weight}%</div>
-                                    <div className="flex-1 h-1.5 bg-[#2A2A30] rounded-none overflow-hidden">
-                                        <div className={`h-full ${f.color}`} style={{ width: `${f.weight}%` }} />
+                                <div key={f.name} className="flex items-center gap-2 text-sm">
+                                    <div className="w-12 text-gray-600">{f.weight}%</div>
+                                    <div className="flex-1 h-1.5 bg-gray-200 border border-black overflow-hidden">
+                                        <div className="h-full bg-f1-red" style={{ width: `${f.weight}%` }} />
                                     </div>
-                                    <div className="w-28 text-gray-600 text-right">{f.name}</div>
+                                    <div className="w-24 text-gray-600 text-right text-xs">{f.name}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
                     {/* Prediction Modes */}
-                    <div className="bg-black/30 rounded-none p-3">
-                        <div className="text-[10px] font-bold uppercase text-gray-600 mb-2">Prediction Modes</div>
-                        <div className="grid grid-cols-2 gap-2 text-[11px]">
-                            <div className="bg-blue-500/10 border border-blue-500/20 rounded p-2">
-                                <div className="font-bold text-blue-400 mb-0.5">Pre-Season</div>
-                                <div className="text-gray-600">Estimated qualifying from team strength. ~65% accuracy.</div>
+                    <div className="bg-gray-100 border border-black p-3">
+                        <div className="text-xs font-heading uppercase text-black mb-2">Prediction Modes</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="bg-white border border-black p-2">
+                                <div className="font-heading text-black mb-0.5">Pre-Season</div>
+                                <div className="text-gray-600">~65% accuracy</div>
                             </div>
-                            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded p-2">
-                                <div className="font-bold text-emerald-400 mb-0.5">Post-Qualifying</div>
-                                <div className="text-gray-600">Uses actual Q3 times. ~85% accuracy.</div>
+                            <div className="bg-white border border-f1-red p-2">
+                                <div className="font-heading text-f1-red mb-0.5">Post-Quali</div>
+                                <div className="text-gray-600">~85% accuracy</div>
                             </div>
                         </div>
                     </div>
@@ -952,10 +951,10 @@ function AIPredictions({ races, year }) {
             </div>
 
             {/* RIGHT: Results */}
-            <div className="flex-1 bg-white rounded-none border border-black flex flex-col overflow-hidden">
+            <div className="flex-1 bg-white border-2 border-black shadow-hard flex flex-col overflow-hidden">
                 {loading ? (
                     <div className="flex-1 flex items-center justify-center">
-                        <Brain className="animate-pulse text-purple-500" size={48} />
+                        <Brain className="animate-pulse text-f1-red" size={48} />
                     </div>
                 ) : !data ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-gray-600">
@@ -964,12 +963,12 @@ function AIPredictions({ races, year }) {
                     </div>
                 ) : (
                     <>
-                        <div className="p-4 border-b border-black bg-black/20 flex justify-between items-center shrink-0">
+                        <div className="p-4 border-b-2 border-black bg-gray-100 flex justify-between items-center shrink-0">
                             <div>
-                                <h3 className="text-sm font-bold uppercase text-purple-400 flex items-center gap-2">
+                                <h3 className="text-sm font-heading uppercase text-f1-red flex items-center gap-2">
                                     <Brain size={14} /> AI Win Probabilities
                                 </h3>
-                                <div className="text-[10px] text-gray-600">Based on circuit-specific historical data</div>
+                                <div className="text-xs text-gray-600">Based on circuit-specific historical data</div>
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
@@ -981,7 +980,7 @@ function AIPredictions({ races, year }) {
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: i * 0.05 }}
-                                        className="bg-white/80 p-3 rounded-none border border-black flex items-center gap-4 relative overflow-hidden group hover:border-[#3A3A45] transition-colors"
+                                        className="bg-white p-3 border-2 border-black shadow-hard-sm flex items-center gap-4 relative overflow-hidden group hover:border-f1-red transition-colors"
                                     >
                                         {/* Background Probability Bar */}
                                         <motion.div
@@ -1014,8 +1013,8 @@ function AIPredictions({ races, year }) {
                                                 <span className="text-[9px] uppercase font-bold text-gray-600 mb-0.5">Win Prob</span>
                                                 <div className="flex items-end gap-1">
                                                     <span className="text-lg font-bold text-black leading-none">{d.win_probability}%</span>
-                                                    <div className="h-1.5 flex-1 bg-[#2A2A30] rounded-none overflow-hidden mb-1">
-                                                        <div className="h-full rounded-none" style={{ width: `${d.win_probability}%`, backgroundColor: color }} />
+                                                    <div className="h-1.5 flex-1 bg-gray-200 border border-black overflow-hidden mb-1">
+                                                        <div className="h-full" style={{ width: `${d.win_probability}%`, backgroundColor: color }} />
                                                     </div>
                                                 </div>
                                             </div>
@@ -1025,8 +1024,8 @@ function AIPredictions({ races, year }) {
                                                 <span className="text-[9px] uppercase font-bold text-gray-600 mb-0.5">Podium</span>
                                                 <div className="flex items-end gap-1">
                                                     <span className="text-sm font-bold text-gray-300 leading-none">{d.podium_probability}%</span>
-                                                    <div className="h-1.5 flex-1 bg-[#2A2A30] rounded-none overflow-hidden mb-0.5">
-                                                        <div className="h-full rounded-none bg-gray-500" style={{ width: `${d.podium_probability}%` }} />
+                                                    <div className="h-1.5 flex-1 bg-gray-200 border border-black overflow-hidden mb-0.5">
+                                                        <div className="h-full bg-gray-500" style={{ width: `${d.podium_probability}%` }} />
                                                     </div>
                                                 </div>
                                             </div>
@@ -1041,9 +1040,9 @@ function AIPredictions({ races, year }) {
                                                             <span className="text-gray-600">Circuit Avg</span>
                                                             <span className="text-black font-mono">{d.features.circuit_avg?.toFixed(1) || '-'}</span>
                                                         </div>
-                                                        <div className="h-1 bg-[#2A2A30] rounded-none overflow-hidden">
+                                                        <div className="h-1 bg-gray-200 border border-black overflow-hidden">
                                                             {/* Inverse bar: lower is better (max 20) */}
-                                                            <div className="h-full bg-blue-500/60" style={{ width: `${Math.max(0, 100 - (d.features.circuit_avg * 5))}%` }} />
+                                                            <div className="h-full bg-f1-red" style={{ width: `${Math.max(0, 100 - (d.features.circuit_avg * 5))}%` }} />
                                                         </div>
                                                     </div>
                                                     <div className="flex-1">
@@ -1051,9 +1050,9 @@ function AIPredictions({ races, year }) {
                                                             <span className="text-gray-600">Recent Form</span>
                                                             <span className="text-black font-mono">{d.features.recent_form?.toFixed(1) || '-'}</span>
                                                         </div>
-                                                        <div className="h-1 bg-[#2A2A30] rounded-none overflow-hidden">
+                                                        <div className="h-1 bg-gray-200 border border-black overflow-hidden">
                                                             {/* Inverse bar: lower is better */}
-                                                            <div className="h-full bg-purple-500/60" style={{ width: `${Math.max(0, 100 - (d.features.recent_form * 5))}%` }} />
+                                                            <div className="h-full bg-f1-red" style={{ width: `${Math.max(0, 100 - (d.features.recent_form * 5))}%` }} />
                                                         </div>
                                                     </div>
                                                 </>

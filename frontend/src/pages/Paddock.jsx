@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { MessageSquare, ArrowBigUp, ArrowBigDown, Plus, ChevronLeft, Send, Users, Activity, MessageCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
+import API_BASE from '../config/api';
 
 export default function Paddock() {
     const [view, setView] = useState('feed'); // 'feed' | 'thread'
@@ -41,7 +42,7 @@ export default function Paddock() {
     const fetchThreads = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('http://localhost:5000/api/paddock/threads');
+            const res = await axios.get(`${API_BASE}/api/paddock/threads`);
             setThreads(res.data);
         } catch (err) { console.error(err); }
         setLoading(false);
@@ -50,7 +51,7 @@ export default function Paddock() {
     const fetchThreadDetail = async (id) => {
         setLoading(true);
         try {
-            const res = await axios.get(`http://localhost:5000/api/paddock/threads/${id}?client_id=${clientId}`);
+            const res = await axios.get(`${API_BASE}/api/paddock/threads/${id}?client_id=${clientId}`);
             setActiveThread(res.data);
             setView('thread');
         } catch (err) { console.error(err); }
@@ -60,7 +61,7 @@ export default function Paddock() {
     const handleVote = async (e, type, id, direction) => {
         e.stopPropagation();
         try {
-            const res = await axios.post('http://localhost:5000/api/paddock/vote', {
+            const res = await axios.post(`${API_BASE}/api/paddock/vote`, {
                 client_id: clientId,
                 item_type: type,
                 item_id: id,
@@ -87,7 +88,7 @@ export default function Paddock() {
     const handleCreateThread = async () => {
         if (!newTitle.trim() || !newContent.trim()) return;
         try {
-            await axios.post('http://localhost:5000/api/paddock/threads', {
+            await axios.post(`${API_BASE}/api/paddock/threads`, {
                 client_id: clientId,
                 nickname,
                 title: newTitle,
@@ -103,7 +104,7 @@ export default function Paddock() {
 
     const handlePostComment = async (content) => {
         try {
-            await axios.post(`http://localhost:5000/api/paddock/threads/${activeThread.id}/comments`, {
+            await axios.post(`${API_BASE}/api/paddock/threads/${activeThread.id}/comments`, {
                 client_id: clientId,
                 nickname,
                 content

@@ -5,6 +5,7 @@ import { cn } from '../lib/utils';
 import { motion } from 'framer-motion';
 
 import { PixelCard } from '../components/PixelUI';
+import API_BASE from '../config/api';
 
 export default function Standings() {
     const [data, setData] = useState(null);
@@ -16,7 +17,7 @@ export default function Standings() {
         const fetchStandings = async () => {
             setLoading(true);
             try {
-                const res = await axios.get(`http://localhost:5000/api/standings?year=${year}`);
+                const res = await axios.get(`${API_BASE}/api/standings?year=${year}`);
                 if (res.data.error) throw new Error(res.data.error);
                 setData(res.data);
             } catch (e) {

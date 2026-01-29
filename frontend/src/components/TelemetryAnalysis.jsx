@@ -4,6 +4,7 @@ import { LayoutDashboard, Zap, TrendingUp, Settings, Map as MapIcon, ChevronDown
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Legend, AreaChart, Area, CartesianGrid, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import API_BASE from '../config/api';
 
 export default function TelemetryAnalysis({ raceId: initialRaceId }) {
     const [raceId, setRaceId] = useState(initialRaceId || 0);
@@ -104,7 +105,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
     useEffect(() => {
         const init = async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/races?year=${year}`);
+                const res = await axios.get(`${API_BASE}/api/races?year=${year}`);
                 setRaceList(res.data);
                 // Reset raceId when year changes
                 if (res.data.length > 0) setRaceId(res.data[0].id);
@@ -118,7 +119,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
         if (!raceId) return;
         const fetchData = async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/replay/${raceId}`);
+                const res = await axios.get(`${API_BASE}/api/replay/${raceId}`);
                 setReplayData(res.data);
                 // Default drivers
                 if (res.data.data[1] && res.data.data[1].length >= 2) {
@@ -135,7 +136,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
     useEffect(() => {
         if (!raceId || !activeDriver) return;
         const fetchLaps = async () => {
-            const res = await axios.get(`http://localhost:5000/api/laps?raceId=${raceId}&driverId=${activeDriver}`);
+            const res = await axios.get(`${API_BASE}/api/laps?raceId=${raceId}&driverId=${activeDriver}`);
             setActiveLapsList(res.data);
             setSelectedLap('fastest');
         };
@@ -145,7 +146,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
     useEffect(() => {
         if (!raceId || !compareDriver) return;
         const fetchLaps = async () => {
-            const res = await axios.get(`http://localhost:5000/api/laps?raceId=${raceId}&driverId=${compareDriver}`);
+            const res = await axios.get(`${API_BASE}/api/laps?raceId=${raceId}&driverId=${compareDriver}`);
             setCompareLapsList(res.data);
         };
         fetchLaps();
@@ -159,7 +160,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
         const runAnalysis = async () => {
             setLoading(true);
             try {
-                const res = await axios.get(`http://localhost:5000/api/analysis/compare?raceId=${raceId}&driver1=${activeDriver}&driver2=${compareDriver}&lap1=${selectedLap}&lap2=${selectedLap}`);
+                const res = await axios.get(`${API_BASE}/api/analysis/compare?raceId=${raceId}&driver1=${activeDriver}&driver2=${compareDriver}&lap1=${selectedLap}&lap2=${selectedLap}`);
                 setAnalysisData(res.data);
             } catch (e) {
                 console.error("Analysis failed", e);

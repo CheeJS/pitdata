@@ -15,6 +15,7 @@ import Paddock from './pages/Paddock';
 import DriverSprite from './components/DriverSprite';
 import { DashboardSkeleton, PageTransition } from './components/ui/Skeleton';
 import CountdownTimer from './components/ui/CountdownTimer';
+import API_BASE from './config/api';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -28,8 +29,8 @@ export default function App() {
     const fetchData = async () => {
       try {
         const [resultsRes, standingsRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/latest-results'),
-          axios.get('http://localhost:5000/api/standings?year=2026')
+          axios.get(`${API_BASE}/api/latest-results`),
+          axios.get(`${API_BASE}/api/standings?year=2026`)
         ]);
 
         setRaceData(resultsRes.data);

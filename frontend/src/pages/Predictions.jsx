@@ -8,6 +8,7 @@ import {
     Medal, Star, XCircle, Gauge, Users, Award, Sparkles, Clock, MessageSquare, Send
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import API_BASE from '../config/api';
 
 // --- SUB-COMPONENT: PODIUM SLOT ---
 const PodiumSlot = ({ position, driver, color, onRemove, isLocked }) => {
@@ -156,7 +157,7 @@ export default function Predictions() {
         }
 
         // Fetch Drivers
-        axios.get('http://localhost:5000/api/drivers?year=2026')
+        axios.get(`${API_BASE}/api/drivers?year=2026`)
             .then(res => {
                 setActiveDrivers(res.data);
                 // Create lookup map
@@ -167,7 +168,7 @@ export default function Predictions() {
             .catch(err => console.error("Error fetching drivers", err));
 
         // Fetch Races
-        axios.get('http://localhost:5000/api/races?year=2026')
+        axios.get(`${API_BASE}/api/races?year=2026`)
             .then(res => {
                 setRaces(res.data);
                 if (res.data.length > 0) setSelectedRace(res.data[0]);
@@ -186,7 +187,7 @@ export default function Predictions() {
         setShowAllDrivers(false);
         setShowResults(false);
 
-        axios.get(`http://localhost:5000/api/predictions/stats?race_id=${selectedRace.id}`)
+        axios.get(`${API_BASE}/api/predictions/stats?race_id=${selectedRace.id}`)
             .then(res => setStats(res.data))
             .catch(err => console.error(err))
             .finally(() => setLoading(false));
@@ -198,7 +199,7 @@ export default function Predictions() {
     const fetchComments = async () => {
         if (!selectedRace) return;
         try {
-            const res = await axios.get(`http://localhost:5000/api/predictions/comments?race_id=${selectedRace.id}`);
+            const res = await axios.get(`${API_BASE}/api/predictions/comments?race_id=${selectedRace.id}`);
             setComments(res.data || []);
         } catch (err) {
             console.error(err);
@@ -209,7 +210,7 @@ export default function Predictions() {
     const postComment = async () => {
         if (!newComment.trim() || !nickname.trim()) return;
         try {
-            await axios.post('http://localhost:5000/api/predictions/comments', {
+            await axios.post(`${API_BASE}/api/predictions/comments`, {
                 race_id: selectedRace.id,
                 client_id: clientId,
                 nickname: nickname,
@@ -290,7 +291,7 @@ export default function Predictions() {
         setShowPredictionForm(false); // Hide the form after submission
 
         try {
-            await axios.post('http://localhost:5000/api/predictions/vote', {
+            await axios.post(`${API_BASE}/api/predictions/vote`, {
                 race_id: selectedRace.id,
                 client_id: clientId,
                 value: votePayload
@@ -302,7 +303,7 @@ export default function Predictions() {
 
     const refreshStats = async () => {
         if (!selectedRace) return;
-        const res = await axios.get(`http://localhost:5000/api/predictions/stats?race_id=${selectedRace.id}`);
+        const res = await axios.get(`${API_BASE}/api/predictions/stats?race_id=${selectedRace.id}`);
         setStats(res.data);
     };
 

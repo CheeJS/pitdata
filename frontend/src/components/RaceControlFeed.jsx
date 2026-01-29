@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Flag, AlertTriangle, AlertCircle, Info, Filter } from 'lucide-react';
 import axios from 'axios';
 import { cn } from "../lib/utils";
+import API_BASE from '../config/api';
 
 export default function RaceControlFeed({ raceId }) {
     const [messages, setMessages] = useState([]);
@@ -13,7 +14,7 @@ export default function RaceControlFeed({ raceId }) {
     useEffect(() => {
         if (!raceId) return;
         setLoading(true);
-        axios.get(`http://localhost:5000/api/race-control/${raceId}`)
+        axios.get(`${API_BASE}/api/race-control/${raceId}`)
             .then(res => {
                 setMessages(res.data.messages || []);
             })

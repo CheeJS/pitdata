@@ -1,9 +1,11 @@
 from flask import Flask, jsonify, request
 from flask.json.provider import DefaultJSONProvider
 from flask_cors import CORS
+from flask_caching import Cache
 from services.f1_service import get_latest_race_results, run_monte_carlo_simulation, simulate_race_strategy
 import json
 import math
+import os
 
 # Custom JSON Provider to handle NaN/Infinity (which are invalid in JSON spec)
 class SafeJSONProvider(DefaultJSONProvider):
@@ -24,13 +26,21 @@ class SafeJSONProvider(DefaultJSONProvider):
 app = Flask(__name__)
 app.json_provider_class = SafeJSONProvider
 app.json = SafeJSONProvider(app)
-CORS(app)
+
+# Cache Configuration (Simple In-Memory)
+cache = Cache(config={'CACHE_TYPE': 'SimpleCache', 'CACHE_DEFAULT_TIMEOUT': 300})
+cache.init_app(app)
+
+# CORS Configuration: Allow specific origins in production, or all in development
+cors_origins = os.getenv('CORS_ORIGINS', '*')  # Set CORS_ORIGINS=https://yourdomain.com in production
+CORS(app, origins=cors_origins.split(',') if cors_origins != '*' else '*')
 
 @app.route('/api/health')
 def health_check():
     return jsonify({"status": "healthy", "service": "F1 Stats API"})
 
 @app.route('/api/latest-results')
+@cache.cached(timeout=60) # Cache for 1 minute
 def latest_results():
     from services.f1_service import get_dashboard_data
     year = request.args.get('year', 2026, type=int) 
@@ -71,6 +81,7 @@ def race_telemetry(race_id):
         return jsonify({"error": "Failed to fetch telemetry"}), 404
 
 @app.route('/api/races')
+@cache.cached(timeout=300, query_string=True) # Cache for 5 mins, distinct by query params (year)
 def get_races():
     from services.f1_service import get_races_list
     from flask import request
@@ -115,6 +126,7 @@ def get_laps():
     return jsonify(data)
 
 @app.route('/api/standings', methods=['GET'])
+@cache.cached(timeout=300, query_string=True) # Cache for 5 mins
 def standings():
     from services.f1_service import get_season_standings
     year = request.args.get('year', 2024)
@@ -196,6 +208,7 @@ def race_control_feed(race_id):
 
 
 @app.route('/api/drivers')
+@cache.cached(timeout=3600, query_string=True) # Cache for 1 hour (drivers don't change often)
 def get_active_season_drivers():
     from services.f1_service import get_active_drivers
     year = request.args.get('year', 2026, type=int)
@@ -326,5 +339,7 @@ def paddock_vote():
     return jsonify(res)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Use FLASK_DEBUG=true in development, defaults to False for production
+    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(debug=debug_mode)
 
