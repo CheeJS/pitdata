@@ -1,10 +1,26 @@
 __pycache__
 *.pyc
 *.pyo
+*.pyd
+.Python
 venv
+env
 .env
+.venv
 node_modules
 dist
 build
 .git
+.gitignore
 .DS_Store
+*.log
+*.sqlite
+*.db
+
+# Development/debug scripts (optional - uncomment to exclude)
+# debug_*.py
+# verify_*.py
+# audit_*.py
+
+# Frontend files (if building backend only)
+frontend/

@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      # Database connection (AWS RDS PostgreSQL)
+      - DATABASE_URL=${DATABASE_URL}
+      # Flask configuration
+      - FLASK_DEBUG=${FLASK_DEBUG:-false}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      # Add other environment variables as needed
+    env_file:
+      - ./backend/.env
+    volumes:
+      # Mount for development (optional - remove in production)
+      - ./backend:/app
+    restart: unless-stopped
+    networks:
+      - f1-network
+
+networks:
+  f1-network:
+    driver: bridge
