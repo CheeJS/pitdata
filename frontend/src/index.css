@@ -15,6 +15,8 @@
   body {
     @apply bg-f1-light text-f1-dark font-body antialiased;
     font-family: 'VT323', monospace;
+    /* Responsive base font size for better mobile readability */
+    font-size: clamp(18px, 2.5vw, 24px);
   }
 
   h1,
@@ -25,6 +27,24 @@
   h6 {
     font-family: 'Press Start 2P', cursive;
     @apply uppercase tracking-widest leading-relaxed;
+  }
+
+  /* Mobile-specific heading sizes for better readability */
+  @media (max-width: 768px) {
+    h1 {
+      font-size: clamp(16px, 4vw, 24px);
+      line-height: 1.3;
+    }
+
+    h2 {
+      font-size: clamp(14px, 3.5vw, 20px);
+      line-height: 1.3;
+    }
+
+    h3 {
+      font-size: clamp(12px, 3vw, 16px);
+      line-height: 1.3;
+    }
   }
 
   :root {

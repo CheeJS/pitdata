@@ -12,7 +12,7 @@ import API_BASE from '../config/api';
 
 // --- SUB-COMPONENT: PODIUM SLOT ---
 const PodiumSlot = ({ position, driver, color, onRemove, isLocked }) => {
-    const heights = { 1: 'h-24', 2: 'h-20', 3: 'h-16' };
+    const heights = { 1: 'h-16 md:h-24', 2: 'h-14 md:h-20', 3: 'h-12 md:h-16' };
     const positions = { 1: 'order-2', 2: 'order-1', 3: 'order-3' };
     const labels = { 1: '1ST', 2: '2ND', 3: '3RD' };
     const medalColors = {
@@ -33,7 +33,7 @@ const PodiumSlot = ({ position, driver, color, onRemove, isLocked }) => {
                         className="relative"
                     >
                         <div
-                            className="w-16 h-16 rounded-none flex items-center justify-center text-black font-bold text-lg border-2 shadow-lg"
+                            className="w-12 h-12 md:w-16 md:h-16 rounded-none flex items-center justify-center text-black font-bold text-base md:text-lg border-2 shadow-lg"
                             style={{ backgroundColor: color + '30', borderColor: color }}
                         >
                             {driver}
@@ -41,7 +41,7 @@ const PodiumSlot = ({ position, driver, color, onRemove, isLocked }) => {
                         {!isLocked && (
                             <button
                                 onClick={onRemove}
-                                className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-none flex items-center justify-center text-black text-xs hover:bg-red-600"
+                                className="absolute -top-2 -right-2 w-6 h-6 md:w-5 md:h-5 bg-red-500 rounded-none flex items-center justify-center text-black text-xs hover:bg-red-600 min-h-11 min-w-11"
                             >
                                 ×
                             </button>
@@ -50,13 +50,13 @@ const PodiumSlot = ({ position, driver, color, onRemove, isLocked }) => {
                 ) : (
                     <motion.div
                         key="empty"
-                        className="w-16 h-16 rounded-none border-2 border-dashed border-black flex items-center justify-center text-gray-600 text-xs"
+                        className="w-12 h-12 md:w-16 md:h-16 rounded-none border-2 border-dashed border-black flex items-center justify-center text-gray-600 text-xs"
                     >
                         P{position}
                     </motion.div>
                 )}
             </AnimatePresence>
-            <div className={cn("w-20 rounded-none-lg flex flex-col items-center justify-end bg-gradient-to-t", heights[position], medalColors[position])}>
+            <div className={cn("w-16 md:w-20 rounded-none-lg flex flex-col items-center justify-end bg-gradient-to-t", heights[position], medalColors[position])}>
                 <span className="text-black font-bold text-sm mb-1">{labels[position]}</span>
             </div>
         </div>
@@ -80,14 +80,14 @@ const DriverCard = ({ code, meta, isSelected, isLocked, onSelect, type = 'conten
             className={cn(
                 "relative text-left transition-all overflow-hidden bg-white border",
                 isSelected ? "border-current bg-gray-100" : "border-black hover:border-gray-600",
-                isContender ? "p-4 rounded-none border-2" : "p-3 rounded-none opacity-80 hover:opacity-100",
+                isContender ? "p-3 md:p-4 rounded-none border-2" : "p-2 md:p-3 rounded-none opacity-80 hover:opacity-100",
                 isLocked && !isSelected && "opacity-50 grayscale"
             )}
             style={{ borderColor: isSelected ? color : undefined }}
         >
             <div className="relative z-10 flex justify-between items-start">
                 <div className="flex flex-col">
-                    <span className={cn("font-bold text-black block", isContender ? "text-2xl" : "text-lg")}>{code}</span>
+                    <span className={cn("font-bold text-black block", isContender ? "text-xl md:text-2xl" : "text-base md:text-lg")}>{code}</span>
                     <span className={cn("text-gray-600 font-bold uppercase", isContender ? "text-xs tracking-wider" : "text-[10px]")}>
                         {teamName}
                     </span>
@@ -339,7 +339,7 @@ export default function Predictions() {
             </AnimatePresence>
 
             {/* HEADER */}
-            <header className="relative overflow-hidden rounded-none bg-white border border-black min-h-[180px] md:min-h-[220px] mx-3 md:mx-6 mt-3 md:mt-6 shrink-0 flex flex-col justify-end p-5 md:p-8">
+            <header className="relative overflow-hidden rounded-none bg-white border border-black min-h-[140px] md:min-h-[220px] mx-2 md:mx-6 mt-2 md:mt-6 shrink-0 flex flex-col justify-end p-3 md:p-8">
                 <div className="absolute inset-0 z-0">
                     <img
                         src={`https://flagcdn.com/w1280/${selectedRace.code?.slice(0, 2) || 'un'}.png`}
@@ -365,7 +365,7 @@ export default function Predictions() {
                                 {selectedRace.date}
                             </span>
                         </div>
-                        <h1 className="text-3xl md:text-5xl font-bold text-black tracking-tight">
+                        <h1 className="text-2xl md:text-5xl font-bold text-black tracking-tight">
                             {selectedRace.name}
                         </h1>
                         <p className="text-gray-600 text-sm mt-1">Make your race predictions</p>
@@ -383,13 +383,13 @@ export default function Predictions() {
             </header>
 
             {/* MAIN CONTENT */}
-            <div className="flex flex-col gap-4 md:gap-6 flex-1 min-h-0 overflow-hidden p-3 md:p-6">
+            <div className="flex flex-col gap-3 md:gap-6 flex-1 min-h-0 overflow-hidden p-2 md:p-6">
 
                 {/* MAKE PREDICTION BUTTON */}
                 {!locked && !showPredictionForm && (
                     <button
                         onClick={() => setShowPredictionForm(true)}
-                        className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-4 rounded-none transition-all flex items-center justify-center gap-2"
+                        className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-3 md:py-4 rounded-none transition-all flex items-center justify-center gap-2 min-h-11"
                     >
                         Make Your Prediction
                     </button>
@@ -404,7 +404,7 @@ export default function Predictions() {
                             exit={{ height: 0, opacity: 0 }}
                             className={cn("bg-white rounded-none border border-black overflow-hidden", locked && "opacity-90 pointer-events-none")}
                         >
-                            <div className="p-4 md:p-6">
+                            <div className="p-3 md:p-6">
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-sm font-semibold text-black">Your Prediction</h3>
                                     {!locked && (
@@ -417,7 +417,7 @@ export default function Predictions() {
                                 {/* PODIUM */}
                                 <div className="mb-6">
                                     <div className="text-xs font-semibold text-gray-600 uppercase mb-3">Podium</div>
-                                    <div className="flex justify-center items-end gap-4 bg-white rounded-none p-4">
+                                    <div className="flex justify-center items-end gap-2 md:gap-4 bg-white rounded-none p-3 md:p-4">
                                         <PodiumSlot position={2} driver={podium[2]} color={podium[2] ? driverMap[podium[2]]?.color : '#666'} onRemove={() => removePodium(2)} isLocked={locked} />
                                         <PodiumSlot position={1} driver={podium[1]} color={podium[1] ? driverMap[podium[1]]?.color : '#666'} onRemove={() => removePodium(1)} isLocked={locked} />
                                         <PodiumSlot position={3} driver={podium[3]} color={podium[3] ? driverMap[podium[3]]?.color : '#666'} onRemove={() => removePodium(3)} isLocked={locked} />
@@ -427,7 +427,7 @@ export default function Predictions() {
                                 {/* DRIVER SELECTION */}
                                 <div className="mb-6">
                                     <div className="text-xs font-semibold text-gray-600 uppercase mb-3">Select Drivers</div>
-                                    <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                                    <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 md:gap-2">
                                         {contenders.map(code => {
                                             const pPos = Object.entries(podium).find(([p, d]) => d === code)?.[0];
                                             return (
@@ -499,7 +499,7 @@ export default function Predictions() {
                                 </div>
 
                                 {!locked && (
-                                    <button onClick={confirmVote} disabled={!podium[1]} className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-3 rounded-none transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <button onClick={confirmVote} disabled={!podium[1]} className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-3 rounded-none transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-11">
                                         Lock In Prediction
                                     </button>
                                 )}
@@ -509,7 +509,7 @@ export default function Predictions() {
                 </AnimatePresence>
 
                 {/* COMMUNITY PREDICTIONS - Main Content */}
-                <div className="bg-white rounded-none border border-black p-5 flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
+                <div className="bg-white rounded-none border border-black p-3 md:p-5 flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-semibold text-black">Community Predictions</h3>
                         {stats?.total_votes > 0 && <span className="text-sm text-gray-600">{stats.total_votes} votes</span>}
@@ -588,7 +588,7 @@ export default function Predictions() {
                 </div>
 
                 {/* DISCUSSION SECTION */}
-                <div className="bg-white rounded-none border border-black p-5 mt-4">
+                <div className="bg-white rounded-none border border-black p-3 md:p-5 mt-3 md:mt-4">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-2">
                             <MessageSquare size={14} />
@@ -604,7 +604,7 @@ export default function Predictions() {
                             placeholder="Nickname"
                             value={nickname}
                             onChange={e => setNickname(e.target.value)}
-                            className="w-24 bg-white border border-black rounded-none px-3 py-2 text-sm text-black placeholder-gray-400 focus:outline-none focus:border-white/30"
+                            className="w-20 md:w-24 bg-white border border-black rounded-none px-2 md:px-3 py-2 text-sm text-black placeholder-gray-400 focus:outline-none focus:border-white/30 min-h-11"
                         />
                         <input
                             type="text"
@@ -612,12 +612,12 @@ export default function Predictions() {
                             value={newComment}
                             onChange={e => setNewComment(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && postComment()}
-                            className="flex-1 bg-white border border-black rounded-none px-3 py-2 text-sm text-black placeholder-gray-400 focus:outline-none focus:border-white/30"
+                            className="flex-1 bg-white border border-black rounded-none px-2 md:px-3 py-2 text-sm text-black placeholder-gray-400 focus:outline-none focus:border-white/30 min-h-11"
                         />
                         <button
                             onClick={postComment}
                             disabled={!newComment.trim() || !nickname.trim()}
-                            className="bg-white hover:bg-gray-100 text-black px-4 py-2 rounded-none font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="bg-white hover:bg-gray-100 text-black px-3 md:px-4 py-2 rounded-none font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-11 min-w-11"
                         >
                             <Send size={16} />
                         </button>

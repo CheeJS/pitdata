@@ -69,19 +69,16 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-f1-light text-black flex flex-col md:flex-row font-body selection:bg-f1-red selection:text-white scanlines">
+    <div className="min-h-screen bg-gray-50 md:bg-f1-light text-black flex flex-col md:flex-row font-body selection:bg-f1-red selection:text-white scanlines">
       {/* Mobile Header */}
       <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b-4 border-black flex items-center justify-between px-4 z-50 text-black">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-tr from-f1-red to-red-600 rounded-none flex items-center justify-center font-bold italic tracking-tighter shadow-hard-sm border border-black text-white">F1</div>
-          <span className="font-heading text-lg font-bold tracking-widest text-black">INSIGHT</span>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-1.5 hover:bg-gray-100 transition-colors border-2 border-black">
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <div className="w-8 h-8 bg-f1-red flex items-center justify-center text-white font-black text-xl border-2 border-black shadow-hard-sm">F1</div>
+          <span className="font-heading text-sm uppercase tracking-wider">INSIGHT</span>
         </div>
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 rounded-none transition-colors"
-        >
-          {mobileMenuOpen ? <X size={24} className="text-black" /> : <Menu size={24} className="text-black" />}
-        </button>
       </header>
 
       {/* Mobile Menu Overlay */}
@@ -94,8 +91,8 @@ export default function App() {
 
       {/* Mobile Slide-out Menu */}
       <aside className={cn(
-        "md:hidden fixed top-14 right-0 h-[calc(100%-3.5rem)] w-64 bg-white border-l-4 border-black z-50 transition-transform duration-300 ease-in-out",
-        mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+        "md:hidden fixed top-14 left-0 h-[calc(100%-3.5rem)] w-64 bg-white border-r-4 border-black z-50 transition-transform duration-300 ease-in-out",
+        mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <nav className="py-6 px-4 space-y-2">
           <MobileNavItem icon={<Activity />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => handleTabChange('dashboard')} />
@@ -149,7 +146,7 @@ export default function App() {
         "transition-all duration-300",
         activeTab === 'replay'
           ? "fixed inset-0 top-14 md:top-0 left-0 md:left-20 lg:left-64 overflow-y-auto z-0 bg-gray-200"
-          : "flex-1 pt-14 pb-16 md:pb-0 md:pt-0 md:ml-20 lg:ml-64 p-4 md:p-8 lg:p-12 overflow-y-auto min-h-screen"
+          : "flex-1 pt-14 pb-4 md:pb-0 md:pt-0 md:ml-20 lg:ml-64 p-2 md:p-8 lg:p-12 overflow-y-auto min-h-screen"
       )} style={activeTab === 'replay' ? { height: '100dvh' } : {}}>
         <div className={cn(
           "mx-auto transition-all duration-300",
@@ -179,14 +176,6 @@ export default function App() {
           </AnimatePresence>
         </div>
       </main>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-white border-t border-black flex items-center justify-around px-2 z-50">
-        <BottomNavItem icon={<Activity size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => handleTabChange('dashboard')} />
-        <BottomNavItem icon={<Trophy size={20} />} label="Standings" active={activeTab === 'standings'} onClick={() => handleTabChange('standings')} />
-        <BottomNavItem icon={<Brain size={20} />} label="Simulate" active={activeTab === 'simulations'} onClick={() => handleTabChange('simulations')} />
-        <BottomNavItem icon={<Calendar size={20} />} label="History" active={activeTab === 'history'} onClick={() => handleTabChange('history')} />
-      </nav>
     </div>
   );
 }
@@ -235,20 +224,6 @@ function MobileNavItem({ icon, label, active, onClick }) {
   )
 }
 
-function BottomNavItem({ icon, label, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-none transition-colors",
-        active ? "text-white" : "text-gray-500"
-      )}
-    >
-      {React.cloneElement(icon, { className: active ? "text-f1-red" : "text-gray-500" })}
-      <span className="text-[10px] font-medium">{label}</span>
-    </button>
-  )
-}
 
 // Helper to get font size based on name length
 function getFontSize(name) {
@@ -277,21 +252,21 @@ function DashboardView({ data, standingsData }) {
   // I will make the LIST dynamic.
 
   return (
-    <div className="space-y-4 md:space-y-8">
+    <div className="space-y-3 md:space-y-8">
 
       {/* ===== MOBILE LAYOUT (shown below md) ===== */}
-      <div className="md:hidden space-y-4">
+      <div className="md:hidden space-y-3 mt-14">
 
         {/* Latest Race or Next Race Card */}
         {data.mode === 'NEXT_RACE' ? (
-          <section className="bg-[#0A0A0A]/90 backdrop-blur-md border border-white/5 rounded-none p-4 relative overflow-hidden pixel-shadow">
-            <div className="absolute top-0 right-0 p-4 opacity-50">
-              <div className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded animate-pulse">UPCOMING</div>
+          <section className="bg-white border-4 border-black p-4 relative overflow-hidden shadow-hard">
+            <div className="absolute top-3 right-3">
+              <div className="text-[10px] bg-f1-red text-white px-2 py-1 font-bold uppercase tracking-wide">UPCOMING</div>
             </div>
             <div className="mb-4">
-              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Next Race</span>
-              <h2 className="text-xl font-bold text-white leading-tight mt-1">{data.raceName}</h2>
-              <p className="text-xs text-gray-400">{data.circuit} • {new Date(data.date).toLocaleDateString([], { day: 'numeric', month: 'short' })}</p>
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Next Race</span>
+              <h2 className="text-2xl font-heading text-black leading-tight mt-2">{data.raceName}</h2>
+              <p className="text-sm text-gray-600 mt-1">{data.circuit} • {new Date(data.date).toLocaleDateString([], { day: 'numeric', month: 'short' })}</p>
             </div>
 
             {/* Countdown Mini */}
@@ -299,44 +274,44 @@ function DashboardView({ data, standingsData }) {
               <CountdownTimer targetDate={data.date} />
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-[#222]">
-              <div className="text-xs text-gray-400">Round {data.round}</div>
+            <div className="flex items-center justify-between pt-3 border-t-2 border-black">
+              <div className="text-xs text-gray-600 font-bold">Round {data.round}</div>
               <div className="flex items-center gap-2">
                 {/* Flag */}
               </div>
             </div>
           </section>
         ) : (
-          <section className="bg-[#0A0A0A]/90 backdrop-blur-md border border-white/5 rounded-none p-4 pixel-shadow">
+          <section className="bg-white border-4 border-black p-4 shadow-hard">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Latest Race</span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-green-500/10 text-green-500 font-medium">Finished</span>
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Latest Race</span>
+              <span className="text-[10px] px-2 py-1 bg-green-500 text-white font-bold uppercase">Finished</span>
             </div>
-            <h2 className="text-lg font-bold text-white mb-1">{data.raceName}</h2>
-            <p className="text-sm text-gray-400 mb-3">{data.circuit} • {data.date}</p>
-            <div className="flex items-center gap-3 pt-3 border-t border-[#222]">
-              <div className="w-1 h-8 rounded-none" style={{ backgroundColor: winnerColor }} />
+            <h2 className="text-xl font-heading text-black mb-1">{data.raceName}</h2>
+            <p className="text-sm text-gray-600 mb-4">{data.circuit} • {data.date}</p>
+            <div className="flex items-center gap-3 pt-3 border-t-2 border-black">
+              <div className="w-2 h-10 border-2 border-black" style={{ backgroundColor: winnerColor }} />
               <div>
-                <div className="text-xs text-gray-500 uppercase">Winner</div>
-                <div className="text-sm font-bold text-white">{data.winner}</div>
+                <div className="text-xs text-gray-500 uppercase font-bold">Winner</div>
+                <div className="text-lg font-heading text-black">{data.winner}</div>
               </div>
             </div>
           </section>
         )}
 
         {/* Podium - Minimal Horizontal */}
-        <section className="bg-[#0A0A0A]/90 backdrop-blur-md border border-white/5 rounded-none p-4 pixel-shadow">
-          <h3 className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-4">Podium</h3>
-          <div className="flex items-end justify-center gap-2 h-28">
+        <section className="bg-white border-4 border-black p-4 shadow-hard">
+          <h3 className="text-xs font-heading text-black uppercase tracking-wider mb-4">Podium</h3>
+          <div className="flex items-end justify-center gap-3 h-32">
             {/* P2 */}
             {podium[1] && (
               <div className="flex-1 flex flex-col items-center">
                 <DriverSprite driver={podium[1].code} size="md" />
-                <span className="text-xs font-bold text-white mb-1">{podium[1].code}</span>
-                <div className="w-full h-16 rounded-none-lg flex items-center justify-center relative overflow-hidden"
+                <span className="text-xs font-heading text-black mb-1">{podium[1].code}</span>
+                <div className="w-full h-16 border-2 border-black flex items-center justify-center relative overflow-hidden"
                   style={{ backgroundColor: getTeamColor(podium[1].team) }}>
                   <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-                  <span className="text-2xl font-black text-white/30 z-10">2</span>
+                  <span className="text-2xl font-black text-black/20 z-10">2</span>
                 </div>
               </div>
             )}
@@ -344,11 +319,11 @@ function DashboardView({ data, standingsData }) {
             {podium[0] && (
               <div className="flex-1 flex flex-col items-center">
                 <DriverSprite driver={podium[0].code} size="lg" />
-                <span className="text-sm font-bold text-white mb-1">{podium[0].code}</span>
-                <div className="w-full h-24 rounded-none-lg flex items-center justify-center relative overflow-hidden"
+                <span className="text-sm font-heading text-black mb-1">{podium[0].code}</span>
+                <div className="w-full h-24 border-2 border-black flex items-center justify-center relative overflow-hidden shadow-hard-sm"
                   style={{ backgroundColor: getTeamColor(podium[0].team) }}>
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-                  <span className="text-3xl font-black text-white/30 z-10">1</span>
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent" />
+                  <span className="text-3xl font-black text-black/20 z-10">1</span>
                 </div>
               </div>
             )}
@@ -356,11 +331,11 @@ function DashboardView({ data, standingsData }) {
             {podium[2] && (
               <div className="flex-1 flex flex-col items-center">
                 <DriverSprite driver={podium[2].code} size="md" />
-                <span className="text-xs font-bold text-white mb-1">{podium[2].code}</span>
-                <div className="w-full h-12 rounded-none-lg flex items-center justify-center relative overflow-hidden"
+                <span className="text-xs font-heading text-black mb-1">{podium[2].code}</span>
+                <div className="w-full h-12 border-2 border-black flex items-center justify-center relative overflow-hidden"
                   style={{ backgroundColor: getTeamColor(podium[2].team) }}>
                   <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-                  <span className="text-xl font-black text-white/30 z-10">3</span>
+                  <span className="text-xl font-black text-black/20 z-10">3</span>
                 </div>
               </div>
             )}
@@ -369,20 +344,20 @@ function DashboardView({ data, standingsData }) {
 
         {/* Championship Standings - Clean List */}
         {standingsData && (
-          <section className="bg-[#0A0A0A]/90 backdrop-blur-md border border-white/5 rounded-none p-4 pixel-shadow">
+          <section className="bg-white border-4 border-black p-4 shadow-hard">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Championship</h3>
-              <span className="text-[10px] text-gray-600">{standingsData.drivers?.length || 0} drivers</span>
+              <h3 className="text-xs font-heading text-black uppercase tracking-wider">Championship</h3>
+              <span className="text-[10px] text-gray-600 font-bold">{standingsData.drivers?.length || 0} drivers</span>
             </div>
-            <div className="space-y-0 divide-y divide-[#1a1a1a]">
+            <div className="space-y-0 divide-y-2 divide-gray-200">
               {standingsData.drivers?.slice(0, 5).map((driver, i) => (
-                <div key={driver.code} className="flex items-center justify-between py-2.5">
+                <div key={driver.code} className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-gray-500 w-5">{i + 1}</span>
-                    <div className="w-0.5 h-4 rounded-none" style={{ backgroundColor: getTeamColor(driver.team) }} />
-                    <span className="text-sm font-medium text-white">{driver.name}</span>
+                    <span className="text-base font-heading text-black w-6">{i + 1}</span>
+                    <div className="w-1 h-6 border border-black" style={{ backgroundColor: getTeamColor(driver.team) }} />
+                    <span className="text-base font-heading text-black">{driver.name}</span>
                   </div>
-                  <span className="text-sm text-gray-400 font-mono">{driver.points} pts</span>
+                  <span className="text-base text-black font-mono font-bold">{driver.points} pts</span>
                 </div>
               ))}
             </div>
@@ -395,7 +370,7 @@ function DashboardView({ data, standingsData }) {
       <div className="hidden md:block space-y-6">
 
         {/* ========== CINEMATIC HERO ========== */}
-        <header className="relative overflow-hidden bg-white border-4 border-black min-h-[320px] group shadow-hard">
+        <header className="relative overflow-hidden bg-white border-4 border-black min-h-[200px] md:min-h-[320px] group shadow-hard">
 
           {/* Background Effects - Enhanced with gradients */}
           <div className="absolute inset-0 z-0">
@@ -416,7 +391,7 @@ function DashboardView({ data, standingsData }) {
           </div>
 
           {/* Content */}
-          <div className="relative z-10 p-8 lg:p-10 flex flex-col min-h-[320px] text-black">
+          <div className="relative z-10 p-4 md:p-8 lg:p-10 flex flex-col min-h-[200px] md:min-h-[320px] text-black">
 
             {data.mode === 'NEXT_RACE' ? (
               /* ===== NEXT RACE MODE ===== */
@@ -443,9 +418,9 @@ function DashboardView({ data, standingsData }) {
                       <MapPin size={14} className="text-f1-red" />
                       {data.circuit}
                     </div>
-                    <h1 className="text-6xl lg:text-8xl font-black text-black uppercase tracking-tighter leading-[0.85] italic">
+                    <h1 className="text-3xl md:text-6xl lg:text-8xl font-black text-black uppercase tracking-tighter leading-[0.85] italic">
                       {data.raceName?.replace(' Grand Prix', '')}
-                      <span className="block text-3xl lg:text-4xl not-italic text-gray-500 mt-2 tracking-normal">Grand Prix</span>
+                      <span className="block text-xl md:text-3xl lg:text-4xl not-italic text-gray-500 mt-2 tracking-normal">Grand Prix</span>
                     </h1>
                   </div>
 
@@ -512,9 +487,9 @@ function DashboardView({ data, standingsData }) {
                       <MapPin size={14} className="text-green-500" />
                       {data.circuit}
                     </div>
-                    <h1 className="text-5xl lg:text-7xl font-black text-black uppercase tracking-tighter leading-[0.85] italic">
+                    <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-black uppercase tracking-tighter leading-[0.85] italic">
                       {data.raceName?.replace(' Grand Prix', '')}
-                      <span className="block text-2xl lg:text-3xl not-italic text-gray-500 mt-2 tracking-normal">Grand Prix</span>
+                      <span className="block text-xl md:text-2xl lg:text-3xl not-italic text-gray-500 mt-2 tracking-normal">Grand Prix</span>
                     </h1>
                   </div>
 
@@ -522,7 +497,7 @@ function DashboardView({ data, standingsData }) {
                   {/* Winner Spotlight */}
                   <div className="text-right">
                     <div className="text-gray-500 text-xs uppercase tracking-widest mb-2 font-bold">Race Winner</div>
-                    <div className="text-5xl lg:text-6xl font-black text-black italic tracking-tight">{data.winner}</div>
+                    <div className="text-3xl md:text-5xl lg:text-6xl font-black text-black italic tracking-tight">{data.winner}</div>
                     <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-none border-2 border-black bg-white"
                       style={{ color: winnerColor }}>
                       <div className="w-3 h-3 rounded-none border border-black" style={{ backgroundColor: winnerColor }} />
