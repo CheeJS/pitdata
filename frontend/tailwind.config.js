@@ -13,7 +13,8 @@ export default {
 					dark: '#000000', // Pure Black
 					carbon: '#222222', // Dark Gray
 					gray: '#888888', // Med Gray
-					light: '#FFFFFF' // Pure White
+					light: '#EEEDEB', // Warm Grey - easier on the eyes
+					paper: '#F9F9F7' // Warm White - for cards
 				},
 				team: {
 					ferrari: '#FF2800',

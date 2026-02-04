@@ -26,6 +26,16 @@ app = Flask(__name__)
 app.json_provider_class = SafeJSONProvider
 app.json = SafeJSONProvider(app)
 
+@app.route('/api/predictions/active-race')
+def active_prediction_race_route():
+    from services.f1_service import get_active_prediction_race
+    year = request.args.get('year', 2026, type=int)
+    data = get_active_prediction_race(year)
+    if "error" in data:
+        return jsonify(data), 404
+    return jsonify(data)
+
+
 # CORS Configuration: Allow specific origins in production, or all in development
 cors_origins = os.getenv('CORS_ORIGINS', '*')  # Set CORS_ORIGINS=https://yourdomain.com inca production
 CORS(app, origins=cors_origins.split(',') if cors_origins != '*' else '*')
@@ -259,6 +269,8 @@ def post_prediction_comment():
         data.get('content')
     )
     return jsonify(res)
+
+
 
 
 # --- AI PREDICTIONS ENDPOINT ---

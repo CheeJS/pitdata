@@ -11,31 +11,23 @@ load_dotenv()
 
 Base = declarative_base()
 
-class Prediction(Base):
-    __tablename__ = 'predictions'
-    id = Column(Integer, primary_key=True)
-    race_id = Column(String) # "2025_1", "2025_monaco", etc.
-    client_id = Column(String) # UUID
-    category = Column(String) # "podium", "winner", "h2h"
-    value = Column(Text) # JSON string
-    timestamp = Column(DateTime, default=datetime.utcnow)
+class RaceAggregation(Base):
+    __tablename__ = 'race_aggregation'
+    race_id = Column(String, primary_key=True)
+    data = Column(Text) # JSON of aggregated stats
+    updated_at = Column(DateTime, default=datetime.utcnow)
 
-class Comment(Base):
-    __tablename__ = 'comments'
-    id = Column(Integer, primary_key=True)
-    race_id = Column(String)
-    client_id = Column(String)
-    nickname = Column(String)
-    content = Column(String)
+class VoterLog(Base):
+    __tablename__ = 'voter_log'
+    race_id = Column(String, primary_key=True)
+    client_id = Column(String, primary_key=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
 # dedicated DB for votes to separate from ETL data
-# dedicated DB for votes to separate from ETL data
-# In production, we use the same DATABASE_URL for simplicity (Postgres schema or tables)
 DB_URL = os.getenv("DATABASE_URL")
 if not DB_URL:
     print("WARNING: DATABASE_URL not set for Voting Service.")
-    DB_URL = "sqlite:///:memory:" # Fallback to memory to prevent disk writes, or fail.
+    DB_URL = "sqlite:///:memory:"
 
 if "sqlite" in str(DB_URL):
     engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
@@ -49,129 +41,137 @@ def init_db():
 def submit_vote(race_id, client_id, category, value):
     session = SessionLocal()
     try:
-        # Check if vote exists (Upsert logic)
-        existing = session.query(Prediction).filter_by(
-            race_id=str(race_id), 
-            client_id=client_id, 
-            category=category
-        ).first()
+        # 1. Check if user already voted for this race
+        existing_log = session.query(VoterLog).filter_by(race_id=str(race_id), client_id=client_id).first()
+        if existing_log:
+             # In aggregated model, we prevent vote flipping effectively as we don't know what to subtract.
+             # Strict lock: One vote per race.
+             return {"error": "You have already voted for this race."}
 
-        json_val = json.dumps(value)
+        # 2. Fetch Aggregation
+        agg = session.query(RaceAggregation).filter_by(race_id=str(race_id)).first()
+        if not agg:
+            # Init empty stats structure
+            stats = {
+                "total_votes": 0,
+                "podium": {1: {}, 2: {}, 3: {}},
+                "winningGap": {},
+                "dnfPredictions": {},
+                "safetyCar": {"yes": 0, "no": 0},
+                "pitStrategy": {"stop_dist": {}, "avg_stops_acc": 0} # acc = accumulator
+            }
+            agg = RaceAggregation(race_id=str(race_id), data=json.dumps(stats))
+            session.add(agg)
+        
+        # 3. Update Stats
+        stats = json.loads(agg.data)
+        
+        # Payload validation
+        val = value if isinstance(value, dict) else {}
+        
+        # 3a. Podium
+        if "podium" in val:
+            for pos, driver in val["podium"].items():
+                if driver: 
+                    p_key = str(pos) # JSON keys are strings
+                    if p_key not in stats["podium"]: stats["podium"][p_key] = {}
+                    stats["podium"][p_key][driver] = stats["podium"][p_key].get(driver, 0) + 1
+        
+        # 3b. Gap
+        gap = val.get("winningGap")
+        if gap:
+            stats["winningGap"][gap] = stats["winningGap"].get(gap, 0) + 1
 
-        if existing:
-            existing.value = json_val
-            existing.timestamp = datetime.utcnow()
+        # 3c. DNF
+        for driver in val.get("dnfPredictions", []):
+            stats["dnfPredictions"][driver] = stats["dnfPredictions"].get(driver, 0) + 1
+
+        # 3d. Safety Car
+        if val.get("safetyCar", {}).get("enabled"):
+            stats["safetyCar"]["yes"] += 1
         else:
-            vote = Prediction(
-                race_id=str(race_id),
-                client_id=client_id,
-                category=category,
-                value=json_val
-            )
-            session.add(vote)
+            stats["safetyCar"]["no"] += 1
+
+        # 3e. Pit Strategy
+        stops = val.get("pitStrategy", {}).get("stops")
+        if stops is not None:
+             s_key = str(stops)
+             if "stop_dist" not in stats["pitStrategy"]: stats["pitStrategy"]["stop_dist"] = {}
+             stats["pitStrategy"]["stop_dist"][s_key] = stats["pitStrategy"]["stop_dist"].get(s_key, 0) + 1
+             # We can't easily do exact average without count, but total_votes is close enough approx if everyone votes on stops
+             # Or we keep a separate count for strategy votes. For now, simplistic.
+
+        stats["total_votes"] += 1
+        
+        # Save back
+        agg.data = json.dumps(stats)
+        agg.updated_at = datetime.utcnow()
+        
+        # 4. Log the Voter
+        log = VoterLog(race_id=str(race_id), client_id=client_id)
+        session.add(log)
         
         session.commit()
         return {"status": "success"}
+
     except Exception as e:
         session.rollback()
+        print(f"Vote Error: {e}")
         return {"error": str(e)}
     finally:
         session.close()
 
-
 def get_vote_stats(race_id):
     session = SessionLocal()
     try:
-        votes = session.query(Prediction).filter_by(race_id=str(race_id)).all()
+        agg = session.query(RaceAggregation).filter_by(race_id=str(race_id)).first()
         
-        stats = {
-            "total_votes": len(votes),
-            "podium": {1: {}, 2: {}, 3: {}}, # {pos: {driver: count}}
-            "winningGap": {}, # {gap: count}
-            "dnfPredictions": {}, # {driver: count}
-            "safetyCar": {"yes": 0, "no": 0, "avg_count": 0},
-            "pitStrategy": {"avg_stops": 0, "tyres": {}} # {stint_idx: {tyre: count}}
-        }
+        if not agg:
+            return {
+                "total_votes": 0,
+                "podium": {1: [], 2: [], 3: []}, 
+                "winningGap": {}, 
+                "safetyCar": {"yes": 0, "no": 0, "avg_count": 0},
+                "pitStrategy": {"avg_stops": 0, "stop_dist": {}}
+            }
+
+        stats = json.loads(agg.data)
         
-        if not votes:
-            return stats
-
-        sc_counts = []
-        stops_counts = []
-
-        for v in votes:
-            try:
-                # Value is stored as JSON string
-                val = json.loads(v.value)
-                
-                # Check format version. New payload has 'podium' key.
-                if isinstance(val, dict) and "podium" in val:
-                    # 1. Podium
-                    for pos, driver in val.get("podium", {}).items():
-                        if not driver: continue
-                        p_key = int(pos)
-                        stats["podium"][p_key][driver] = stats["podium"][p_key].get(driver, 0) + 1
-                    
-                    # 2. Winning Gap
-                    gap = val.get("winningGap")
-                    if gap:
-                        stats["winningGap"][gap] = stats["winningGap"].get(gap, 0) + 1
-                    
-                    # 3. DNFs
-                    for driver in val.get("dnfPredictions", []):
-                        stats["dnfPredictions"][driver] = stats["dnfPredictions"].get(driver, 0) + 1
-                    
-                    # 4. Safety Car
-                    sc = val.get("safetyCar", {})
-                    if sc.get("enabled"):
-                        stats["safetyCar"]["yes"] += 1
-                        if "count" in sc: sc_counts.append(sc["count"])
-                    else:
-                        stats["safetyCar"]["no"] += 1
-                        
-                    # 5. Pit Strategy
-                    strat = val.get("pitStrategy", {})
-                    if "stops" in strat:
-                        stops_counts.append(strat["stops"])
-                    
-                # Support Legacy "Winner" votes if any exist (graceful fallback)
-                elif isinstance(val, dict) and "code" in val:
-                     # Just count as P1
-                     driver = val.get("code")
-                     if driver:
-                         stats["podium"][1][driver] = stats["podium"][1].get(driver, 0) + 1
-
-            except Exception as e:
-                print(f"Error parsing vote {v.id}: {e}")
-                continue
-
-        # Post-Processing / Formatting
-        # Convert Podium dicts to sorted lists
+        # Format for Frontend (Arrays for Charts etc)
         def format_podium(pos_data):
-            # Sort by count desc
+            # pos_data is { "VER": 10, "HAM": 5 }
+            total = stats["total_votes"]
             sorted_items = sorted(pos_data.items(), key=lambda x: x[1], reverse=True)
-            # Take top 5?
-            return [{"code": k, "count": v, "percent": round((v/max(1, len(votes)))*100, 1)} for k, v in sorted_items]
+            return [{"code": k, "count": v, "percent": round((v/max(1, total))*100, 1)} for k, v in sorted_items]
 
-        stats["podium"] = {
-            1: format_podium(stats["podium"][1]),
-            2: format_podium(stats["podium"][2]),
-            3: format_podium(stats["podium"][3])
+        # Ensure structure exists
+        raw_podium = stats.get("podium", {})
+        formatted_podium = {
+            1: format_podium(raw_podium.get("1", {})),
+            2: format_podium(raw_podium.get("2", {})),
+            3: format_podium(raw_podium.get("3", {}))
         }
-        
-        # Aggregates
-        if sc_counts:
-            stats["safetyCar"]["avg_count"] = round(sum(sc_counts) / len(sc_counts), 1)
-            
-        if stops_counts:
-            stats["pitStrategy"]["avg_stops"] = round(sum(stops_counts) / len(stops_counts), 1)
-            dist = {1: 0, 2: 0, 3: 0}
-            for s in stops_counts:
-                if s in dist:
-                    dist[s] += 1
-            stats["pitStrategy"]["stop_dist"] = dist
 
-        return stats
+        # SC
+        sc = stats.get("safetyCar", {"yes": 0, "no": 0})
+        # Pit
+        pit = stats.get("pitStrategy", {})
+        stop_dist = pit.get("stop_dist", {})
+        
+        # Simple weighted avg for stops
+        total_stops_votes = sum(stop_dist.values())
+        weighted_sum = sum(int(k)*v for k,v in stop_dist.items())
+        avg_stops = round(weighted_sum / max(1, total_stops_votes), 1)
+
+        return {
+            "total_votes": stats["total_votes"],
+            "podium": formatted_podium,
+            "winningGap": stats.get("winningGap", {}),
+            "dnfPredictions": stats.get("dnfPredictions", {}),
+            "safetyCar": {**sc, "avg_count": 1}, # Legacy field
+            "pitStrategy": {"avg_stops": avg_stops, "stop_dist": stop_dist}
+        }
+
     except Exception as e:
         print(f"Stats Error: {e}")
         return {"error": str(e)}

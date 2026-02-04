@@ -2,7 +2,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import { Trophy, Calendar, Zap, Timer, ChevronRight, Activity, TrendingUp, AlertTriangle, Calculator, Map, Info, Dna, RefreshCw, Clock, Play, BarChart3, Brain } from 'lucide-react';
+import {
+    Trophy, Activity, Zap, Timer, ChevronRight, TrendingUp, AlertTriangle, Calculator, Map, Info, Dna, RefreshCw, Clock, Play, BarChart3, Brain, CheckCircle2
+} from 'lucide-react';
 import { cn } from '../lib/utils';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Label, ComposedChart, Area, BarChart, Bar, Cell } from 'recharts';
@@ -47,7 +49,7 @@ export default function Simulations() {
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex bg-white p-1 border-2 border-black shadow-hard-sm">
+                    <div className="flex bg-f1-paper p-1 border-2 border-black shadow-hard-sm">
                         <button onClick={() => setActiveTab('simulator')}
                             className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-heading uppercase transition-all",
                                 activeTab === 'simulator' ? "bg-f1-red text-white" : "text-black hover:bg-gray-100")}>
@@ -89,7 +91,7 @@ export default function Simulations() {
                     </div>
                 </div>
 
-                <div className="flex bg-white p-1.5 border-2 border-black shadow-hard-sm">
+                <div className="flex bg-f1-paper p-1.5 border-2 border-black shadow-hard-sm">
                     <button onClick={() => setActiveTab('simulator')}
                         className={cn("flex items-center gap-2 px-5 py-2.5 text-sm font-heading uppercase transition-all",
                             activeTab === 'simulator' ? "bg-f1-red text-white" : "text-black hover:bg-gray-100")}>
@@ -155,19 +157,19 @@ function ChampionshipCalculator() {
                 )}
 
                 {/* SCENARIOS TICKER */}
-                <div className="bg-white border border-black rounded-none p-4 flex-1 overflow-y-auto custom-scrollbar">
+                <div className="bg-f1-paper border border-black rounded-none p-4 flex-1 overflow-y-auto custom-scrollbar">
                     <h3 className="text-xs font-bold uppercase text-gray-600 mb-3 flex items-center gap-2">
                         <Zap size={12} /> Championship Scenarios
                     </h3>
                     <div className="space-y-3">
                         {data.scenarios.length > 0 ? data.scenarios.map((s, i) => (
-                            <div key={i} className="bg-white p-3 rounded-none border border-black text-sm text-gray-300">
+                            <div key={i} className="bg-f1-paper p-3 rounded-none border border-black text-sm text-gray-300">
                                 {s}
                             </div>
                         )) : (
                             <div className="text-gray-600 text-sm">No dramatic scenarios yet.</div>
                         )}
-                        <div className="bg-white p-3 rounded-none border border-black text-sm">
+                        <div className="bg-f1-paper p-3 rounded-none border border-black text-sm">
                             <span className="text-gray-600">Races remaining: </span>
                             <span className="text-black font-bold">{data.remaining_races}</span>
                             <span className="text-gray-600 ml-2">({data.max_points_available} pts available)</span>
@@ -177,7 +179,7 @@ function ChampionshipCalculator() {
             </div>
 
             {/* RIGHT: STANDINGS TABLE */}
-            <div className="flex-1 bg-white rounded-none border border-black flex flex-col overflow-hidden">
+            <div className="flex-1 bg-f1-paper rounded-none border border-black flex flex-col overflow-hidden">
                 <div className="p-4 border-b border-black bg-black/20 flex justify-between items-center shrink-0">
                     <h3 className="text-sm font-bold uppercase text-gray-600 flex items-center gap-2">
                         <Calculator size={14} /> Who Can Still Win?
@@ -193,7 +195,7 @@ function ChampionshipCalculator() {
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: i * 0.05 }}
-                                className="bg-white p-4 rounded-none border border-black flex items-center gap-4"
+                                className="bg-f1-paper p-4 rounded-none border border-black flex items-center gap-4"
                             >
                                 <div className="w-8 h-8 rounded-none flex items-center justify-center text-sm font-bold" style={{ backgroundColor: color + "30", color: color }}>
                                     {i + 1}
@@ -281,7 +283,7 @@ function RaceSimulator({ races, year }) {
             <div className="lg:w-1/3 flex flex-col gap-4 shrink-0">
                 {/* LAST RUN BANNER */}
                 {lastRun && !data && (
-                    <div className="bg-white border-2 border-black shadow-hard-sm p-4">
+                    <div className="bg-f1-paper border-2 border-black shadow-hard-sm p-4">
                         <h4 className="text-xs font-heading uppercase text-black mb-2">Your Last Simulation</h4>
                         <div className="text-sm text-gray-700">{lastRun.race}: {lastRun.top3.join(', ')}</div>
                         <div className="text-xs text-gray-500 mt-1">{new Date(lastRun.timestamp).toLocaleString()}</div>
@@ -290,7 +292,7 @@ function RaceSimulator({ races, year }) {
 
 
                 {/* METHODOLOGY INFO */}
-                <div className="bg-white border-2 border-black shadow-hard-sm p-5">
+                <div className="bg-f1-paper border-2 border-black shadow-hard-sm p-5">
                     <h4 className="text-xs font-heading uppercase text-black mb-3 flex items-center gap-2">
                         <BarChart3 size={12} /> Monte Carlo Simulation
                     </h4>
@@ -326,13 +328,13 @@ function RaceSimulator({ races, year }) {
                 </div>
 
                 {/* CONFIG PANEL */}
-                <div className="bg-white border-2 border-black shadow-hard-sm p-6 space-y-6">
+                <div className="bg-f1-paper border-2 border-black shadow-hard-sm p-6 space-y-6">
                     <div>
                         <label className="text-xs font-heading uppercase text-black block mb-2">Select Race</label>
                         <select
                             value={selectedRace}
                             onChange={(e) => setSelectedRace(e.target.value)}
-                            className="w-full bg-white text-black text-sm font-body border-2 border-black px-4 py-2 outline-none focus:border-f1-red"
+                            className="w-full bg-f1-paper text-black text-sm font-body border-2 border-black px-4 py-2 outline-none focus:border-f1-red"
                         >
                             {races.map(r => (
                                 <option key={r.id} value={r.code}>{r.name}</option>
@@ -363,7 +365,7 @@ function RaceSimulator({ races, year }) {
                                 <button
                                     key={n}
                                     onClick={() => setNumSims(n)}
-                                    className={cn("flex-1 py-2 text-xs font-heading uppercase transition-all border-2 border-black", numSims === n ? "bg-f1-red text-white" : "bg-white text-black hover:bg-gray-100")}
+                                    className={cn("flex-1 py-2 text-xs font-heading uppercase transition-all border-2 border-black", numSims === n ? "bg-f1-red text-white" : "bg-f1-paper text-black hover:bg-gray-100")}
                                 >
                                     {n >= 1000 ? `${n / 1000}K` : n}
                                 </button>
@@ -384,8 +386,8 @@ function RaceSimulator({ races, year }) {
                 </div>
             </div>
 
-            {/* RIGHT: RESULTS */}
-            <div className="flex-1 bg-white border-2 border-black shadow-hard flex flex-col overflow-hidden">
+            {/* RIGHT: Results */}
+            <div className="flex-1 bg-f1-paper border-2 border-black shadow-hard flex flex-col overflow-hidden">
                 {!data ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-gray-600">
                         <BarChart3 size={64} className="opacity-20 mb-4" />
@@ -409,7 +411,7 @@ function RaceSimulator({ races, year }) {
                                         initial={{ opacity: 0, width: 0 }}
                                         animate={{ opacity: 1, width: "100%" }}
                                         transition={{ delay: i * 0.05 }}
-                                        className="bg-white p-4 border-2 border-black shadow-hard-sm flex items-center gap-4 relative overflow-hidden"
+                                        className="bg-f1-paper p-4 border-2 border-black shadow-hard-sm flex items-center gap-4 relative overflow-hidden"
                                     >
                                         {/* Background bar */}
                                         <motion.div
@@ -528,16 +530,16 @@ function StrategyView({ races }) {
     const verdict = data.verdict;
 
     return (
-        <div className="flex-1 bg-white md:bg-white rounded-none md:rounded-none border border-black md:border-black flex flex-col overflow-hidden relative">
+        <div className="flex-1 bg-f1-paper md:bg-f1-paper rounded-none md:rounded-none border border-black md:border-black flex flex-col overflow-hidden relative">
             {/* RACE CONTEXT BAR */}
-            <div className="bg-white border-b border-black p-3 md:p-4 shrink-0">
+            <div className="bg-f1-paper border-b border-black p-3 md:p-4 shrink-0">
                 {/* Mobile: Stacked layout */}
                 <div className="md:hidden space-y-3">
                     <div className="flex items-center justify-between">
                         <select
                             value={selectedRace?.id || ''}
                             onChange={(e) => setSelectedRace(races.find(r => r.id === parseInt(e.target.value)))}
-                            className="bg-white text-black text-sm font-medium border border-black rounded-none px-3 py-2 flex-1"
+                            className="bg-f1-paper text-black text-sm font-medium border border-black rounded-none px-3 py-2 flex-1"
                         >
                             {races && races.map(r => (
                                 <option key={r.id} value={r.id}>{r.name}</option>
@@ -548,7 +550,7 @@ function StrategyView({ races }) {
                         <select
                             value={gridPos}
                             onChange={(e) => setGridPos(parseInt(e.target.value))}
-                            className="bg-white text-black text-sm border border-black rounded-none px-3 py-2 flex-1"
+                            className="bg-f1-paper text-black text-sm border border-black rounded-none px-3 py-2 flex-1"
                         >
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(p => (
                                 <option key={p} value={p}>P{p}</option>
@@ -557,7 +559,7 @@ function StrategyView({ races }) {
                         <select
                             value={objective}
                             onChange={(e) => setObjective(e.target.value)}
-                            className="bg-white text-black text-sm border border-black rounded-none px-3 py-2 flex-1"
+                            className="bg-f1-paper text-black text-sm border border-black rounded-none px-3 py-2 flex-1"
                         >
                             <option>Minimise Time</option>
                             <option>Track Position</option>
@@ -574,7 +576,7 @@ function StrategyView({ races }) {
                             <select
                                 value={selectedRace?.id || ''}
                                 onChange={(e) => setSelectedRace(races.find(r => r.id === parseInt(e.target.value)))}
-                                className="bg-white text-black text-sm font-bold border border-black rounded px-3 py-1 outline-none focus:border-f1-red"
+                                className="bg-f1-paper text-black text-sm font-bold border border-black rounded px-3 py-1 outline-none focus:border-f1-red"
                             >
                                 {races && races.map(r => (
                                     <option key={r.id} value={r.id}>{r.name} ({r.laps} Laps)</option>
@@ -588,7 +590,7 @@ function StrategyView({ races }) {
                             <select
                                 value={gridPos}
                                 onChange={(e) => setGridPos(parseInt(e.target.value))}
-                                className="bg-white text-black text-sm font-bold border border-black rounded px-3 py-1 outline-none"
+                                className="bg-f1-paper text-black text-sm font-bold border border-black rounded px-3 py-1 outline-none"
                             >
                                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(p => (
                                     <option key={p} value={p}>P{p}</option>
@@ -603,7 +605,7 @@ function StrategyView({ races }) {
                         <select
                             value={objective}
                             onChange={(e) => setObjective(e.target.value)}
-                            className="bg-white text-black text-sm font-bold border border-black rounded px-3 py-1 outline-none text-right"
+                            className="bg-f1-paper text-black text-sm font-bold border border-black rounded px-3 py-1 outline-none text-right"
                         >
                             <option>Minimise Time</option>
                             <option>Track Position</option>
@@ -623,7 +625,7 @@ function StrategyView({ races }) {
                 </div>
 
                 {/* METHODOLOGY PANEL */}
-                <div className="bg-white border border-black rounded-none p-4 mb-6">
+                <div className="bg-f1-paper border border-black rounded-none p-4 mb-6">
                     <div className="flex items-start gap-4">
                         <div className="flex-1">
                             <h4 className="text-xs font-bold uppercase text-gray-600 mb-2 flex items-center gap-2">
@@ -632,26 +634,26 @@ function StrategyView({ races }) {
                             <p className="text-sm text-gray-700 leading-relaxed mb-3">
                                 We compare <span className="text-black font-semibold">1-stop, 2-stop, and aggressive strategies</span> by modeling tire degradation curves and pit stop time losses for each compound.
                             </p>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[10px]">
-                                <div className="bg-black/40 rounded p-2">
-                                    <div className="text-gray-600 uppercase mb-0.5">Pit Loss</div>
-                                    <div className="text-black font-bold">~22s</div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                <div className="bg-f1-paper border-2 border-black p-3 shadow-hard-sm">
+                                    <div className="text-xs font-heading text-gray-500 uppercase mb-1">Pit Loss</div>
+                                    <div className="text-lg font-bold text-black font-mono">~22s</div>
                                 </div>
-                                <div className="bg-black/40 rounded p-2">
-                                    <div className="text-gray-600 uppercase mb-0.5">Tire Compounds</div>
-                                    <div className="flex gap-1">
-                                        <span className="w-3 h-3 rounded-none bg-red-500" title="Soft" />
-                                        <span className="w-3 h-3 rounded-none bg-yellow-500" title="Medium" />
-                                        <span className="w-3 h-3 rounded-none bg-white" title="Hard" />
+                                <div className="bg-f1-paper border-2 border-black p-3 shadow-hard-sm">
+                                    <div className="text-xs font-heading text-gray-500 uppercase mb-1">Compounds</div>
+                                    <div className="flex gap-1.5">
+                                        <div className="w-4 h-4 rounded-full bg-red-500 border border-black shadow-sm" title="Soft" />
+                                        <div className="w-4 h-4 rounded-full bg-yellow-400 border border-black shadow-sm" title="Medium" />
+                                        <div className="w-4 h-4 rounded-full bg-f1-paper border border-black shadow-sm" title="Hard" />
                                     </div>
                                 </div>
-                                <div className="bg-black/40 rounded p-2">
-                                    <div className="text-gray-600 uppercase mb-0.5">Deg Rate</div>
-                                    <div className="text-black font-bold">{degMult}x</div>
+                                <div className="bg-f1-paper border-2 border-black p-3 shadow-hard-sm">
+                                    <div className="text-xs font-heading text-gray-500 uppercase mb-1">Deg Rate</div>
+                                    <div className="text-lg font-bold text-black font-mono">{degMult}x</div>
                                 </div>
-                                <div className="bg-black/40 rounded p-2">
-                                    <div className="text-gray-600 uppercase mb-0.5">Safety Cars</div>
-                                    <div className="text-amber-400 font-bold">{scLaps.length} scheduled</div>
+                                <div className="bg-f1-paper border-2 border-black p-3 shadow-hard-sm">
+                                    <div className="text-xs font-heading text-gray-500 uppercase mb-1">Safety Cars</div>
+                                    <div className="text-lg font-bold text-f1-red font-mono">{scLaps.length}</div>
                                 </div>
                             </div>
                         </div>
@@ -661,7 +663,7 @@ function StrategyView({ races }) {
                 {/* INSIGHT + SCENARIO */}
                 <div className="flex flex-col xl:flex-row gap-6 mb-6 shrink-0">
                     {/* INSIGHT PANEL */}
-                    <div className="flex-[2] bg-white border-2 border-black shadow-hard p-4">
+                    <div className="flex-[2] bg-f1-paper border-2 border-black shadow-hard p-4">
                         <div className="flex justify-between items-start mb-4">
                             <div>
                                 <div className="text-xs font-heading uppercase text-f1-red mb-1 flex items-center gap-2">
@@ -686,7 +688,7 @@ function StrategyView({ races }) {
                     </div>
 
                     {/* SCENARIO DECK */}
-                    <div className="flex-1 bg-white p-4 border-2 border-black shadow-hard-sm space-y-4 min-w-[240px]">
+                    <div className="flex-1 bg-f1-paper p-4 border-2 border-black shadow-hard-sm space-y-4 min-w-[240px]">
                         <div className="flex justify-between items-center">
                             <h4 className="text-xs font-heading uppercase text-black flex items-center gap-2">
                                 <Calculator size={12} /> Scenario Lab
@@ -727,7 +729,7 @@ function StrategyView({ races }) {
                                     placeholder="Lap"
                                     value={newScLap}
                                     onChange={(e) => setNewScLap(e.target.value)}
-                                    className="flex-1 bg-white border-2 border-black px-2 py-1 text-sm text-black outline-none"
+                                    className="flex-1 bg-f1-paper border-2 border-black px-2 py-1 text-sm text-black outline-none"
                                 />
                                 <button onClick={addSafetyCar} className="bg-f1-red text-white px-3 py-1 text-xs font-heading uppercase border-2 border-black">Add SC</button>
                             </div>
@@ -747,7 +749,7 @@ function StrategyView({ races }) {
                 {/* STRATEGY CARDS */}
                 <div className="flex gap-4 mb-6 overflow-x-auto pb-2 shrink-0">
                     {data.strategies.map((strat, i) => (
-                        <div key={strat.name} className={cn("min-w-[200px] p-4 border-2 flex-shrink-0", strat.is_best ? "bg-white border-f1-red shadow-hard" : "bg-white border-black shadow-hard-sm")}>
+                        <div key={strat.name} className={cn("min-w-[200px] p-4 border-2 flex-shrink-0", strat.is_best ? "bg-f1-paper border-f1-red shadow-hard" : "bg-f1-paper border-black shadow-hard-sm")}>
                             <div className="flex justify-between items-start mb-2">
                                 <h4 className="font-heading text-black text-sm">{strat.name}</h4>
                                 {strat.is_best && <span className="bg-f1-red text-white text-[8px] px-1.5 py-0.5 font-heading uppercase">BEST</span>}
@@ -792,19 +794,20 @@ function AIPredictions({ races, year }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [selectedRace, setSelectedRace] = useState(races[0]?.code || 'AUS');
+    const [viewMode, setViewMode] = useState('preseason'); // 'preseason' or 'postquali'
+    const [postQualiAvailable, setPostQualiAvailable] = useState(true); // tracks if post-quali data exists
 
     const fetchPrediction = async () => {
         setLoading(true);
         const startTime = performance.now();
 
         try {
-            // Load pre-computed predictions from S3
-            const cdnUrl = `https://pitdata-prediction.s3.ap-southeast-2.amazonaws.com/${year}/${selectedRace.toUpperCase()}.json`;
+            // Load from S3 CDN - preseason folder
+            const cdnUrl = `https://pitdata-prediction.s3.ap-southeast-2.amazonaws.com/${year}/preseason/${selectedRace.toUpperCase()}.json`;
             const response = await fetch(cdnUrl);
 
             if (response.ok) {
                 const data = await response.json();
-                const elapsed = Math.round(performance.now() - startTime);
                 setData(data);
             } else {
                 throw new Error(`Failed to load prediction: ${response.status}`);
@@ -815,7 +818,6 @@ function AIPredictions({ races, year }) {
             // Fallback to API if CDN fails
             try {
                 const res = await axios.get(`${API_BASE}/api/predictions/ai?race=${selectedRace}&year=${year}`);
-                const elapsed = Math.round(performance.now() - startTime);
                 setData(res.data);
             } catch (apiError) {
                 console.error('Both sources failed:', apiError);
@@ -839,7 +841,7 @@ function AIPredictions({ races, year }) {
         <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-hidden">
             {/* LEFT: Config */}
             <div className="lg:w-1/3 flex flex-col gap-4 shrink-0">
-                <div className="bg-white border-2 border-black shadow-hard p-6">
+                <div className="bg-f1-paper border-2 border-black shadow-hard p-6">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-12 h-12 bg-f1-red/20 border border-black flex items-center justify-center">
                             <Brain size={24} className="text-f1-red" />
@@ -856,7 +858,7 @@ function AIPredictions({ races, year }) {
                             <select
                                 value={selectedRace}
                                 onChange={(e) => setSelectedRace(e.target.value)}
-                                className="w-full bg-white text-black text-sm font-body border-2 border-black px-4 py-2 outline-none focus:border-f1-red"
+                                className="w-full bg-f1-paper text-black text-sm font-body border-2 border-black px-4 py-2 outline-none focus:border-f1-red"
                             >
                                 {races.map(r => (
                                     <option key={r.id} value={r.code}>{r.name}</option>
@@ -864,63 +866,106 @@ function AIPredictions({ races, year }) {
                             </select>
                         </div>
 
-                        {/* PRE-SEASON PREDICTION BANNER */}
-                        <div className="bg-gray-100 border border-black p-4">
-                            <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 bg-f1-red/20 border border-black flex items-center justify-center shrink-0 mt-0.5">
-                                    <Info size={16} className="text-f1-red" />
-                                </div>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <h4 className="text-sm font-heading text-black">Pre-Season Prediction</h4>
-                                        <span className="bg-f1-red/20 text-f1-red text-xs px-2 py-0.5 font-heading uppercase">
-                                            Estimated Quali
-                                        </span>
-                                    </div>
-                                    <p className="text-sm text-gray-700 leading-relaxed">
-                                        Based on 2025 performance data and team strengths. <span className="text-f1-red font-semibold">Predictions will be updated with actual qualifying times</span> after Saturday sessions.
-                                    </p>
-                                </div>
+                        {/* PREDICTION MODE TOGGLE */}
+                        <div>
+                            <label className="text-xs font-heading uppercase text-black block mb-2">Prediction Mode</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    onClick={async () => {
+                                        setViewMode('preseason');
+                                        setPostQualiAvailable(true);
+                                        setLoading(true);
+                                        try {
+                                            const cdnUrl = `https://pitdata-prediction.s3.ap-southeast-2.amazonaws.com/${year}/preseason/${selectedRace.toUpperCase()}.json`;
+                                            const response = await fetch(cdnUrl);
+                                            if (response.ok) {
+                                                setData(await response.json());
+                                            } else {
+                                                setData(null);
+                                            }
+                                        } catch (e) {
+                                            console.error('Failed to load pre-season:', e);
+                                            setData(null);
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }}
+                                    className={`px-4 py-2 text-xs font-heading uppercase border-2 border-black transition-colors ${viewMode === 'preseason'
+                                        ? 'bg-amber-500 text-white'
+                                        : 'bg-f1-paper text-black hover:bg-gray-100'
+                                        }`}
+                                >
+                                    Pre-Season
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        setViewMode('postquali');
+                                        setLoading(true);
+                                        try {
+                                            const cdnUrl = `https://pitdata-prediction.s3.ap-southeast-2.amazonaws.com/${year}/postquali/${selectedRace.toUpperCase()}.json`;
+                                            const response = await fetch(cdnUrl);
+                                            if (response.ok) {
+                                                setPostQualiAvailable(true);
+                                                setData(await response.json());
+                                            } else {
+                                                // Post-quali file doesn't exist yet
+                                                setPostQualiAvailable(false);
+                                                setData(null);
+                                            }
+                                        } catch (e) {
+                                            console.error('Failed to load post-quali:', e);
+                                            setPostQualiAvailable(false);
+                                            setData(null);
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }}
+                                    className={`px-4 py-2 text-xs font-heading uppercase border-2 border-black transition-colors ${viewMode === 'postquali'
+                                        ? 'bg-emerald-500 text-white'
+                                        : 'bg-f1-paper text-black hover:bg-gray-100'
+                                        }`}
+                                >
+                                    Post-Quali
+                                </button>
                             </div>
                         </div>
 
-                        {data && (
-                            <div className="bg-gray-100 border border-black p-4 space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-600">Model Type</span>
-                                    <span className="text-black font-mono">{data.model_type}</span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-600">Prediction Year</span>
-                                    <span className="text-black font-bold">{data.prediction_year}</span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-600">Data Confidence</span>
-                                    <span className={cn("font-bold", data.model_confidence >= 70 ? "text-black" : data.model_confidence >= 40 ? "text-gray-600" : "text-f1-red")}>
-                                        {data.model_confidence}%
-                                    </span>
-                                </div>
-                            </div>
-                        )}
                     </div>
+
+
+
+                    {data && (
+                        <div className="bg-gray-100 border border-black p-4 space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-600">Prediction Year</span>
+                                <span className="text-black font-bold">{data.prediction_year}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-600">Data Confidence</span>
+                                <span className={cn("font-bold", data.model_confidence >= 70 ? "text-black" : data.model_confidence >= 40 ? "text-gray-600" : "text-f1-red")}>
+                                    {data.model_confidence}%
+                                </span>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* METHODOLOGY PANEL */}
-                <div className="bg-white border-2 border-black shadow-hard-sm p-4">
+                {/* METHODOLOGY PANEL - inside left column */}
+                <div className="bg-f1-paper border-2 border-black shadow-hard-sm p-4">
                     <h4 className="text-xs font-heading uppercase text-black mb-3 flex items-center gap-2">
                         <Brain size={12} /> AI Model Methodology
                     </h4>
 
                     {/* Feature Weights */}
-                    <div className="space-y-2 mb-4">
+                    <div className="space-y-2">
                         <div className="text-xs font-heading uppercase text-black">Feature Weights</div>
                         <div className="space-y-1.5">
                             {[
-                                { name: 'Qualifying Position', weight: 30 },
-                                { name: 'Circuit History', weight: 25 },
-                                { name: 'Recent Form (Last 5)', weight: 20 },
-                                { name: 'Team Strength', weight: 15 },
-                                { name: 'Championship Pos', weight: 10 },
+                                { name: 'Qualifying Position', weight: viewMode === 'postquali' ? 50 : 30 },
+                                { name: 'Circuit History', weight: viewMode === 'postquali' ? 20 : 25 },
+                                { name: 'Recent Form (Last 5)', weight: viewMode === 'postquali' ? 15 : 20 },
+                                { name: 'Team Strength', weight: viewMode === 'postquali' ? 10 : 15 },
+                                { name: 'Championship Pos', weight: viewMode === 'postquali' ? 5 : 10 },
                             ].map(f => (
                                 <div key={f.name} className="flex items-center gap-2 text-sm">
                                     <div className="w-12 text-gray-600">{f.weight}%</div>
@@ -932,29 +977,22 @@ function AIPredictions({ races, year }) {
                             ))}
                         </div>
                     </div>
-
-                    {/* Prediction Modes */}
-                    <div className="bg-gray-100 border border-black p-3">
-                        <div className="text-xs font-heading uppercase text-black mb-2">Prediction Modes</div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="bg-white border border-black p-2">
-                                <div className="font-heading text-black mb-0.5">Pre-Season</div>
-                                <div className="text-gray-600">~65% accuracy</div>
-                            </div>
-                            <div className="bg-white border border-f1-red p-2">
-                                <div className="font-heading text-f1-red mb-0.5">Post-Quali</div>
-                                <div className="text-gray-600">~85% accuracy</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
             {/* RIGHT: Results */}
-            <div className="flex-1 bg-white border-2 border-black shadow-hard flex flex-col overflow-hidden">
+            <div className="flex-1 bg-f1-paper border-2 border-black shadow-hard flex flex-col overflow-hidden">
                 {loading ? (
                     <div className="flex-1 flex items-center justify-center">
                         <Brain className="animate-pulse text-f1-red" size={48} />
+                    </div>
+                ) : viewMode === 'postquali' && !postQualiAvailable ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-gray-600 p-8">
+                        <Brain size={64} className="opacity-20 mb-4" />
+                        <div className="text-lg font-heading uppercase text-black mb-2">Post-Quali Not Available</div>
+                        <div className="text-sm text-center max-w-md">
+                            Qualifying has not happened yet for this race. Post-qualifying predictions will be available after the qualifying session.
+                        </div>
                     </div>
                 ) : !data ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-gray-600">
@@ -968,7 +1006,18 @@ function AIPredictions({ races, year }) {
                                 <h3 className="text-sm font-heading uppercase text-f1-red flex items-center gap-2">
                                     <Brain size={14} /> AI Win Probabilities
                                 </h3>
-                                <div className="text-xs text-gray-600">Based on circuit-specific historical data</div>
+                                <div className="text-xs text-gray-700 font-medium">Based on circuit-specific historical data</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {viewMode === 'preseason' ? (
+                                    <span className="bg-amber-500 text-white px-3 py-1.5 text-xs font-heading uppercase border-2 border-black shadow-hard-sm">
+                                        PRE-SEASON
+                                    </span>
+                                ) : (
+                                    <span className="bg-emerald-500 text-white px-3 py-1.5 text-xs font-heading uppercase border-2 border-black shadow-hard-sm">
+                                        POST-QUALI
+                                    </span>
+                                )}
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
@@ -980,7 +1029,7 @@ function AIPredictions({ races, year }) {
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: i * 0.05 }}
-                                        className="bg-white p-3 border-2 border-black shadow-hard-sm flex items-center gap-4 relative overflow-hidden group hover:border-f1-red transition-colors"
+                                        className="bg-f1-paper p-3 border-2 border-black shadow-hard-sm flex items-center gap-4 relative overflow-hidden group hover:border-f1-red transition-colors"
                                     >
                                         {/* Background Probability Bar */}
                                         <motion.div
@@ -1002,7 +1051,7 @@ function AIPredictions({ races, year }) {
                                                     {d.name}
                                                     {d.code === 'VER' && <Trophy size={10} className="text-yellow-500" />}
                                                 </div>
-                                                <div className="text-[10px] text-gray-600 font-medium">{d.team}</div>
+                                                <div className="text-[10px] text-gray-700 font-medium">{d.team}</div>
                                             </div>
                                         </div>
 
@@ -1023,7 +1072,7 @@ function AIPredictions({ races, year }) {
                                             <div className="flex flex-col w-24">
                                                 <span className="text-[9px] uppercase font-bold text-gray-600 mb-0.5">Podium</span>
                                                 <div className="flex items-end gap-1">
-                                                    <span className="text-sm font-bold text-gray-300 leading-none">{d.podium_probability}%</span>
+                                                    <span className="text-sm font-bold text-gray-600 leading-none">{d.podium_probability}%</span>
                                                     <div className="h-1.5 flex-1 bg-gray-200 border border-black overflow-hidden mb-0.5">
                                                         <div className="h-full bg-gray-500" style={{ width: `${d.podium_probability}%` }} />
                                                     </div>
@@ -1065,6 +1114,6 @@ function AIPredictions({ races, year }) {
                     </>
                 )}
             </div>
-        </div>
+        </div >
     );
 }

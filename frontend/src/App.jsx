@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Flag, Trophy, Calendar, ChevronRight, ChevronUp, ChevronDown, Activity, Zap, Timer, MapPin, BarChart, Brain, Menu, X, Thermometer, MessageSquare, Clock } from 'lucide-react';
+import { Flag, Trophy, Calendar, ChevronRight, ChevronUp, ChevronDown, Activity, Zap, Timer, MapPin, BarChart, Brain, Menu, X, Thermometer, MessageSquare, Clock, Coffee } from 'lucide-react';
 import axios from 'axios';
 import { cn } from './lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -11,7 +11,7 @@ import Simulations from './pages/Simulations';
 import Predictions from './pages/Predictions';
 import History from './pages/History';
 import RaceControlFeed from './components/RaceControlFeed';
-import Paddock from './pages/Paddock';
+
 import DriverSprite from './components/DriverSprite';
 import { DashboardSkeleton, PageTransition } from './components/ui/Skeleton';
 import CountdownTimer from './components/ui/CountdownTimer';
@@ -102,15 +102,24 @@ export default function App() {
           <MobileNavItem icon={<Brain />} label="Simulations" active={activeTab === 'simulations'} onClick={() => handleTabChange('simulations')} />
           <MobileNavItem icon={<Calendar />} label="History" active={activeTab === 'history'} onClick={() => handleTabChange('history')} />
           <MobileNavItem icon={<Zap />} label="Predictions" active={activeTab === 'predictions'} onClick={() => handleTabChange('predictions')} />
-          <MobileNavItem icon={<MessageSquare />} label="The Paddock" active={activeTab === 'paddock'} onClick={() => handleTabChange('paddock')} />
+
         </nav>
 
-        <div className="absolute bottom-4 left-4 right-4">
+        <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-3">
           <div className="bg-[#1A1A20] rounded-none p-4 border border-[#2A2A30]">
             <div className="text-xs text-gray-500 font-medium mb-2">NEXT RACE</div>
             <div className="font-bold text-sm">Azerbaijan GP</div>
             <div className="text-xs text-f1-red mt-1 font-bold">In 2 Weeks</div>
           </div>
+          <a
+            href="https://buymeacoffee.com/jschee"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 bg-[#FFDD00] hover:bg-[#FFEA00] text-black font-bold font-heading uppercase text-xs py-3 border-2 border-black shadow-hard-sm transition-all active:translate-y-0.5"
+          >
+            <Coffee size={16} />
+            <span>Buy me a coffee</span>
+          </a>
         </div>
       </aside>
 
@@ -129,15 +138,24 @@ export default function App() {
           <NavItem icon={<Brain />} label="Simulations" active={activeTab === 'simulations'} onClick={() => setActiveTab('simulations')} />
           <NavItem icon={<Calendar />} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
           <NavItem icon={<Zap />} label="Predictions" active={activeTab === 'predictions'} onClick={() => setActiveTab('predictions')} />
-          <NavItem icon={<MessageSquare />} label="The Paddock" active={activeTab === 'paddock'} onClick={() => setActiveTab('paddock')} />
+
         </nav>
 
-        <div className="p-4 border-t-4 border-black hidden lg:block">
-          <div className="bg-white rounded-none p-4 border-2 border-black shadow-hard-sm">
+        <div className="p-4 border-t-4 border-black hidden lg:flex flex-col gap-3">
+          <div className="bg-white rounded-none p-4 border-2 border-black shadow-hard-sm w-full">
             <div className="text-xs text-gray-500 font-medium mb-2 font-heading uppercase">NEXT RACE</div>
             <div className="font-bold text-sm text-black">Azerbaijan GP</div>
             <div className="text-xs text-f1-red mt-1 font-bold">In 2 Weeks</div>
           </div>
+          <a
+            href="https://buymeacoffee.com/jschee"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 bg-[#FFDD00] hover:bg-[#FFEA00] text-black font-bold font-heading uppercase text-xs py-2.5 border-2 border-black shadow-hard-sm transition-all hover:-translate-y-0.5 active:translate-y-0 w-full"
+          >
+            <Coffee size={16} />
+            <span>Buy me a coffee</span>
+          </a>
         </div>
       </aside>
 
@@ -170,7 +188,7 @@ export default function App() {
                 {activeTab === 'simulations' && <Simulations />}
                 {activeTab === 'history' && <History />}
                 {activeTab === 'predictions' && <Predictions />}
-                {activeTab === 'paddock' && <Paddock />}
+
               </motion.div>
             )}
           </AnimatePresence>

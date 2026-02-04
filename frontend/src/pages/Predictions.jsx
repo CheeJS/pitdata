@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Trophy, Activity, Zap, AlertTriangle, MapPin, Calendar, CheckCircle2, ChevronRight,
     BarChart3, Brain, Lock, Info, Timer, Sun, CloudRain, Flame, Target, TrendingUp,
-    Medal, Star, XCircle, Gauge, Users, Award, Sparkles, Clock, MessageSquare, Send
+    Medal, Star, XCircle, Gauge, Users, Award, Sparkles, Clock
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import API_BASE from '../config/api';
@@ -33,15 +33,15 @@ const PodiumSlot = ({ position, driver, color, onRemove, isLocked }) => {
                         className="relative"
                     >
                         <div
-                            className="w-12 h-12 md:w-16 md:h-16 rounded-none flex items-center justify-center text-black font-bold text-base md:text-lg border-2 shadow-lg"
-                            style={{ backgroundColor: color + '30', borderColor: color }}
+                            className="w-12 h-12 md:w-16 md:h-16 rounded-none flex items-center justify-center text-black font-heading font-bold text-lg md:text-xl border-2 border-black shadow-hard-sm"
+                            style={{ backgroundColor: color }}
                         >
                             {driver}
                         </div>
                         {!isLocked && (
                             <button
                                 onClick={onRemove}
-                                className="absolute -top-2 -right-2 w-6 h-6 md:w-5 md:h-5 bg-red-500 rounded-none flex items-center justify-center text-black text-xs hover:bg-red-600 min-h-11 min-w-11"
+                                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-black text-white rounded-full flex items-center justify-center text-[10px] font-bold border border-white hover:bg-f1-red hover:border-black transition-colors"
                             >
                                 ×
                             </button>
@@ -50,14 +50,14 @@ const PodiumSlot = ({ position, driver, color, onRemove, isLocked }) => {
                 ) : (
                     <motion.div
                         key="empty"
-                        className="w-12 h-12 md:w-16 md:h-16 rounded-none border-2 border-dashed border-black flex items-center justify-center text-gray-600 text-xs"
+                        className="w-12 h-12 md:w-16 md:h-16 rounded-none border-2 border-dashed border-black/30 flex items-center justify-center text-gray-400 text-xs font-bold font-heading uppercase"
                     >
                         P{position}
                     </motion.div>
                 )}
             </AnimatePresence>
-            <div className={cn("w-16 md:w-20 rounded-none-lg flex flex-col items-center justify-end bg-gradient-to-t", heights[position], medalColors[position])}>
-                <span className="text-black font-bold text-sm mb-1">{labels[position]}</span>
+            <div className={cn("w-16 md:w-20 rounded-none shadow-hard-sm flex flex-col items-center justify-end bg-gradient-to-t border-2 border-black", heights[position], medalColors[position])}>
+                <span className="text-black font-black font-heading text-sm mb-1">{labels[position]}</span>
             </div>
         </div>
     );
@@ -105,15 +105,15 @@ const DriverCard = ({ code, meta, isSelected, isLocked, onSelect, type = 'conten
 };
 
 export default function Predictions() {
-    const [races, setRaces] = useState([]);
     const [activeDrivers, setActiveDrivers] = useState([]);
     const [driverMap, setDriverMap] = useState({});
 
     const [clientId, setClientId] = useState(localStorage.getItem('f1_client_id'));
     const [selectedRace, setSelectedRace] = useState(null);
+    const [voteWindow, setVoteWindow] = useState({ is_open: false, status: 'LOADING' });
     const [stats, setStats] = useState(null);
     const [userVote, setUserVote] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [showResults, setShowResults] = useState(false);
 
     // Podium State
@@ -129,11 +129,9 @@ export default function Predictions() {
     // UI State
     const [showAllDrivers, setShowAllDrivers] = useState(false);
     const [showPredictionForm, setShowPredictionForm] = useState(false);
+    const [podiumTab, setPodiumTab] = useState(1);
 
-    // Discussion State
-    const [comments, setComments] = useState([]);
-    const [newComment, setNewComment] = useState('');
-    const [nickname, setNickname] = useState(localStorage.getItem('f1_nickname') || '');
+
 
     // Mock User Stats (kept for UI flavor)
     const [userStats] = useState({
@@ -149,6 +147,7 @@ export default function Predictions() {
     };
 
     // 1. Initialize Identity & Fetch Data
+    // 1. Initialize Identity & Fetch Data
     useEffect(() => {
         if (!clientId) {
             const newId = 'user_' + Math.random().toString(36).substr(2, 9);
@@ -156,7 +155,7 @@ export default function Predictions() {
             setClientId(newId);
         }
 
-        // Fetch Drivers
+        // Fetch Drivers - Reverted to 2026 as backend now supports fallback
         axios.get(`${API_BASE}/api/drivers?year=2026`)
             .then(res => {
                 setActiveDrivers(res.data);
@@ -167,23 +166,46 @@ export default function Predictions() {
             })
             .catch(err => console.error("Error fetching drivers", err));
 
-        // Fetch Races
-        axios.get(`${API_BASE}/api/races?year=2026`)
+        // Fetch Active Race for Predictions (auto-selected by backend)
+        axios.get(`${API_BASE}/api/predictions/active-race?year=2026`)
             .then(res => {
-                setRaces(res.data);
-                if (res.data.length > 0) setSelectedRace(res.data[0]);
+                if (res.data.race) {
+                    setSelectedRace(res.data.race);
+                    setVoteWindow(res.data.vote_window || { is_open: false, status: 'CLOSED' });
+                }
             })
-            .catch(err => console.error("Error fetching races", err));
-    }, []); // Run once on mount (ignoring clientId dep to avoid double fetch)
+            .catch(err => console.error("Error fetching active race", err))
+            .finally(() => setLoading(false));
+    }, []); // Run once on mount
 
     // 2. Fetch Stats and Comments when Race Changes
     useEffect(() => {
         if (!selectedRace) return;
         setLoading(true);
-        setUserVote(null);
-        setPodium({ 1: null, 2: null, 3: null });
-        setWinningGap('5-10s');
-        setDnfPredictions([]);
+
+        // CHECK LOCAL STORAGE FOR EXISTING VOTE
+        const savedVote = localStorage.getItem(`f1_vote_${selectedRace.id}`);
+        if (savedVote) {
+            try {
+                const parsed = JSON.parse(savedVote);
+                setUserVote(parsed);
+                setPodium(parsed.podium || {});
+                if (parsed.winningGap) setWinningGap(parsed.winningGap);
+                if (parsed.pitStrategy) setPitStrategy(parsed.pitStrategy);
+                if (parsed.safetyCar) setSafetyCar(parsed.safetyCar);
+            } catch (e) {
+                console.error("Error parsing saved vote", e);
+                setUserVote(null);
+            }
+        } else {
+            setUserVote(null);
+            setPodium({ 1: null, 2: null, 3: null });
+            setWinningGap('5-10s');
+            setDnfPredictions([]);
+            setPitStrategy({ stops: 1, tyres: ['S', 'M', 'M', 'M'] });
+            setSafetyCar({ enabled: true, count: 1 });
+        }
+
         setShowAllDrivers(false);
         setShowResults(false);
 
@@ -191,36 +213,7 @@ export default function Predictions() {
             .then(res => setStats(res.data))
             .catch(err => console.error(err))
             .finally(() => setLoading(false));
-
-        // Fetch comments for this race
-        fetchComments();
     }, [selectedRace]);
-
-    const fetchComments = async () => {
-        if (!selectedRace) return;
-        try {
-            const res = await axios.get(`${API_BASE}/api/predictions/comments?race_id=${selectedRace.id}`);
-            setComments(res.data || []);
-        } catch (err) {
-            console.error(err);
-            setComments([]);
-        }
-    };
-
-    const postComment = async () => {
-        if (!newComment.trim() || !nickname.trim()) return;
-        try {
-            await axios.post(`${API_BASE}/api/predictions/comments`, {
-                race_id: selectedRace.id,
-                client_id: clientId,
-                nickname: nickname,
-                content: newComment
-            });
-            setNewComment('');
-            localStorage.setItem('f1_nickname', nickname);
-            fetchComments();
-        } catch (err) { console.error(err); }
-    };
 
     // Derived States
     // Top Contenders: Sort by 'probability' (or just pick top 6 from list)
@@ -233,10 +226,9 @@ export default function Predictions() {
         // Dev: Allow unlocking via URL param ?unlock=true
         if (typeof window !== 'undefined' && window.location.search.includes('unlock=true')) return true;
 
-        // Default to open for 2026 season (future races)
-        if (!selectedRace || !selectedRace.predictions) return true;
-        return selectedRace.predictions.is_open ?? true;
-    }, [selectedRace]);
+        // Use vote window from backend
+        return voteWindow.is_open;
+    }, [voteWindow]);
 
     // Helpers
     const updateStops = (n) => {
@@ -290,6 +282,9 @@ export default function Predictions() {
         setUserVote(votePayload);
         setShowPredictionForm(false); // Hide the form after submission
 
+        // SAVE TO LOCAL STORAGE
+        localStorage.setItem(`f1_vote_${selectedRace.id}`, JSON.stringify(votePayload));
+
         try {
             await axios.post(`${API_BASE}/api/predictions/vote`, {
                 race_id: selectedRace.id,
@@ -315,7 +310,7 @@ export default function Predictions() {
     const locked = !!userVote || !isPredictionWindowOpen;
 
     return (
-        <div className="h-full flex flex-col overflow-hidden bg-gray-200 relative">
+        <div className="h-full flex flex-col overflow-hidden bg-f1-light relative font-body">
             {/* RESULT OVERLAY (Keep existing logic) */}
             <AnimatePresence>
                 {showResults && userVote && (
@@ -326,73 +321,79 @@ export default function Predictions() {
                     >
                         <motion.div
                             initial={{ scale: 0.8, y: 50 }} animate={{ scale: 1, y: 0 }}
-                            className="bg-white rounded-none border border-black p-8 max-w-md text-center"
+                            className="bg-f1-paper rounded-none border-2 border-black p-8 max-w-md text-center shadow-lg"
                             onClick={e => e.stopPropagation()}
                         >
                             <Sparkles size={64} className="text-yellow-500 mx-auto mb-4" />
-                            <h2 className="text-2xl font-bold text-black mb-2">Prediction Locked!</h2>
+                            <h2 className="text-2xl font-bold text-black mb-2 font-heading uppercase">Prediction Locked!</h2>
                             <p className="text-gray-600 mb-6">Good luck! Check the results after the race.</p>
-                            <button onClick={() => setShowResults(false)} className="w-full bg-f1-red hover:bg-red-600 text-black font-bold py-3 rounded-none">Continue</button>
+                            <button onClick={() => setShowResults(false)} className="w-full bg-f1-red hover:bg-red-600 text-black font-heading uppercase font-bold py-3 rounded-none border-2 border-black shadow-hard-sm">Continue</button>
                         </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
             {/* HEADER */}
-            <header className="relative overflow-hidden rounded-none bg-white border border-black min-h-[140px] md:min-h-[220px] mx-2 md:mx-6 mt-2 md:mt-6 shrink-0 flex flex-col justify-end p-3 md:p-8">
+            <header className="relative overflow-hidden bg-white border-b-2 border-black min-h-[140px] md:min-h-[200px] shrink-0 flex flex-col justify-end p-4 md:p-8">
                 <div className="absolute inset-0 z-0">
                     <img
                         src={`https://flagcdn.com/w1280/${selectedRace.code?.slice(0, 2) || 'un'}.png`}
                         alt=""
-                        className="w-full h-full object-cover opacity-10"
+                        className="w-full h-full object-cover opacity-15 grayscale"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/50 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/40 to-transparent" />
                 </div>
 
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                     <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
+                        <div className="flex items-center gap-3 mb-2">
                             {isPredictionWindowOpen ? (
-                                <span className="px-2.5 py-1 rounded-none bg-emerald-500/10 text-[11px] font-semibold text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">
-                                    Open
+                                <span className="px-3 py-1 bg-emerald-100 text-xs font-heading font-black text-emerald-700 border border-emerald-700 uppercase tracking-wide flex items-center gap-1">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    Voting Open
                                 </span>
                             ) : (
-                                <span className="px-2.5 py-1 rounded-none bg-red-500/10 text-[11px] font-semibold text-red-500 border border-red-500/20 uppercase tracking-wide">
-                                    Closed
+                                <span className="px-3 py-1 bg-red-100 text-xs font-heading font-black text-red-600 border border-red-600 uppercase tracking-wide">
+                                    Voting Closed
                                 </span>
                             )}
-                            <span className="text-gray-600 text-xs font-medium">
-                                {selectedRace.date}
+                            <span className="text-gray-600 text-xs font-bold font-mono">
+                                {selectedRace.date} • RD {selectedRace.round}
                             </span>
                         </div>
-                        <h1 className="text-2xl md:text-5xl font-bold text-black tracking-tight">
+                        <h1 className="text-3xl md:text-6xl font-heading uppercase text-black tracking-tighter mb-1">
                             {selectedRace.name}
                         </h1>
-                        <p className="text-gray-600 text-sm mt-1">Make your race predictions</p>
+                        <p className="text-gray-600 font-medium">Join the community prediction for this race</p>
                     </div>
                     <div className="z-20">
-                        <select
-                            className="bg-white border border-black text-black text-sm rounded-none py-2.5 px-4 outline-none focus:border-white/30"
-                            value={selectedRace.id}
-                            onChange={e => setSelectedRace(races.find(r => r.id == e.target.value))}
-                        >
-                            {races.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                        </select>
+                        <div className={`
+                            px-4 py-2 text-sm font-bold font-heading uppercase border-2 border-black shadow-hard-sm
+                            ${voteWindow.is_open ? 'bg-f1-green text-black' : 'bg-f1-red text-white'}
+                        `}>
+                            {voteWindow.is_open ? 'VOTING OPEN' :
+                                voteWindow.status === 'CLOSED_TOO_EARLY' ? 'VOTING OPENS SOON' : 'VOTING CLOSED'
+                            }
+                        </div>
                     </div>
                 </div>
             </header>
 
             {/* MAIN CONTENT */}
-            <div className="flex flex-col gap-3 md:gap-6 flex-1 min-h-0 overflow-hidden p-2 md:p-6">
+            <div className="flex flex-col gap-4 md:gap-6 flex-1 min-h-0 overflow-hidden p-4 md:p-6 bg-f1-light">
 
                 {/* MAKE PREDICTION BUTTON */}
                 {!locked && !showPredictionForm && (
-                    <button
+                    <motion.button
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
                         onClick={() => setShowPredictionForm(true)}
-                        className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-3 md:py-4 rounded-none transition-all flex items-center justify-center gap-2 min-h-11"
+                        className="w-full bg-f1-paper hover:bg-white text-black font-heading uppercase font-bold text-lg md:text-xl py-4 md:py-6 rounded-none border-2 border-black shadow-hard transition-all flex items-center justify-center gap-3 min-h-[80px]"
                     >
-                        Make Your Prediction
-                    </button>
+                        <Zap className="text-f1-red" size={24} />
+                        Join the Community Prediction
+                        <ChevronRight className="text-gray-400" size={24} />
+                    </motion.button>
                 )}
 
                 {/* USER PREDICTION FORM (Collapsible) */}
@@ -402,22 +403,26 @@ export default function Predictions() {
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            className={cn("bg-white rounded-none border border-black overflow-hidden", locked && "opacity-90 pointer-events-none")}
+                            className={cn("bg-f1-paper rounded-none border-2 border-black overflow-hidden shadow-hard", locked && "opacity-90 pointer-events-none")}
                         >
-                            <div className="p-3 md:p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-sm font-semibold text-black">Your Prediction</h3>
+                            <div className="p-4 md:p-6">
+                                <div className="flex items-center justify-between mb-6 border-b border-black/10 pb-4">
+                                    <h3 className="text-lg font-heading uppercase font-bold text-black flex items-center gap-2">
+                                        <Trophy size={18} className="text-f1-red" /> Your Prediction
+                                    </h3>
                                     {!locked && (
-                                        <button onClick={() => setShowPredictionForm(false)} className="text-gray-600 hover:text-black text-sm">
+                                        <button onClick={() => setShowPredictionForm(false)} className="text-gray-500 hover:text-black text-xs font-bold font-heading uppercase">
                                             Cancel
                                         </button>
                                     )}
                                 </div>
 
                                 {/* PODIUM */}
-                                <div className="mb-6">
-                                    <div className="text-xs font-semibold text-gray-600 uppercase mb-3">Podium</div>
-                                    <div className="flex justify-center items-end gap-2 md:gap-4 bg-white rounded-none p-3 md:p-4">
+                                <div className="mb-8">
+                                    <div className="text-xs font-bold font-heading uppercase text-gray-500 mb-4 flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-f1-red" /> Click to Select Podium
+                                    </div>
+                                    <div className="flex justify-center items-end gap-2 md:gap-4 bg-white/50 border border-black p-6 shadow-inner">
                                         <PodiumSlot position={2} driver={podium[2]} color={podium[2] ? driverMap[podium[2]]?.color : '#666'} onRemove={() => removePodium(2)} isLocked={locked} />
                                         <PodiumSlot position={1} driver={podium[1]} color={podium[1] ? driverMap[podium[1]]?.color : '#666'} onRemove={() => removePodium(1)} isLocked={locked} />
                                         <PodiumSlot position={3} driver={podium[3]} color={podium[3] ? driverMap[podium[3]]?.color : '#666'} onRemove={() => removePodium(3)} isLocked={locked} />
@@ -425,9 +430,11 @@ export default function Predictions() {
                                 </div>
 
                                 {/* DRIVER SELECTION */}
-                                <div className="mb-6">
-                                    <div className="text-xs font-semibold text-gray-600 uppercase mb-3">Select Drivers</div>
-                                    <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 md:gap-2">
+                                <div className="mb-8">
+                                    <div className="text-xs font-bold font-heading uppercase text-gray-500 mb-4 flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-f1-red" /> Contenders
+                                    </div>
+                                    <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
                                         {contenders.map(code => {
                                             const pPos = Object.entries(podium).find(([p, d]) => d === code)?.[0];
                                             return (
@@ -436,8 +443,8 @@ export default function Predictions() {
                                         })}
                                     </div>
                                     {!showAllDrivers && !locked && (
-                                        <button onClick={() => setShowAllDrivers(true)} className="w-full mt-3 py-2 rounded-none border border-dashed border-black text-gray-600 text-xs hover:bg-gray-100">
-                                            Show Full Grid
+                                        <button onClick={() => setShowAllDrivers(true)} className="w-full mt-4 py-3 rounded-none border-2 border-dashed border-gray-300 text-gray-500 text-xs font-bold uppercase font-heading hover:border-black hover:text-black hover:bg-white transition-colors">
+                                            View Full Grid
                                         </button>
                                     )}
                                     <AnimatePresence>
@@ -455,51 +462,42 @@ export default function Predictions() {
                                 </div>
 
                                 {/* EXTRAS */}
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                                    <div className="bg-white rounded-none p-3 border border-black">
-                                        <div className="text-[10px] font-semibold text-gray-600 uppercase mb-2">Winning Gap</div>
-                                        <div className="flex flex-col gap-1">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                                    <div className="bg-white rounded-none p-4 border-2 border-black shadow-hard-sm">
+                                        <div className="text-[10px] font-bold font-heading uppercase text-gray-500 mb-2">Winning Gap</div>
+                                        <div className="flex flex-col gap-1.5">
                                             {['< 5s', '5-10s', '> 10s'].map(gap => (
                                                 <button key={gap} onClick={() => !locked && setWinningGap(gap)} disabled={locked}
-                                                    className={cn("py-1.5 rounded text-xs font-medium transition-all", winningGap === gap ? "bg-white text-black" : "text-gray-600 hover:text-black")}
+                                                    className={cn("py-2 rounded-sm text-xs font-bold border font-heading uppercase transition-all", winningGap === gap ? "bg-black text-white border-black" : "bg-gray-50 text-gray-600 border-transparent hover:border-black hover:text-black")}
                                                 >{gap}</button>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white rounded-none p-3 border border-black">
-                                        <div className="text-[10px] font-semibold text-gray-600 uppercase mb-2">Pit Stops</div>
-                                        <div className="flex flex-col gap-1">
+                                    <div className="bg-white rounded-none p-4 border-2 border-black shadow-hard-sm">
+                                        <div className="text-[10px] font-bold font-heading uppercase text-gray-500 mb-2">Pit Stops</div>
+                                        <div className="flex flex-col gap-1.5">
                                             {[1, 2, 3].map(stops => (
                                                 <button key={stops} onClick={() => !locked && setPitStrategy(prev => ({ ...prev, stops }))} disabled={locked}
-                                                    className={cn("py-1.5 rounded text-xs font-medium transition-all", pitStrategy.stops === stops ? "bg-white text-black" : "text-gray-600 hover:text-black")}
+                                                    className={cn("py-2 rounded-sm text-xs font-bold border font-heading uppercase transition-all", pitStrategy.stops === stops ? "bg-black text-white border-black" : "bg-gray-50 text-gray-600 border-transparent hover:border-black hover:text-black")}
                                                 >{stops} Stop{stops > 1 ? 's' : ''}</button>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white rounded-none p-3 border border-black">
-                                        <div className="text-[10px] font-semibold text-gray-600 uppercase mb-2">Safety Car</div>
-                                        <div className="flex flex-col gap-1">
+                                    <div className="bg-white rounded-none p-4 border-2 border-black shadow-hard-sm">
+                                        <div className="text-[10px] font-bold font-heading uppercase text-gray-500 mb-2">Safety Car</div>
+                                        <div className="flex flex-col gap-1.5">
                                             {['Yes', 'No'].map(opt => (
                                                 <button key={opt} onClick={() => !locked && setSafetyCar(prev => ({ ...prev, enabled: opt === 'Yes' }))} disabled={locked}
-                                                    className={cn("py-1.5 rounded text-xs font-medium transition-all", (safetyCar.enabled ? 'Yes' : 'No') === opt ? "bg-white text-black" : "text-gray-600 hover:text-black")}
+                                                    className={cn("py-2 rounded-sm text-xs font-bold border font-heading uppercase transition-all", (safetyCar.enabled ? 'Yes' : 'No') === opt ? "bg-black text-white border-black" : "bg-gray-50 text-gray-600 border-transparent hover:border-black hover:text-black")}
                                                 >{opt}</button>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white rounded-none p-3 border border-black">
-                                        <div className="text-[10px] font-semibold text-gray-600 uppercase mb-2">First DNF</div>
-                                        <div className="grid grid-cols-3 gap-1 max-h-20 overflow-y-auto">
-                                            {activeDrivers.slice(0, 6).map(d => (
-                                                <button key={d.code} onClick={() => !locked && setDnfPredictions(prev => prev.includes(d.code) ? [] : [d.code])} disabled={locked}
-                                                    className={cn("py-1 rounded text-[9px] font-bold transition-all", dnfPredictions.includes(d.code) ? "bg-white text-black" : "text-gray-600 hover:text-black")}
-                                                >{d.code}</button>
-                                            ))}
-                                        </div>
-                                    </div>
+                                    {/* DNF Section Removed */}
                                 </div>
 
                                 {!locked && (
-                                    <button onClick={confirmVote} disabled={!podium[1]} className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-3 rounded-none transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-11">
+                                    <button onClick={confirmVote} disabled={!podium[1]} className="w-full bg-f1-red hover:bg-black text-white font-heading uppercase font-bold text-lg py-4 rounded-none border-2 border-black shadow-hard transform active:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                                         Lock In Prediction
                                     </button>
                                 )}
@@ -509,49 +507,150 @@ export default function Predictions() {
                 </AnimatePresence>
 
                 {/* COMMUNITY PREDICTIONS - Main Content */}
-                <div className="bg-white rounded-none border border-black p-3 md:p-5 flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-semibold text-black">Community Predictions</h3>
-                        {stats?.total_votes > 0 && <span className="text-sm text-gray-600">{stats.total_votes} votes</span>}
+                <div className="bg-f1-paper rounded-none border-2 border-black p-4 md:p-6 flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar shadow-hard">
+                    <div className="flex items-center justify-between mb-6 border-b border-black/10 pb-4">
+                        <h3 className="text-xl font-heading uppercase font-bold text-black flex items-center gap-2">
+                            <Users className="text-black" /> Community Pulse
+                        </h3>
+                        {stats?.total_votes > 0 && (
+                            <span className="px-3 py-1 bg-black text-white text-xs font-bold font-heading uppercase rounded-full">
+                                {stats.total_votes} Votes Cast
+                            </span>
+                        )}
                     </div>
 
                     {!stats || stats.total_votes === 0 ? (
-                        <div className="text-center text-gray-600 py-16 flex-1 flex flex-col items-center justify-center">
-                            <p className="text-lg mb-2">No predictions yet</p>
-                            <p className="text-sm">Be the first to predict this race!</p>
+                        <div className="text-center text-gray-500 py-16 flex-1 flex flex-col items-center justify-center bg-white/50 border-2 border-dashed border-gray-300 m-4">
+                            <Activity size={48} className="text-gray-300 mb-4" />
+                            <p className="text-xl font-heading uppercase font-bold text-gray-400 mb-2">No Data Yet</p>
+                            <p className="text-sm font-medium">Be the first to predict this race!</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {/* PREDICTED WINNER */}
-                            <div className="bg-white rounded-none p-4 border border-black">
-                                <div className="text-xs font-semibold text-gray-600 uppercase mb-4">Predicted Winner</div>
-                                {stats.podium[1].slice(0, 5).map((p, i) => (
-                                    <div key={p.code} className="mb-3">
-                                        <div className="flex justify-between items-center text-sm mb-1">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-1 h-4 rounded-none" style={{ backgroundColor: driverMap[p.code]?.color || '#666' }} />
-                                                <span className="font-semibold text-black">{p.code}</span>
-                                            </div>
-                                            <span className="font-bold text-black">{p.percent}%</span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* MY PREDICTION SUMMARY CARD (only if voted) */}
+                            {userVote && (
+                                <div className="bg-f1-paper text-black rounded-none p-5 border-2 border-f1-red shadow-hard-sm flex flex-col relative overflow-hidden group min-h-[220px]">
+                                    <div className="absolute top-0 right-0 p-2 opacity-5 text-f1-red rotate-12 scale-150 transform transition-transform group-hover:scale-125"><Zap size={120} /></div>
+                                    <div className="text-xs font-bold font-heading uppercase text-f1-red mb-4 flex items-center gap-1.5 relative z-10 border-b-2 border-f1-red/10 pb-2">
+                                        <Zap size={14} /> Your Prediction
+                                    </div>
+                                    <div className="flex-1 flex flex-col gap-3 relative z-10">
+                                        {/* Podium List */}
+                                        <div className="flex flex-col gap-2">
+                                            {[1, 2, 3].map((pos) => (
+                                                <div
+                                                    key={pos}
+                                                    className="flex items-center justify-between p-3 bg-white border-l-4 shadow-sm transition-all"
+                                                    style={{ borderLeftColor: driverMap[userVote.podium[pos]]?.color || '#ccc' }}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <span className={cn(
+                                                            "text-sm font-black font-heading w-8",
+                                                            pos === 1 ? "text-f1-red" : "text-gray-400"
+                                                        )}>
+                                                            {pos === 1 ? 'P1' : pos === 2 ? 'P2' : 'P3'}
+                                                        </span>
+                                                        <span className="font-bold font-heading text-lg text-black">
+                                                            {userVote.podium[pos]}
+                                                        </span>
+                                                    </div>
+                                                    {pos === 1 && <Trophy size={16} className="text-f1-red" />}
+                                                </div>
+                                            ))}
                                         </div>
-                                        <div className="h-2 bg-gray-100 rounded-none overflow-hidden">
-                                            <motion.div initial={{ width: 0 }} animate={{ width: `${p.percent}%` }} className="h-full rounded-none" style={{ backgroundColor: driverMap[p.code]?.color || '#666' }} />
+
+                                        <div className="grid grid-cols-2 gap-3 mt-auto pt-2 border-t border-black/5">
+                                            <div className="bg-white p-2 border border-black/5">
+                                                <span className="block text-[10px] font-heading font-medium text-gray-400 uppercase mb-0.5">Gap</span>
+                                                <span className="font-bold text-sm text-black">{userVote.winningGap}</span>
+                                            </div>
+                                            <div className="bg-white p-2 border border-black/5">
+                                                <span className="block text-[10px] font-heading font-medium text-gray-400 uppercase mb-0.5">Strategy</span>
+                                                <span className="font-bold text-sm text-black">{userVote.pitStrategy?.stops} Stop(s)</span>
+                                            </div>
                                         </div>
                                     </div>
-                                ))}
+                                </div>
+                            )}
+
+                            {/* COMMUNITY PODIUM PREDICTIONS */}
+                            <div className="bg-white rounded-none p-5 border-2 border-black shadow-hard-sm flex flex-col min-h-[220px]">
+                                <div className="flex justify-between items-center mb-4">
+                                    <div className="text-xs font-bold font-heading uppercase text-gray-500 flex items-center gap-1.5">
+                                        <Trophy size={14} /> Community Podium
+                                    </div>
+                                    <div className="flex bg-gray-100 rounded-none border border-black p-0.5">
+                                        {[1, 2, 3].map(pos => (
+                                            <button
+                                                key={pos}
+                                                onClick={() => setPodiumTab(pos)}
+                                                className={cn(
+                                                    "px-3 py-0.5 text-[10px] font-bold font-heading uppercase transition-all",
+                                                    podiumTab === pos ? "bg-black text-white shadow-sm" : "text-gray-500 hover:text-black"
+                                                )}
+                                            >
+                                                P{pos}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 space-y-3">
+                                    {stats.podium[podiumTab] && stats.podium[podiumTab].slice(0, 5).map((p, i) => {
+                                        const isUserPick = userVote?.podium?.[podiumTab] === p.code;
+                                        return (
+                                            <div key={p.code} className="relative group">
+                                                <div className="flex justify-between items-end text-sm mb-1 relative z-10">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-1.5 h-3 rounded-none" style={{ backgroundColor: driverMap[p.code]?.color || '#666' }} />
+                                                        <span className="font-bold text-black font-heading uppercase text-base leading-none">{p.code}</span>
+                                                        {isUserPick && (
+                                                            <span className="ml-1 px-1.5 py-[1px] bg-black text-white text-[8px] font-bold rounded-sm uppercase tracking-wide">You</span>
+                                                        )}
+                                                    </div>
+                                                    <span className="font-black text-black text-xs">{p.percent}%</span>
+                                                </div>
+                                                <div className="h-2 bg-gray-100 border border-black/30 rounded-none overflow-hidden relative">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${p.percent}%` }}
+                                                        className="h-full absolute left-0 top-0"
+                                                        style={{ backgroundColor: driverMap[p.code]?.color || '#666' }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {(!stats.podium[podiumTab] || stats.podium[podiumTab].length === 0) && (
+                                        <div className="flex-1 flex items-center justify-center text-gray-400 text-xs font-medium italic py-4">
+                                            No predictions for P{podiumTab} yet
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* WINNING MARGIN */}
-                            <div className="bg-white rounded-none p-4 border border-black">
-                                <div className="text-xs font-semibold text-gray-600 uppercase mb-4">Winning Margin</div>
-                                <div className="space-y-3">
+                            <div className="bg-white rounded-none p-5 border-2 border-black shadow-hard-sm flex flex-col">
+                                <div className="text-xs font-bold font-heading uppercase text-gray-500 mb-4 flex items-center gap-1.5">
+                                    <Timer size={14} /> Winning Margin
+                                </div>
+                                <div className="space-y-4 flex-1">
                                     {['< 5s', '5-10s', '> 10s'].map(gap => {
                                         const count = stats.winningGap[gap] || 0;
                                         const pct = Math.round((count / stats.total_votes) * 100) || 0;
+                                        const isUserPick = userVote?.winningGap === gap;
                                         return (
-                                            <div key={gap} className="flex items-center justify-between">
-                                                <span className="text-sm text-gray-600">{gap}</span>
-                                                <span className="text-lg font-bold text-black">{pct}%</span>
+                                            <div key={gap}>
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-bold font-heading uppercase text-gray-600">{gap}</span>
+                                                        {isUserPick && <span className="text-[9px] font-bold text-f1-red uppercase bg-f1-red/10 px-1 rounded-sm">You</span>}
+                                                    </div>
+                                                    <span className="text-sm font-black text-black">{pct}%</span>
+                                                </div>
+                                                <div className="h-2 bg-gray-100 border border-black/20 rounded-none overflow-hidden">
+                                                    {pct > 0 && <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className="h-full bg-black" />}
+                                                </div>
                                             </div>
                                         )
                                     })}
@@ -559,23 +658,41 @@ export default function Predictions() {
                             </div>
 
                             {/* SAFETY CAR & PIT STOPS */}
-                            <div className="bg-white rounded-none p-4 border border-black">
-                                <div className="text-xs font-semibold text-gray-600 uppercase mb-4">Race Factors</div>
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Safety Car</span>
-                                        <span className="text-lg font-bold text-black">{Math.round((stats.safetyCar.yes / stats.total_votes) * 100) || 0}% Yes</span>
+                            <div className="bg-white rounded-none p-5 border-2 border-black shadow-hard-sm flex flex-col">
+                                <div className="text-xs font-bold font-heading uppercase text-gray-500 mb-4 flex items-center gap-1.5">
+                                    <AlertTriangle size={14} /> Race Factors
+                                </div>
+                                <div className="space-y-6">
+                                    <div>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-bold font-heading uppercase text-gray-600">Safety Car</span>
+                                                {userVote?.safetyCar?.enabled && <span className="text-[9px] font-bold text-f1-red uppercase bg-f1-red/10 px-1 rounded-sm">You</span>}
+                                            </div>
+                                            <span className="text-lg font-black text-black">{Math.round((stats.safetyCar.yes / stats.total_votes) * 100) || 0}% <span className="text-xs font-medium text-gray-500">YES</span></span>
+                                        </div>
+                                        <div className="w-full h-3 bg-gray-100 border border-black rounded-none overflow-hidden flex">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${Math.round((stats.safetyCar.yes / stats.total_votes) * 100) || 0}%` }}
+                                                className="h-full bg-f1-red"
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="border-t border-black pt-4">
-                                        <div className="text-xs text-gray-600 mb-2">Pit Strategy</div>
+
+                                    <div className="border-t border-black/10 pt-4">
+                                        <div className="text-xs font-bold font-heading uppercase text-gray-500 mb-3">Pit Strategy Consensus</div>
                                         <div className="flex gap-2">
                                             {[1, 2, 3].map(stops => {
                                                 const count = stats.pitStrategy?.stop_dist?.[stops] || 0;
                                                 const pct = Math.round((count / stats.total_votes) * 100) || 0;
+                                                const isHighest = pct >= 50;
+                                                const isUserPick = userVote?.pitStrategy?.stops === stops;
                                                 return (
-                                                    <div key={stops} className="flex-1 bg-gray-100 rounded-none p-2 text-center">
-                                                        <div className="text-xs text-gray-600">{stops}S</div>
-                                                        <div className="text-sm font-bold text-black">{pct}%</div>
+                                                    <div key={stops} className={cn("flex-1 p-2 text-center border transition-all relative", isHighest ? "bg-black text-white border-black" : "bg-gray-50 text-gray-600 border-gray-200")}>
+                                                        {isUserPick && <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-f1-red rounded-full border border-black" />}
+                                                        <div className="text-[10px] font-heading uppercase opacity-80">{stops} Stop</div>
+                                                        <div className="text-lg font-black leading-none mt-1">{pct}%</div>
                                                     </div>
                                                 )
                                             })}
@@ -587,63 +704,7 @@ export default function Predictions() {
                     )}
                 </div>
 
-                {/* DISCUSSION SECTION */}
-                <div className="bg-white rounded-none border border-black p-3 md:p-5 mt-3 md:mt-4">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-2">
-                            <MessageSquare size={14} />
-                            Discussion
-                        </h3>
-                        <span className="text-xs text-gray-600">{comments.length} comments</span>
-                    </div>
 
-                    {/* Comment Input */}
-                    <div className="flex gap-3 mb-4">
-                        <input
-                            type="text"
-                            placeholder="Nickname"
-                            value={nickname}
-                            onChange={e => setNickname(e.target.value)}
-                            className="w-20 md:w-24 bg-white border border-black rounded-none px-2 md:px-3 py-2 text-sm text-black placeholder-gray-400 focus:outline-none focus:border-white/30 min-h-11"
-                        />
-                        <input
-                            type="text"
-                            placeholder="Share your thoughts..."
-                            value={newComment}
-                            onChange={e => setNewComment(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && postComment()}
-                            className="flex-1 bg-white border border-black rounded-none px-2 md:px-3 py-2 text-sm text-black placeholder-gray-400 focus:outline-none focus:border-white/30 min-h-11"
-                        />
-                        <button
-                            onClick={postComment}
-                            disabled={!newComment.trim() || !nickname.trim()}
-                            className="bg-white hover:bg-gray-100 text-black px-3 md:px-4 py-2 rounded-none font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-11 min-w-11"
-                        >
-                            <Send size={16} />
-                        </button>
-                    </div>
-
-                    {/* Comments List */}
-                    <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
-                        {comments.length === 0 ? (
-                            <div className="text-center text-gray-600 py-8 text-sm">
-                                No comments yet. Be the first to share your thoughts!
-                            </div>
-                        ) : (
-                            comments.map((c, i) => (
-                                <div key={c.id || i} className="bg-white rounded-none p-3 border border-black">
-                                    <div className="flex justify-between items-start mb-1">
-                                        <span className="text-xs font-semibold text-black">{c.nickname}</span>
-                                        <span className="text-[10px] text-gray-600">
-                                            {c.timestamp ? new Date(c.timestamp).toLocaleString() : ''}
-                                        </span>
-                                    </div>
-                                    <p className="text-sm text-gray-600">{c.content}</p>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
             </div>
         </div>
     );

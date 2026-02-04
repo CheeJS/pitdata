@@ -230,35 +230,70 @@ def get_latest_race_results():
 
 def get_active_drivers(year=2025):
     """
-    Returns a list of active drivers for the season with their team and inferred stats.
+    Returns a list of active drivers for the season.
+    Priority:
+    1. DB Results (if season started)
+    2. season_entries.json (if defined)
+    3. Previous year DB results (fallback)
     """
     session = get_db_session()
     try:
-        # Get all results for the year to find active drivers
-        # We use results to ensure they actually raced or are entered
+        # 1. DB Check
         results = session.query(Result).join(Race).filter(Race.year == year).all()
         
-        # If no results (start of season), try previous year for initial roster?
-        # Or just return empty if it's truly empty.
-        if not results:
-             # Fallback to previous year if current year has no data yet (common in pre-season)
-             results = session.query(Result).join(Race).filter(Race.year == year - 1).all()
-
-        drivers = {}
+        drivers_map = {}
         
+        if results:
+            for r in results:
+                if r.driver_code and r.driver_code not in drivers_map:
+                    drivers_map[r.driver_code] = {
+                        "code": r.driver_code,
+                        "name": r.driver_name,
+                        "team": r.team_name,
+                        "color": TEAM_COLORS.get(r.team_name, "#333333"),
+                        "probability": 0
+                    }
+            return list(drivers_map.values())
+
+        # 2. JSON Fallback
+        import json
+        json_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'season_entries.json')
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, 'r') as f:
+                    data = json.load(f)
+                    
+                str_year = str(year)
+                if str_year in data:
+                    entries = data[str_year]
+                    for ent in entries:
+                         code = ent.get('code')
+                         team = ent.get('team')
+                         drivers_map[code] = {
+                             "code": code,
+                             "name": ent.get('name', code),
+                             "team": team,
+                             "color": TEAM_COLORS.get(team, "#333333"),
+                             "probability": 0
+                         }
+                    return list(drivers_map.values())
+            except Exception as e:
+                print(f"Error reading season_entries.json: {e}")
+
+        # 3. Previous Year Fallback
+        # Fallback to previous year if current year has no data yet and no JSON entry
+        results = session.query(Result).join(Race).filter(Race.year == year - 1).all()
         for r in results:
-            if r.driver_code not in drivers and r.driver_code:
-                # Basic Stats Mockup -> In future, calculate real probability based on points
-                drivers[r.driver_code] = {
+             if r.driver_code and r.driver_code not in drivers_map:
+                drivers_map[r.driver_code] = {
                     "code": r.driver_code,
                     "name": r.driver_name,
                     "team": r.team_name,
                     "color": TEAM_COLORS.get(r.team_name, "#333333"),
-                    "probability": 0, # Placeholder
-                    "dnfRisk": 10 # Placeholder default
+                    "probability": 0
                 }
         
-        return list(drivers.values())
+        return list(drivers_map.values())
 
     except Exception as e:
         print(f"Active Drivers Error: {e}")
@@ -592,8 +627,12 @@ def get_analysis_data(race_id, driver1, driver2, lap1_num=None, lap2_num=None):
         d2_dist = np.array(d2_tel['distance'])
         d2_speed = np.array(d2_tel['speed'])
         
-        # Interpolate D2 speed to D1 distances
+        # Interpolate D2 speed/throttle to D1 distances
         d2_speed_interp = np.interp(d1_dist, d2_dist, d2_speed)
+
+        d1_throttle = np.array(d1_tel['throttle'])
+        d2_throttle = np.array(d2_tel['throttle'])
+        d2_throttle_interp = np.interp(d1_dist, d2_dist, d2_throttle)
         
         # Calculate Delta (Time)
         # Time = Distance / Speed. 
@@ -634,6 +673,8 @@ def get_analysis_data(race_id, driver1, driver2, lap1_num=None, lap2_num=None):
             
             s1 = d1_speed[i]
             s2 = d2_speed_interp[i]
+            th1 = d1_throttle[i]
+            th2 = d2_throttle_interp[i]
             
             d_val = 0
             if len(time_delta_vals) > i:
@@ -644,7 +685,8 @@ def get_analysis_data(race_id, driver1, driver2, lap1_num=None, lap2_num=None):
                 "delta": round(d_val, 4), 
                 "speed": int(s1),
                 "speed_compare": int(s2),
-                "speed_delta": int(s1 - s2)
+                "speed_delta": int(s1 - s2),
+                "throttle_delta": int(th1 - th2) 
             })
 
         # 2. Corner Analysis
@@ -790,8 +832,52 @@ def get_season_standings(year=2024):
         results = db_session.query(Result, Race).join(Race).filter(Race.year == year).all()
         
         if not results:
-            # Return empty structure for future/empty seasons instead of 404 error
+            if year >= 2026:
+                # Return active drivers with 0 points for pre-season/early-season display
+                try:
+                    active_drivers = get_active_drivers(year)
+                    dummy_drivers = []
+                    for d in active_drivers:
+                         dummy_drivers.append({
+                             "code": d["code"],
+                             "name": d["name"],
+                             "team": d["team"],
+                             "points": 0,
+                             "wins": 0,
+                             "podiums": 0,
+                             "history": [0],
+                             "finish_rate": 0,
+                             "change": 0,
+                             "results": {}
+                         })
+                    # Dummy Constructors
+                    dummy_constructors = []
+                    seen_teams = set()
+                    for d in dummy_drivers:
+                        team = d["team"]
+                        if team and team not in seen_teams:
+                            seen_teams.add(team)
+                            dummy_constructors.append({
+                                "name": team,
+                                "points": 0,
+                                "wins": 0,
+                                "podiums": 0,
+                                "history": [0],
+                                "change": 0
+                            })
+                    return {
+                        "drivers": dummy_drivers, 
+                        "constructors": dummy_constructors, 
+                        "races": [], 
+                        "total_rounds": 24, 
+                        "completed_rounds": 0
+                    }
+                except Exception as e:
+                    print(f"Error fetching active drivers for standings fallback: {e}")
+            
+            # Return empty structure for other cases
             return {"drivers": [], "constructors": [], "races": []}
+
 
         # Structure:
         # {
@@ -2104,4 +2190,91 @@ def get_dashboard_data(year=2026):
         session.close()
 
 
-
+def get_active_prediction_race(year=2026):
+    """
+    Returns the race that users should be voting on for predictions,
+    plus the vote window status.
+    
+    Uses same logic as get_dashboard_data() for race selection.
+    Vote window:
+    - Opens: After previous race ends (or season start for R1)
+    - Closes: 1 hour before race start
+    """
+    from datetime import timedelta
+    session = get_db_session()
+    try:
+        current_time = datetime.utcnow()
+        
+        # Get latest race with results and next upcoming race
+        latest_race_with_results = session.query(Race).join(Result).filter(Race.year == year).order_by(Race.date.desc()).first()
+        next_race = session.query(Race).filter(Race.year == year, Race.date >= current_time).order_by(Race.date.asc()).first()
+        
+        target_race = None
+        vote_status = "CLOSED"
+        opens_at = None
+        closes_at = None
+        
+        # Determine target race (same logic as dashboard)
+        if not latest_race_with_results:
+            # Start of season
+            target_race = next_race
+        elif not next_race:
+            # End of season - show last race
+            target_race = latest_race_with_results
+        else:
+            days_since_last_race = (current_time - latest_race_with_results.date).total_seconds() / 86400
+            gap_between_races = (next_race.date - latest_race_with_results.date).total_seconds() / 86400
+            
+            if days_since_last_race < 3:
+                # Fresh results, but can still show next race for predictions
+                target_race = next_race
+            elif gap_between_races <= 7:
+                # Back-to-back
+                target_race = next_race
+            else:
+                # Normal gap
+                target_race = next_race
+        
+        if not target_race:
+            return {"error": "No race available"}
+        
+        # Calculate vote window
+        # Opens: After previous race ends (assume race duration ~2 hours)
+        if latest_race_with_results and latest_race_with_results.id != target_race.id:
+            opens_at = latest_race_with_results.date + timedelta(hours=2)
+        else:
+            # First race or same race - open from a week before
+            opens_at = target_race.date - timedelta(days=7)
+        
+        # Closes: 1 hour before race start
+        closes_at = target_race.date - timedelta(hours=1)
+        
+        # Determine status
+        if current_time < opens_at:
+            vote_status = "CLOSED_TOO_EARLY"
+        elif current_time > closes_at:
+            vote_status = "CLOSED_RACE_STARTED"
+        else:
+            vote_status = "OPEN"
+        
+        return {
+            "race": {
+                "id": target_race.id,
+                "name": target_race.race_name,
+                "circuit": target_race.circuit_name,
+                "date": target_race.date.isoformat() if target_race.date else None,
+                "round": target_race.round
+            },
+            "vote_window": {
+                "is_open": vote_status == "OPEN",
+                "status": vote_status,
+                "opens_at": opens_at.isoformat() if opens_at else None,
+                "closes_at": closes_at.isoformat() if closes_at else None
+            }
+        }
+        
+    except Exception as e:
+        print(f"Active Prediction Race Error: {e}")
+        return {"error": str(e)}
+    finally:
+        session.close()
