@@ -69,15 +69,15 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 md:bg-f1-light text-black flex flex-col md:flex-row font-body selection:bg-f1-red selection:text-white scanlines">
+    <div className="min-h-screen bg-f1-light text-f1-dark flex flex-col md:flex-row font-body selection:bg-f1-red selection:text-white scanlines">
       {/* Mobile Header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b-4 border-black flex items-center justify-between px-4 z-50 text-black">
+      <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-f1-paper border-b-4 border-f1-dark flex items-center justify-between px-4 z-50 text-f1-dark">
         <div className="flex items-center gap-3">
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-1.5 hover:bg-gray-100 transition-colors border-2 border-black">
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-1.5 hover:bg-gray-100 transition-colors border-2 border-f1-dark">
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <div className="w-8 h-8 bg-f1-red flex items-center justify-center text-white font-black text-xl border-2 border-black shadow-hard-sm">F1</div>
-          <span className="font-heading text-sm uppercase tracking-wider">INSIGHT</span>
+          <div className="w-8 h-8 bg-f1-red flex items-center justify-center text-white font-black text-xl border-2 border-f1-dark shadow-hard-sm">F1</div>
+          <span className="font-heading text-sm uppercase tracking-wider">PITDATA</span>
         </div>
       </header>
 
@@ -91,7 +91,7 @@ export default function App() {
 
       {/* Mobile Slide-out Menu */}
       <aside className={cn(
-        "md:hidden fixed top-14 left-0 h-[calc(100%-3.5rem)] w-64 bg-white border-r-4 border-black z-50 transition-transform duration-300 ease-in-out",
+        "md:hidden fixed top-14 left-0 h-[calc(100%-3.5rem)] w-64 bg-white border-r-4 border-f1-dark z-50 transition-transform duration-300 ease-in-out overflow-y-auto",
         mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <nav className="py-6 px-4 space-y-2">
@@ -106,16 +106,12 @@ export default function App() {
         </nav>
 
         <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-3">
-          <div className="bg-[#1A1A20] rounded-none p-4 border border-[#2A2A30]">
-            <div className="text-xs text-gray-500 font-medium mb-2">NEXT RACE</div>
-            <div className="font-bold text-sm">Azerbaijan GP</div>
-            <div className="text-xs text-f1-red mt-1 font-bold">In 2 Weeks</div>
-          </div>
+
           <a
             href="https://buymeacoffee.com/jschee"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 bg-[#FFDD00] hover:bg-[#FFEA00] text-black font-bold font-heading uppercase text-xs py-3 border-2 border-black shadow-hard-sm transition-all active:translate-y-0.5"
+            className="flex items-center justify-center gap-2 bg-[#FFDD00] hover:bg-[#FFEA00] text-f1-dark font-bold font-heading uppercase text-xs py-3 border-2 border-f1-dark shadow-hard-sm transition-all active:translate-y-0.5"
           >
             <Coffee size={16} />
             <span>Buy me a coffee</span>
@@ -124,10 +120,10 @@ export default function App() {
       </aside>
 
       {/* Desktop Sidebar - Hidden on mobile */}
-      <aside className="hidden md:flex fixed left-0 top-0 h-full w-20 lg:w-64 bg-f1-light border-r-4 border-black flex-col z-50 transition-all duration-300">
-        <div className="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b-4 border-black bg-f1-red text-white">
+      <aside className="hidden md:flex fixed left-0 top-0 h-full w-20 lg:w-64 bg-f1-light border-r-4 border-f1-dark flex-col z-50 transition-all duration-300">
+        <div className="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b-4 border-f1-dark bg-f1-red text-white">
           <div className="w-8 h-8 bg-black flex items-center justify-center font-bold tracking-tighter border-2 border-white">F1</div>
-          <span className="hidden lg:block ml-3 font-heading text-xl font-bold tracking-widest text-white">INSIGHT</span>
+          <span className="hidden lg:block ml-3 font-heading text-xl font-bold tracking-widest text-white">PITDATA</span>
         </div>
 
         <nav className="flex-1 py-8 px-2 lg:px-4 space-y-2">
@@ -141,17 +137,13 @@ export default function App() {
 
         </nav>
 
-        <div className="p-4 border-t-4 border-black hidden lg:flex flex-col gap-3">
-          <div className="bg-white rounded-none p-4 border-2 border-black shadow-hard-sm w-full">
-            <div className="text-xs text-gray-500 font-medium mb-2 font-heading uppercase">NEXT RACE</div>
-            <div className="font-bold text-sm text-black">Azerbaijan GP</div>
-            <div className="text-xs text-f1-red mt-1 font-bold">In 2 Weeks</div>
-          </div>
+        <div className="p-4 border-t-4 border-f1-dark hidden lg:flex flex-col gap-3">
+
           <a
             href="https://buymeacoffee.com/jschee"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 bg-[#FFDD00] hover:bg-[#FFEA00] text-black font-bold font-heading uppercase text-xs py-2.5 border-2 border-black shadow-hard-sm transition-all hover:-translate-y-0.5 active:translate-y-0 w-full"
+            className="flex items-center justify-center gap-2 bg-[#FFDD00] hover:bg-[#FFEA00] text-f1-dark font-bold font-heading uppercase text-xs py-2.5 border-2 border-f1-dark shadow-hard-sm transition-all hover:-translate-y-0.5 active:translate-y-0 w-full"
           >
             <Coffee size={16} />
             <span>Buy me a coffee</span>
@@ -207,7 +199,7 @@ function NavItem({ icon, label, active, onClick }) {
       className={cn(
         "w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-3 transition-all duration-200 group relative border-b-2 border-transparent",
         active
-          ? "bg-f1-red text-white border-black font-bold shadow-hard-sm animate-glow-pulse"
+          ? "bg-f1-red text-white border-f1-dark font-bold shadow-hard-sm animate-glow-pulse"
           : "text-gray-600 hover:bg-black hover:text-white hover:shadow-[0_0_15px_rgba(255,0,0,0.3)] hover:shadow-hard-sm"
       )}
     >
@@ -217,7 +209,7 @@ function NavItem({ icon, label, active, onClick }) {
         whileHover={{ rotate: active ? 0 : 10 }}
         transition={{ duration: 0.2 }}
       >
-        {React.cloneElement(icon, { size: 20, className: active ? "text-white" : "text-black group-hover:text-white transition-colors duration-200" })}
+        {React.cloneElement(icon, { size: 20, className: active ? "text-white" : "text-f1-dark group-hover:text-white transition-colors duration-200" })}
       </motion.span>
       <span className="hidden lg:block font-heading tracking-wide text-sm pt-1">{label}</span>
     </motion.button>
@@ -256,6 +248,7 @@ function DashboardView({ data, standingsData }) {
 
   // Extract Podium (P1, P2, P3) from results
   const [resultType, setResultType] = useState('R');
+  const [standingsView, setStandingsView] = useState('drivers');
 
   // Extract Results based on toggle
   const raceResults = data.results?.[resultType] || [];
@@ -277,13 +270,13 @@ function DashboardView({ data, standingsData }) {
 
         {/* Latest Race or Next Race Card */}
         {data.mode === 'NEXT_RACE' ? (
-          <section className="bg-white border-4 border-black p-4 relative overflow-hidden shadow-hard">
+          <section className="bg-white border-4 border-f1-dark p-4 relative overflow-hidden shadow-hard">
             <div className="absolute top-3 right-3">
-              <div className="text-[10px] bg-f1-red text-white px-2 py-1 font-bold uppercase tracking-wide">UPCOMING</div>
+              <div className="text-xs bg-f1-red text-white px-2 py-1 font-bold uppercase tracking-wide">UPCOMING</div>
             </div>
             <div className="mb-4">
-              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Next Race</span>
-              <h2 className="text-2xl font-heading text-black leading-tight mt-2">{data.raceName}</h2>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Next Race</span>
+              <h2 className="text-2xl font-heading text-f1-dark leading-tight mt-2">{data.raceName}</h2>
               <p className="text-sm text-gray-600 mt-1">{data.circuit} • {new Date(data.date).toLocaleDateString([], { day: 'numeric', month: 'short' })}</p>
             </div>
 
@@ -292,7 +285,7 @@ function DashboardView({ data, standingsData }) {
               <CountdownTimer targetDate={data.date} />
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t-2 border-black">
+            <div className="flex items-center justify-between pt-3 border-t-2 border-f1-dark">
               <div className="text-xs text-gray-600 font-bold">Round {data.round}</div>
               <div className="flex items-center gap-2">
                 {/* Flag */}
@@ -300,36 +293,37 @@ function DashboardView({ data, standingsData }) {
             </div>
           </section>
         ) : (
-          <section className="bg-white border-4 border-black p-4 shadow-hard">
+          <section className="bg-white border-4 border-f1-dark p-4 shadow-hard">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Latest Race</span>
-              <span className="text-[10px] px-2 py-1 bg-green-500 text-white font-bold uppercase">Finished</span>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Latest Race</span>
+              <span className="text-xs px-2 py-1 bg-green-500 text-white font-bold uppercase">Finished</span>
             </div>
-            <h2 className="text-xl font-heading text-black mb-1">{data.raceName}</h2>
+            <h2 className="text-xl font-heading text-f1-dark mb-1">{data.raceName}</h2>
             <p className="text-sm text-gray-600 mb-4">{data.circuit} • {data.date}</p>
-            <div className="flex items-center gap-3 pt-3 border-t-2 border-black">
-              <div className="w-2 h-10 border-2 border-black" style={{ backgroundColor: winnerColor }} />
+            <div className="flex items-center gap-3 pt-3 border-t-2 border-f1-dark">
+              <div className="w-2 h-10 border-2 border-f1-dark" style={{ backgroundColor: winnerColor }} />
               <div>
                 <div className="text-xs text-gray-500 uppercase font-bold">Winner</div>
-                <div className="text-lg font-heading text-black">{data.winner}</div>
+                <div className="text-lg font-heading text-f1-dark">{data.winner}</div>
               </div>
             </div>
           </section>
         )}
 
         {/* Podium - Minimal Horizontal */}
-        <section className="bg-white border-4 border-black p-4 shadow-hard">
-          <h3 className="text-xs font-heading text-black uppercase tracking-wider mb-4">Podium</h3>
+        {/* Podium - Minimal Horizontal */}
+        <section className="bg-f1-paper border-4 border-f1-dark p-4 shadow-hard">
+          <h3 className="text-xs font-heading text-f1-dark uppercase tracking-wider mb-4">Podium</h3>
           <div className="flex items-end justify-center gap-3 h-32">
             {/* P2 */}
             {podium[1] && (
               <div className="flex-1 flex flex-col items-center">
                 <DriverSprite driver={podium[1].code} size="md" />
-                <span className="text-xs font-heading text-black mb-1">{podium[1].code}</span>
-                <div className="w-full h-16 border-2 border-black flex items-center justify-center relative overflow-hidden"
+                <span className="text-xs font-heading text-f1-dark mb-1">{podium[1].code}</span>
+                <div className="w-full h-16 border-2 border-f1-dark flex items-center justify-center relative overflow-hidden"
                   style={{ backgroundColor: getTeamColor(podium[1].team) }}>
                   <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-                  <span className="text-2xl font-black text-black/20 z-10">2</span>
+                  <span className="text-2xl font-black text-f1-dark/20 z-10">2</span>
                 </div>
               </div>
             )}
@@ -337,11 +331,11 @@ function DashboardView({ data, standingsData }) {
             {podium[0] && (
               <div className="flex-1 flex flex-col items-center">
                 <DriverSprite driver={podium[0].code} size="lg" />
-                <span className="text-sm font-heading text-black mb-1">{podium[0].code}</span>
-                <div className="w-full h-24 border-2 border-black flex items-center justify-center relative overflow-hidden shadow-hard-sm"
+                <span className="text-sm font-heading text-f1-dark mb-1">{podium[0].code}</span>
+                <div className="w-full h-24 border-2 border-f1-dark flex items-center justify-center relative overflow-hidden shadow-hard-sm"
                   style={{ backgroundColor: getTeamColor(podium[0].team) }}>
                   <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent" />
-                  <span className="text-3xl font-black text-black/20 z-10">1</span>
+                  <span className="text-3xl font-black text-f1-dark/20 z-10">1</span>
                 </div>
               </div>
             )}
@@ -349,11 +343,11 @@ function DashboardView({ data, standingsData }) {
             {podium[2] && (
               <div className="flex-1 flex flex-col items-center">
                 <DriverSprite driver={podium[2].code} size="md" />
-                <span className="text-xs font-heading text-black mb-1">{podium[2].code}</span>
-                <div className="w-full h-12 border-2 border-black flex items-center justify-center relative overflow-hidden"
+                <span className="text-xs font-heading text-f1-dark mb-1">{podium[2].code}</span>
+                <div className="w-full h-12 border-2 border-f1-dark flex items-center justify-center relative overflow-hidden"
                   style={{ backgroundColor: getTeamColor(podium[2].team) }}>
                   <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-                  <span className="text-xl font-black text-black/20 z-10">3</span>
+                  <span className="text-xl font-black text-f1-dark/20 z-10">3</span>
                 </div>
               </div>
             )}
@@ -362,20 +356,20 @@ function DashboardView({ data, standingsData }) {
 
         {/* Championship Standings - Clean List */}
         {standingsData && (
-          <section className="bg-white border-4 border-black p-4 shadow-hard">
+          <section className="bg-f1-paper border-4 border-f1-dark p-4 shadow-hard">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-heading text-black uppercase tracking-wider">Championship</h3>
-              <span className="text-[10px] text-gray-600 font-bold">{standingsData.drivers?.length || 0} drivers</span>
+              <h3 className="text-xs font-heading text-f1-dark uppercase tracking-wider">Championship</h3>
+              <span className="text-xs text-gray-600 font-bold">{standingsData.drivers?.length || 0} drivers</span>
             </div>
             <div className="space-y-0 divide-y-2 divide-gray-200">
               {standingsData.drivers?.slice(0, 5).map((driver, i) => (
                 <div key={driver.code} className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-base font-heading text-black w-6">{i + 1}</span>
-                    <div className="w-1 h-6 border border-black" style={{ backgroundColor: getTeamColor(driver.team) }} />
-                    <span className="text-base font-heading text-black">{driver.name}</span>
+                    <span className="text-base font-heading text-f1-dark w-6">{i + 1}</span>
+                    <div className="w-1 h-6 border border-f1-dark" style={{ backgroundColor: getTeamColor(driver.team) }} />
+                    <span className="text-base font-heading text-f1-dark">{driver.name}</span>
                   </div>
-                  <span className="text-base text-black font-mono font-bold">{driver.points} pts</span>
+                  <span className="text-base text-f1-dark font-mono font-bold">{driver.points} pts</span>
                 </div>
               ))}
             </div>
@@ -388,7 +382,8 @@ function DashboardView({ data, standingsData }) {
       <div className="hidden md:block space-y-6">
 
         {/* ========== CINEMATIC HERO ========== */}
-        <header className="relative overflow-hidden bg-white border-4 border-black min-h-[200px] md:min-h-[320px] group shadow-hard">
+        {/* ========== CINEMATIC HERO ========== */}
+        <header className="relative overflow-hidden bg-f1-paper border-4 border-f1-dark min-h-[200px] md:min-h-[320px] group shadow-hard">
 
           {/* Background Effects - Enhanced with gradients */}
           <div className="absolute inset-0 z-0">
@@ -409,7 +404,7 @@ function DashboardView({ data, standingsData }) {
           </div>
 
           {/* Content */}
-          <div className="relative z-10 p-4 md:p-8 lg:p-10 flex flex-col min-h-[200px] md:min-h-[320px] text-black">
+          <div className="relative z-10 p-4 md:p-8 lg:p-10 flex flex-col min-h-[200px] md:min-h-[320px] text-f1-dark">
 
             {data.mode === 'NEXT_RACE' ? (
               /* ===== NEXT RACE MODE ===== */
@@ -425,61 +420,98 @@ function DashboardView({ data, standingsData }) {
                   </div>
                   <div className="text-right hidden lg:block">
                     <div className="text-gray-500 text-xs uppercase tracking-widest mb-1">Race Day</div>
-                    <div className="text-3xl font-black text-black">{new Date(data.date).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
+                    <div className="text-3xl font-black text-f1-dark">{new Date(data.date).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
                   </div>
                 </div>
 
                 {/* Main Content */}
                 <div className="flex-1 flex items-center justify-between gap-8 mt-8 flex-wrap">
                   <div>
-                    <div className="text-black text-sm font-medium mb-2 flex items-center gap-2">
+                    <div className="text-f1-dark text-sm font-medium mb-2 flex items-center gap-2">
                       <MapPin size={14} className="text-f1-red" />
                       {data.circuit}
                     </div>
-                    <h1 className="text-3xl md:text-6xl lg:text-8xl font-black text-black uppercase tracking-tighter leading-[0.85] italic">
+                    <h1 className="text-3xl md:text-6xl lg:text-8xl font-black text-f1-dark uppercase tracking-tighter leading-[0.85] italic">
                       {data.raceName?.replace(' Grand Prix', '')}
                       <span className="block text-xl md:text-3xl lg:text-4xl not-italic text-gray-500 mt-2 tracking-normal">Grand Prix</span>
                     </h1>
                   </div>
 
-                  {/* Countdown */}
-                  <div className="text-right">
-                    {/* Time Display */}
-                    <div className="flex justify-end mb-4">
-                      <TimeDisplay date={data.date} circuit={data.circuit} />
+                  {/* Countdown & Featured Driver */}
+                  <div className="text-right flex items-end gap-6">
+                    {/* Featured Driver Animation - Side by Side */}
+                    <div className="hidden xl:block relative group mb-1">
+                      <div className="absolute inset-0 bg-f1-red/20 rounded-full blur-xl animate-pulse"></div>
+                      <div className="transform scale-[2.5] origin-bottom translate-y-36">
+                        <DriverSprite driver="VER" size="xl" variant="win" className="relative z-10" />
+                      </div>
+                      <div className="absolute -bottom-2 -left-4 bg-black text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider border border-white/20 -rotate-2">
+                        Leader
+                      </div>
                     </div>
 
-                    <div className="text-gray-500 text-xs uppercase tracking-widest mb-3 font-bold">Lights Out In</div>
-                    <div className="flex items-center justify-end gap-3 text-black">
-                      <CountdownTimer targetDate={data.date} large />
+                    <div className="flex flex-col items-end">
+                      {/* Time Display */}
+                      <div className="flex justify-end mb-4">
+                        <TimeDisplay date={data.date} circuit={data.circuit} />
+                      </div>
+
+                      <div className="text-gray-500 text-xs uppercase tracking-widest mb-3 font-bold">Lights Out In</div>
+                      <div className="flex items-center justify-end gap-3 text-f1-dark">
+                        <CountdownTimer targetDate={data.date} large />
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Session Strip */}
                 {data.sessions && (
-                  <div className="mt-8 pt-6 border-t-2 border-black/10">
-                    <div className="flex items-center gap-6 overflow-x-auto">
-                      {[
-                        { key: 'fp1', label: 'FP1' },
-                        { key: 'fp2', label: 'FP2' },
-                        { key: 'fp3', label: 'FP3' },
-                        { key: 'qualifying', label: 'QUALI' },
-                        { key: 'sprint', label: 'SPRINT' },
-                      ].map(({ key, label }) => {
-                        const time = data.sessions[key];
-                        if (!time) return null;
+                  <div className="mt-8 pt-6 border-t-2 border-f1-dark/10">
+                    <div className="flex items-center gap-6 overflow-x-auto pb-2">
+                      {(() => {
+                        const isSprint = !!data.sessions.sprint;
+                        const sessionOrder = isSprint
+                          ? [
+                            { key: 'fp1', label: 'FP1' },
+                            { key: 'sprintQuali', label: 'SQ' },
+                            { key: 'sprint', label: 'SPRINT' },
+                            { key: 'qualifying', label: 'QUALI' }
+                          ]
+                          : [
+                            { key: 'fp1', label: 'FP1' },
+                            { key: 'fp2', label: 'FP2' },
+                            { key: 'fp3', label: 'FP3' },
+                            { key: 'qualifying', label: 'QUALI' }
+                          ];
+
                         return (
-                          <div key={key} className="flex-shrink-0 text-center">
-                            <div className="text-[10px] uppercase font-bold text-gray-500 tracking-widest mb-1">{label}</div>
-                            <div className="text-sm font-bold text-black">{new Date(time).toLocaleTimeString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })}</div>
-                          </div>
+                          <>
+                            {sessionOrder.map(({ key, label }) => {
+                              const time = data.sessions[key];
+                              if (!time) return null;
+                              return (
+                                <div key={key} className="flex-shrink-0 text-center min-w-[60px]">
+                                  <div className="text-xs uppercase font-bold text-gray-400 tracking-widest mb-1">{label}</div>
+                                  <div className="text-sm font-bold text-f1-dark font-mono">
+                                    {new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            {/* RACE - Always Last */}
+                            <div className="flex-shrink-0 text-center px-4 py-2 rounded-none bg-f1-red text-white border-2 border-f1-dark shadow-hard-sm ml-2">
+                              <div className="text-xs uppercase font-bold text-white tracking-widest mb-1">Race</div>
+                              <div className="text-sm font-bold text-white font-mono">
+                                {new Date(data.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                              </div>
+                            </div>
+                          </>
                         );
-                      })}
-                      <div className="flex-shrink-0 text-center px-4 py-2 rounded-none bg-f1-red text-white border-2 border-black shadow-hard-sm">
-                        <div className="text-[10px] uppercase font-bold text-white tracking-widest mb-1">Race</div>
-                        <div className="text-sm font-bold text-white">{new Date(data.date).toLocaleTimeString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })}</div>
-                      </div>
+                      })()}
+                    </div>
+                    <div className="text-[10px] text-gray-400 font-mono mt-2 text-right uppercase tracking-widest">
+                      * Times displayed in your local timezone
                     </div>
                   </div>
                 )}
@@ -501,11 +533,11 @@ function DashboardView({ data, standingsData }) {
                 {/* Main */}
                 <div className="flex-1 flex items-end justify-between gap-8 mt-6">
                   <div className="flex-1">
-                    <div className="text-black text-sm font-medium mb-2 flex items-center gap-2">
+                    <div className="text-f1-dark text-sm font-medium mb-2 flex items-center gap-2">
                       <MapPin size={14} className="text-green-500" />
                       {data.circuit}
                     </div>
-                    <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-black uppercase tracking-tighter leading-[0.85] italic">
+                    <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-f1-dark uppercase tracking-tighter leading-[0.85] italic">
                       {data.raceName?.replace(' Grand Prix', '')}
                       <span className="block text-xl md:text-2xl lg:text-3xl not-italic text-gray-500 mt-2 tracking-normal">Grand Prix</span>
                     </h1>
@@ -513,30 +545,134 @@ function DashboardView({ data, standingsData }) {
 
                   {/* Winner Spotlight */}
                   {/* Winner Spotlight */}
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end">
                     <div className="text-gray-500 text-xs uppercase tracking-widest mb-2 font-bold">Race Winner</div>
-                    <div className="text-3xl md:text-5xl lg:text-6xl font-black text-black italic tracking-tight">{data.winner}</div>
-                    <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-none border-2 border-black bg-white"
-                      style={{ color: winnerColor }}>
-                      <div className="w-3 h-3 rounded-none border border-black" style={{ backgroundColor: winnerColor }} />
-                      <span className="font-bold">{data.winnerTeam}</span>
+
+                    <div className="flex items-center gap-4 mb-2">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-yellow-500/20 rounded-full blur-xl animate-pulse"></div>
+                        {/* Scale wrapper for zoom effect */}
+                        <div className="transform scale-150 origin-bottom-right">
+                          <DriverSprite driver={data.winner?.split(' ')[1]?.substring(0, 3).toUpperCase() || 'VER'} size="xl" variant="win" className="relative z-10" />
+                        </div>
+                      </div>
+                      <div className="text-3xl md:text-5xl lg:text-6xl font-black text-f1-dark italic tracking-tight">{data.winner}</div>
                     </div>
+
+                    <div className="text-xl md:text-2xl font-bold text-gray-500">{data.winnerTeam}</div>
                   </div>
                 </div>
 
+                {/* Results List */}
+                <div className="bg-f1-paper border-4 border-f1-dark shadow-hard p-4 md:p-6 mb-8">
+                  <div className="flex justify-between items-center mb-6 border-b-2 border-f1-dark pb-4">
+                    <h3 className="text-xl md:text-2xl font-heading uppercase">
+                      {resultType === 'Q' ? 'Qualifying Results' : 'Race Results'}
+                    </h3>
+                    <div className="flex bg-gray-100 rounded-lg p-1 border-2 border-f1-dark">
+                      <button
+                        onClick={() => setResultType('Q')}
+                        className={cn(
+                          "px-3 py-1 text-xs md:text-sm font-bold rounded md:rounded-md transition-all uppercase",
+                          resultType === 'Q' ? "bg-black text-white shadow-md" : "text-gray-500 hover:text-f1-dark hover:bg-white"
+                        )}
+                      >
+                        Quali
+                      </button>
+                      <button
+                        onClick={() => setResultType('R')}
+                        className={cn(
+                          "px-3 py-1 text-xs md:text-sm font-bold rounded md:rounded-md transition-all uppercase",
+                          resultType === 'R' ? "bg-f1-red text-white shadow-md" : "text-gray-500 hover:text-f1-dark hover:bg-white"
+                        )}
+                      >
+                        Race
+                      </button>
+                    </div>
+                  </div>
+
+                  {raceResults.length > 0 ? (
+                    <div className="space-y-2">
+                      {/* Header */}
+                      <div className="grid grid-cols-12 gap-2 md:gap-4 px-3 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                        <div className="col-span-1 text-center font-black">Pos</div>
+                        <div className="col-span-5 md:col-span-4 pl-2">Driver</div>
+                        <div className="col-span-3 hidden md:block pl-2">Team</div>
+                        <div className="col-span-3 md:col-span-2 text-right">Time/Gap</div>
+                        <div className="col-span-3 md:col-span-2 text-right">Pts</div>
+                      </div>
+
+                      {raceResults.map((r, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                          className={cn(
+                            "grid grid-cols-12 gap-2 md:gap-4 items-center p-2 rounded-lg border hover:shadow-lg transition-all text-sm group",
+                            i === 0 ? "bg-yellow-50 border-yellow-200" :
+                              i === 1 ? "bg-gray-50 border-gray-200" :
+                                i === 2 ? "bg-orange-50/50 border-orange-100" : "bg-white border-transparent hover:border-gray-200 hover:bg-gray-50"
+                          )}
+                        >
+                          <div className={cn(
+                            "col-span-1 flex justify-center font-bold font-mono",
+                            i < 3 ? "text-lg md:text-xl" : "text-gray-500"
+                          )}>
+                            {i < 3 ? (
+                              <div className={cn(
+                                "w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-full text-white shadow-sm text-xs md:text-sm",
+                                i === 0 ? "bg-[#FFD700] text-f1-dark border border-yellow-600" :
+                                  i === 1 ? "bg-[#C0C0C0] text-f1-dark border border-gray-400" :
+                                    "bg-[#CD7F32] text-white border border-orange-700"
+                              )}>{r.pos}</div>
+                            ) : (
+                              <span>{r.pos}</span>
+                            )}
+                          </div>
+                          <div className="col-span-5 md:col-span-4 font-bold flex flex-col md:flex-row md:items-center gap-0 md:gap-2 pl-2">
+                            <span className="text-f1-dark group-hover:text-f1-red transition-colors">{r.driver}</span>
+                            <span className="md:hidden text-xs uppercase text-gray-400 font-normal">{r.team}</span>
+                          </div>
+                          <div className="col-span-3 hidden md:block text-gray-600 font-medium pl-2 text-xs uppercase tracking-wide">{r.team}</div>
+                          <div className="col-span-3 md:col-span-2 text-right font-mono text-gray-800 text-xs md:text-sm">
+                            {r.time === 'DNF' ? <span className="text-red-500 font-bold">DNF</span> : r.time}
+                          </div>
+                          <div className="col-span-3 md:col-span-2 text-right font-bold pl-2">
+                            {r.pts > 0 ? (
+                              <div className="inline-block bg-gray-100 px-2 py-0.5 rounded text-xs font-mono text-gray-700 min-w-[2rem] text-center border border-gray-200">
+                                +{r.pts}
+                              </div>
+                            ) : (
+                              <span className="text-gray-300">-</span>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-gray-200 rounded-lg bg-gray-50/50">
+                      <Clock className="w-10 h-10 text-gray-300 mb-3" />
+                      <p className="text-gray-500 font-medium font-heading tracking-wide uppercase">Session Not Started</p>
+                      <p className="text-xs text-gray-400 mt-1">Check back later for official results</p>
+                    </div>
+                  )}
+                </div>
+
+
                 {/* Podium Strip */}
                 {podium.length > 0 && (
-                  <div className="mt-8 pt-6 border-t-2 border-black/10">
+                  <div className="mt-8 pt-6 border-t-2 border-f1-dark/10">
                     <div className="flex items-end justify-center gap-4">
                       {/* P2 */}
                       {podium[1] && (
                         <div className="flex flex-col items-center">
                           <DriverSprite driver={podium[1].code} size="lg" />
-                          <span className="text-sm font-bold text-black mb-2">{podium[1].code}</span>
-                          <div className="w-24 h-20 rounded-none border-2 border-black flex items-center justify-center relative overflow-hidden"
+                          <span className="text-sm font-bold text-f1-dark mb-2">{podium[1].code}</span>
+                          <div className="w-24 h-20 rounded-none border-2 border-f1-dark flex items-center justify-center relative overflow-hidden"
                             style={{ backgroundColor: getTeamColor(podium[1].team) }}>
                             <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-                            <span className="text-3xl font-black text-black/20 z-10">2</span>
+                            <span className="text-3xl font-black text-f1-dark/20 z-10">2</span>
                           </div>
                         </div>
                       )}
@@ -545,11 +681,11 @@ function DashboardView({ data, standingsData }) {
                         <div className="flex flex-col items-center">
                           <DriverSprite driver={podium[0].code} size="xl" />
                           <Trophy className="text-yellow-500 mb-2" size={20} />
-                          <span className="text-lg font-bold text-black mb-2">{podium[0].code}</span>
-                          <div className="w-28 h-28 rounded-none border-2 border-black flex items-center justify-center relative overflow-hidden shadow-hard-sm"
+                          <span className="text-lg font-bold text-f1-dark mb-2">{podium[0].code}</span>
+                          <div className="w-28 h-28 rounded-none border-2 border-f1-dark flex items-center justify-center relative overflow-hidden shadow-hard-sm"
                             style={{ backgroundColor: getTeamColor(podium[0].team) }}>
                             <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent" />
-                            <span className="text-4xl font-black text-black/20 z-10">1</span>
+                            <span className="text-4xl font-black text-f1-dark/20 z-10">1</span>
                           </div>
                         </div>
                       )}
@@ -557,11 +693,11 @@ function DashboardView({ data, standingsData }) {
                       {podium[2] && (
                         <div className="flex flex-col items-center">
                           <DriverSprite driver={podium[2].code} size="lg" />
-                          <span className="text-sm font-bold text-black mb-2">{podium[2].code}</span>
-                          <div className="w-24 h-16 rounded-none border-2 border-black flex items-center justify-center relative overflow-hidden"
+                          <span className="text-sm font-bold text-f1-dark mb-2">{podium[2].code}</span>
+                          <div className="w-24 h-16 rounded-none border-2 border-f1-dark flex items-center justify-center relative overflow-hidden"
                             style={{ backgroundColor: getTeamColor(podium[2].team) }}>
                             <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-                            <span className="text-2xl font-black text-black/20 z-10">3</span>
+                            <span className="text-2xl font-black text-f1-dark/20 z-10">3</span>
                           </div>
                         </div>
                       )}
@@ -577,17 +713,17 @@ function DashboardView({ data, standingsData }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[500px]">
 
           {/* 1. Qualifying Results */}
-          <div className="bg-white rounded-none border-4 border-black flex flex-col overflow-hidden shadow-hard">
-            <div className="p-4 border-b-4 border-black flex justify-between items-center bg-f1-light">
-              <h3 className="text-xs font-bold text-black uppercase tracking-widest font-heading">Qualifying Results</h3>
-              <span className="text-[10px] bg-black text-white px-2 py-0.5 font-bold">Sat</span>
+          <div className="bg-white rounded-none border-4 border-f1-dark flex flex-col overflow-hidden shadow-hard">
+            <div className="p-4 border-b-4 border-f1-dark flex justify-between items-center bg-f1-light">
+              <h3 className="text-xs font-bold text-f1-dark uppercase tracking-widest font-heading">Qualifying Results</h3>
+              <span className="text-xs bg-black text-white px-2 py-0.5 font-bold">Sat</span>
             </div>
             <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-black">
               {(!data.results?.Q || data.results.Q.length === 0) ? (
                 <div className="h-full flex items-center justify-center text-gray-400 text-xs italic">
                   <div className="text-center">
                     <div className="mb-2">Upcoming</div>
-                    <div className="flex gap-2 text-[10px] text-gray-400">
+                    <div className="flex gap-2 text-xs text-gray-400">
                       <span>Q1</span><span>Q2</span><span>Q3</span>
                     </div>
                   </div>
@@ -595,7 +731,7 @@ function DashboardView({ data, standingsData }) {
               ) : (
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="text-black border-b-2 border-black/10">
+                    <tr className="text-f1-dark border-b-2 border-f1-dark/10">
                       <th className="py-2 text-left pl-2 font-heading">#</th>
                       <th className="py-2 text-left font-heading">Driver</th>
                       <th className="py-2 text-right pr-2 font-heading">Time</th>
@@ -604,10 +740,10 @@ function DashboardView({ data, standingsData }) {
                   <tbody className="divide-y divide-gray-100">
                     {data.results.Q.map((r) => (
                       <tr key={r.pos} className="hover:bg-yellow-100 transition-none group">
-                        <td className="py-2 pl-2 font-mono text-black font-bold">{r.pos}</td>
+                        <td className="py-2 pl-2 font-mono text-f1-dark font-bold">{r.pos}</td>
                         <td className="py-2">
-                          <div className="font-bold text-black">{r.driver}</div>
-                          <div className="text-[10px] text-gray-500 truncate max-w-[80px]">{r.team}</div>
+                          <div className="font-bold text-f1-dark">{r.driver}</div>
+                          <div className="text-xs text-gray-500 truncate max-w-[80px]">{r.team}</div>
                         </td>
                         <td className="py-2 pr-2 text-right font-mono text-gray-600">{r.time}</td>
                       </tr>
@@ -619,10 +755,10 @@ function DashboardView({ data, standingsData }) {
           </div>
 
           {/* 2. Race Results */}
-          <div className="bg-white rounded-none border-4 border-black flex flex-col overflow-hidden shadow-hard">
-            <div className="p-4 border-b-4 border-black flex justify-between items-center bg-f1-light">
+          <div className="bg-white rounded-none border-4 border-f1-dark flex flex-col overflow-hidden shadow-hard">
+            <div className="p-4 border-b-4 border-f1-dark flex justify-between items-center bg-f1-light">
               <h3 className="text-xs font-bold text-f1-red uppercase tracking-widest font-heading">Race Results</h3>
-              <span className="text-[10px] bg-f1-red text-white px-2 py-0.5 font-bold">Sun</span>
+              <span className="text-xs bg-f1-red text-white px-2 py-0.5 font-bold">Sun</span>
             </div>
             <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-black">
               {(!data.results?.R || data.results.R.length === 0) ? (
@@ -630,7 +766,7 @@ function DashboardView({ data, standingsData }) {
               ) : (
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="text-black border-b-2 border-black/10">
+                    <tr className="text-f1-dark border-b-2 border-f1-dark/10">
                       <th className="py-2 text-left pl-2 font-heading">#</th>
                       <th className="py-2 text-left font-heading">Driver</th>
                       <th className="py-2 text-right pr-2 font-heading">Pts</th>
@@ -642,14 +778,14 @@ function DashboardView({ data, standingsData }) {
                         <td className={`py-2 pl-2 font-mono font-bold ${r.pos <= 3 ? 'text-f1-red' : 'text-gray-500'}`}>{r.pos}</td>
                         <td className="py-2">
                           <div className="flex items-center gap-2">
-                            <div className="w-1 h-6 border border-black" style={{ backgroundColor: getTeamColor(r.team) }} />
+                            <div className="w-1 h-6 border border-f1-dark" style={{ backgroundColor: getTeamColor(r.team) }} />
                             <div>
-                              <div className="font-bold text-black">{r.driver}</div>
-                              <div className="text-[10px] text-gray-500 truncate max-w-[80px]">{r.team}</div>
+                              <div className="font-bold text-f1-dark">{r.driver}</div>
+                              <div className="text-xs text-gray-500 truncate max-w-[80px]">{r.team}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="py-2 pr-2 text-right font-mono font-bold text-black">{r.pts > 0 ? `+${r.pts}` : ''}</td>
+                        <td className="py-2 pr-2 text-right font-mono font-bold text-f1-dark">{r.pts > 0 ? `+${r.pts}` : ''}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -658,35 +794,116 @@ function DashboardView({ data, standingsData }) {
             </div>
           </div>
 
-          {/* 3. Constructor Results (Event) */}
-          <div className="bg-white rounded-none border-4 border-black flex flex-col overflow-hidden shadow-hard">
-            <div className="p-4 border-b-4 border-black flex justify-between items-center bg-f1-light">
-              <h3 className="text-xs font-bold text-black uppercase tracking-widest font-heading">Constructor Results</h3>
-              <span className="text-[10px] bg-black text-white px-2 py-0.5 font-bold">Event</span>
+          {/* 3. Season Standings (Toggleable) */}
+          <div className="bg-white rounded-none border-4 border-f1-dark flex flex-col overflow-hidden shadow-hard leading-tight">
+            {/* Header + Toggle */}
+            <div className="p-3 border-b-4 border-f1-dark flex justify-between items-center bg-f1-light">
+              <div className="flex bg-gray-200 rounded p-0.5 border border-f1-dark">
+                <button
+                  onClick={() => setStandingsView('drivers')}
+                  className={cn(
+                    "px-3 py-1 text-xs font-bold rounded-sm transition-all uppercase flex items-center gap-1",
+                    standingsView === 'drivers' ? "bg-black text-white shadow-sm" : "text-gray-500 hover:text-f1-dark"
+                  )}
+                >
+                  Drivers
+                </button>
+                <button
+                  onClick={() => setStandingsView('constructors')}
+                  className={cn(
+                    "px-3 py-1 text-xs font-bold rounded-sm transition-all uppercase flex items-center gap-1",
+                    standingsView === 'constructors' ? "bg-black text-white shadow-sm" : "text-gray-500 hover:text-f1-dark"
+                  )}
+                >
+                  Teams
+                </button>
+              </div>
+              <span className="text-[10px] bg-f1-red text-white px-2 py-0.5 font-bold uppercase tracking-wider">2026 Season</span>
             </div>
+
             <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-black">
-              {(!data.results?.C || data.results.C.length === 0) ? (
-                <div className="h-full flex items-center justify-center text-gray-400 text-xs italic">Upcoming</div>
-              ) : (
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="text-black border-b-2 border-black/10">
-                      <th className="py-2 text-left pl-2 font-heading">Team</th>
-                      <th className="py-2 text-right pr-2 font-heading">Pts</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {data.results.C.map((c, i) => (
-                      <tr key={c.team} className="hover:bg-yellow-100 transition-none group">
-                        <td className="py-3 pl-2 flex items-center gap-2">
-                          <div className="w-1 h-8 border border-black" style={{ backgroundColor: getTeamColor(c.team) }} />
-                          <span className="font-bold text-black">{c.team}</span>
-                        </td>
-                        <td className="py-3 pr-2 text-right font-mono font-bold text-black text-sm">{c.pts}</td>
+              {/* DRIVERS VIEW */}
+              {standingsView === 'drivers' && (
+                (!standingsData?.drivers || standingsData.drivers.length === 0) ? (
+                  <div className="h-full flex flex-col items-center justify-center text-gray-400 space-y-2">
+                    <Activity className="animate-pulse" size={24} />
+                    <span className="text-xs font-bold uppercase tracking-widest">Awaiting Data...</span>
+                  </div>
+                ) : (
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-f1-dark border-b-2 border-f1-dark/10">
+                        <th className="py-2 text-left pl-2 font-heading">#</th>
+                        <th className="py-2 text-left font-heading">Driver</th>
+                        <th className="py-2 text-right pr-2 font-heading">Pts</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {standingsData.drivers.slice(0, 10).map((d, i) => (
+                        <tr key={d.code} className="hover:bg-yellow-50 transition-colors group h-16">
+                          <td className="pl-2 w-8 font-mono font-bold text-gray-400">{i + 1}</td>
+                          <td className="py-1">
+                            <div className="flex items-center gap-2">
+                              {/* Driver Sprite - Crop Wrapper with Zoom */}
+                              <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                                <DriverSprite
+                                  driver={d.code}
+                                  size="xl"
+                                  className="transform scale-[3] origin-center relative z-10 translate-y-6"
+                                  style={{ imageRendering: 'pixelated' }}
+                                />
+                              </div>
+                              <div className="leading-none z-0 ml-2">
+                                <div className="font-bold text-f1-dark text-sm">{d.code}</div>
+                                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{d.team}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="pr-2 text-right font-mono font-black text-f1-dark">{d.points}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )
+              )}
+
+              {/* CONSTRUCTORS VIEW */}
+              {standingsView === 'constructors' && (
+                (!standingsData?.constructors || standingsData.constructors.length === 0) ? (
+                  <div className="h-full flex flex-col items-center justify-center text-gray-400 space-y-2">
+                    <Activity className="animate-pulse" size={24} />
+                    <span className="text-xs font-bold uppercase tracking-widest">Awaiting Data...</span>
+                  </div>
+                ) : (
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-f1-dark border-b-2 border-f1-dark/10">
+                        <th className="py-2 text-left pl-2 font-heading">Team</th>
+                        <th className="py-2 text-right pr-2 font-heading">Pts</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {standingsData.constructors.map((c, i) => (
+                        <tr key={c.name || c.team} className="hover:bg-yellow-50 transition-colors group h-16">
+                          <td className="py-1 pl-2 flex items-center gap-3">
+                            <span className="font-mono font-bold text-gray-400 w-4">{i + 1}</span>
+                            {/* Team Sprite - Crop Wrapper with Zoom */}
+                            <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                              <DriverSprite
+                                teamId={getTeamId(c.name || c.team)}
+                                size="xl"
+                                className="transform scale-[3] origin-center relative z-10 translate-y-6"
+                                style={{ imageRendering: 'pixelated' }}
+                              />
+                            </div>
+                            <span className="relative z-10 font-bold text-f1-dark text-sm ml-4">{c.name || c.team}</span>
+                          </td>
+                          <td className="py-1 pr-2 text-right font-mono font-black text-f1-dark text-sm">{c.points}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )
               )}
             </div>
           </div>
@@ -747,6 +964,23 @@ function getTeamColor(teamName) {
   return '#666';
 }
 
+function getTeamId(teamName) {
+  if (!teamName) return 'red_bull';
+  const lower = teamName.toLowerCase();
+  if (lower.includes('red bull')) return 'red_bull';
+  if (lower.includes('ferrari')) return 'ferrari';
+  if (lower.includes('mclaren')) return 'mclaren';
+  if (lower.includes('mercedes')) return 'mercedes';
+  if (lower.includes('aston')) return 'aston_martin';
+  if (lower.includes('alpine')) return 'alpine';
+  if (lower.includes('williams')) return 'williams';
+  if (lower.includes('haas')) return 'haas';
+  if (lower.includes('audi') || lower.includes('sauber')) return 'audi';
+  if (lower.includes('rb') || lower.includes('racing bulls') || lower.includes('alpha')) return 'racing_bulls';
+  if (lower.includes('cadillac')) return 'cadillac';
+  return 'red_bull';
+}
+
 function WeekendSchedule({ sessions }) {
   if (!sessions) return null;
 
@@ -774,7 +1008,7 @@ function WeekendSchedule({ sessions }) {
         return (
           <div key={s.id} className="bg-[#0A0A0A]/80 backdrop-blur-sm border border-white/5 rounded-none p-3 flex flex-col items-center justify-center text-center relative overflow-hidden group hover:border-f1-red/30 transition-colors duration-300">
             {/* Active Indicator (Mock logic: if generic date matches?) */}
-            <div className="text-[10px] uppercase font-bold text-gray-500 mb-1">{s.label}</div>
+            <div className="text-xs uppercase font-bold text-gray-500 mb-1">{s.label}</div>
             <div className="text-sm font-bold text-white">{s.id === 'media' ? 'All Day' : formatTime(s.time)}</div>
             {s.id === 'media' && <div className="absolute top-0 right-0 p-1"><div className="w-1.5 h-1.5 rounded-none bg-green-500"></div></div>}
           </div>
@@ -861,7 +1095,7 @@ function TimeDisplay({ date, circuit }) {
   return (
     <div
       onClick={() => setShowLocal(!showLocal)}
-      className="group relative bg-[#EDEDED] border-2 border-black px-2 py-1 shadow-hard-sm cursor-pointer hover:bg-white transition-colors select-none flex items-center gap-3"
+      className="group relative bg-[#EDEDED] border-2 border-f1-dark px-2 py-1 shadow-hard-sm cursor-pointer hover:bg-white transition-colors select-none flex items-center gap-3"
       title="Click to switch timezone"
     >
       {/* Icon Area */}
@@ -872,7 +1106,7 @@ function TimeDisplay({ date, circuit }) {
       {/* Time Data */}
       <div className="flex flex-col">
         <div className="flex items-center justify-between gap-4">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 font-heading">
+          <span className="text-xs font-bold uppercase tracking-widest text-gray-500 font-heading">
             {showLocal ? "Local Time" : "Track Time"}
           </span>
           {/* Pixel Indicator */}

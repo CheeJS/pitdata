@@ -222,14 +222,14 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                 < div className="p-4 space-y-3 border-b border-black shrink-0" >
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="text-[10px] text-gray-500 uppercase block mb-1">Driver 1</label>
+                            <label className="text-xs text-gray-500 uppercase block mb-1">Driver 1</label>
                             <select value={activeDriver} onChange={(e) => setActiveDriver(e.target.value)}
                                 className="w-full bg-white border border-black rounded-lg px-3 py-2 text-sm text-black">
                                 {replayData?.drivers && Object.entries(replayData.drivers).map(([code, d]) => <option key={code} value={code}>{code}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="text-[10px] text-gray-500 uppercase block mb-1">Driver 2</label>
+                            <label className="text-xs text-gray-500 uppercase block mb-1">Driver 2</label>
                             <select value={compareDriver} onChange={(e) => setCompareDriver(e.target.value)}
                                 className="w-full bg-white border border-black rounded-lg px-3 py-2 text-sm text-black">
                                 {replayData?.drivers && Object.entries(replayData.drivers).map(([code, d]) => <option key={code} value={code}>{code}</option>)}
@@ -242,7 +242,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                 < div className="flex-1 overflow-y-auto p-4 pb-20 space-y-4" >
                     {/* Lap Selector */}
                     < section className="bg-white border border-black rounded-xl p-4" >
-                        <h3 className="text-[10px] text-gray-500 uppercase mb-2">Analysis Lap</h3>
+                        <h3 className="text-xs text-gray-500 uppercase mb-2">Analysis Lap</h3>
                         <select
                             value={selectedLap}
                             onChange={(e) => setSelectedLap(e.target.value)}
@@ -259,7 +259,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
 
                     {/* Fastest Lap Comparison */}
                     < section className="bg-white border border-black rounded-xl p-4" >
-                        <h3 className="text-[10px] text-gray-500 uppercase mb-3">Fastest Lap Comparison</h3>
+                        <h3 className="text-xs text-gray-500 uppercase mb-3">Fastest Lap Comparison</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="text-center">
                                 <div className="w-1 h-6 mx-auto rounded-full mb-2" style={{ backgroundColor: replayData?.drivers?.[activeDriver]?.color || '#888' }} />
@@ -276,7 +276,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
 
                     {/* Sector Times */}
                     < section className="bg-white border border-black rounded-xl p-4" >
-                        <h3 className="text-[10px] text-gray-500 uppercase mb-3">Sector Times</h3>
+                        <h3 className="text-xs text-gray-500 uppercase mb-3">Sector Times</h3>
                         {
                             activeFastest && compareFastest ? (
                                 <div className="space-y-2">
@@ -301,7 +301,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
 
                     {/* Driver Style (simplified for mobile) */}
                     < section className="bg-white border border-black rounded-xl p-4" >
-                        <h3 className="text-[10px] text-gray-500 uppercase mb-3">Driver Style</h3>
+                        <h3 className="text-xs text-gray-500 uppercase mb-3">Driver Style</h3>
                         <div className="grid grid-cols-3 gap-3">
                             {['Brake', 'Consistency', 'Pace'].map((trait, i) => {
                                 const traits = ['brake', 'consistency', 'pace'];
@@ -340,7 +340,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                     {
                         activeLapsList.length > 0 && compareLapsList.length > 0 && (
                             <section className="bg-white border border-black rounded-xl p-4">
-                                <h3 className="text-[10px] text-gray-500 uppercase mb-3 flex items-center gap-2">
+                                <h3 className="text-xs text-gray-500 uppercase mb-3 flex items-center gap-2">
                                     <TrendingUp size={12} /> Lap Time Progression
                                 </h3>
                                 <div className="h-[180px]">
@@ -379,7 +379,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                     {
                         analysisData?.corners && analysisData.corners.length > 0 && (
                             <section className="bg-white border border-black rounded-xl p-4">
-                                <h3 className="text-[10px] text-gray-500 uppercase mb-3 flex items-center gap-2">
+                                <h3 className="text-xs text-gray-500 uppercase mb-3 flex items-center gap-2">
                                     <MapIcon size={12} /> Corner Analysis
                                 </h3>
                                 <div className="space-y-2 max-h-[300px] overflow-y-auto">
@@ -391,13 +391,13 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                                             <div className="flex justify-between items-center mb-2">
                                                 <span className="text-xs font-bold text-black">Turn {corner.number}</span>
                                                 <span className={cn(
-                                                    "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                                                    "text-xs font-bold px-2 py-0.5 rounded-full",
                                                     corner.delta_at_apex < 0 ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
                                                 )}>
                                                     {corner.delta_at_apex > 0 ? "+" : ""}{corner.delta_at_apex} sec
                                                 </span>
                                             </div>
-                                            <div className="flex justify-between text-[10px]">
+                                            <div className="flex justify-between text-xs">
                                                 <div>
                                                     <span className="text-gray-500">Speed: </span>
                                                     <span className="text-black font-mono">{corner.d1_min_speed} km/h</span>
@@ -418,7 +418,7 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                                     ))}
                                 </div>
                                 {analysisData.corners.length > 12 && (
-                                    <div className="text-center text-[10px] text-gray-500 mt-2">
+                                    <div className="text-center text-xs text-gray-500 mt-2">
                                         +{analysisData.corners.length - 12} more corners
                                     </div>
                                 )}
@@ -628,23 +628,22 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                 < div className="flex flex-row gap-4 flex-1 min-h-0 overflow-hidden" >
 
                     {/* LEFT: TIME DELTA CHART */}
-                    < div className="flex-1 min-w-0 h-[500px] bg-white rounded-3xl border border-black p-5 flex flex-col" >
+                    <div className="flex-1 min-w-0 h-[500px] bg-white rounded-none border-2 border-black shadow-hard p-5 flex flex-col">
                         <div className="flex justify-between items-center mb-3">
-                            <h3 className="text-base font-bold uppercase tracking-wider text-black flex items-center gap-2">
-                                {deltaMode === 'time' && <TrendingUp size={16} className="text-f1-red" />}
-                                {deltaMode === 'speed' && <Gauge size={16} className="text-blue-400" />}
-                                {deltaMode === 'throttle' && <Activity size={16} className="text-yellow-400" />}
-                                {deltaMode === 'time' ? 'Time Delta' : deltaMode === 'speed' ? 'Speed Comparison' : 'Throttle Trace'}
+                            <h3 className="text-xl font-heading font-bold uppercase tracking-wider text-black flex items-center gap-2">
+                                {deltaMode === 'time' && <TrendingUp size={20} className="text-f1-red" />}
+                                {deltaMode === 'speed' && <Gauge size={20} className="text-blue-400" />}
+                                {deltaMode === 'time' ? 'Time Delta' : 'Speed Comparison'}
                             </h3>
                             {/* DELTA MODE SWITCHER */}
-                            <div className="flex bg-[#0E0E12] rounded-lg p-1 border border-black">
-                                {['time', 'speed', 'throttle'].map(m => (
+                            <div className="flex bg-gray-100 rounded-none p-1 border-2 border-black">
+                                {['time', 'speed'].map(m => (
                                     <button
                                         key={m}
                                         onClick={() => setDeltaMode(m)}
                                         className={cn(
-                                            "px-3 py-1 text-xs uppercase font-bold rounded-md transition-all",
-                                            deltaMode === m ? "bg-gradient-to-r from-f1-red to-red-600 text-black shadow-lg" : "text-gray-500 hover:text-black hover:bg-white/5"
+                                            "px-4 py-1.5 text-xs uppercase font-bold rounded-none transition-all font-heading",
+                                            deltaMode === m ? "bg-f1-red text-black border border-black" : "text-gray-500 hover:text-black"
                                         )}
                                     >
                                         {m}
@@ -739,8 +738,8 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                     </div >
 
                     {/* RIGHT: CORNER ANALYSIS */}
-                    < div className="w-[450px] shrink-0 bg-white rounded-3xl border border-black p-4 flex flex-col overflow-hidden" >
-                        <h3 className="text-sm font-bold text-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <div className="w-[450px] shrink-0 bg-white rounded-none border-2 border-black shadow-hard p-4 flex flex-col overflow-hidden">
+                        <h3 className="text-sm font-bold text-black uppercase tracking-widest mb-3 flex items-center gap-2 font-heading">
                             <MapIcon size={14} className="text-f1-red" /> Corner Analysis
                         </h3>
                         <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
@@ -753,34 +752,45 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: i * 0.03 }}
                                             className={cn(
-                                                "bg-gradient-to-br from-white to-gray-100 border border-black rounded-xl p-3 transition-all cursor-pointer group hover:border-gray-500",
-                                                hoveredDist && Math.abs(corner.distance - hoveredDist) < 100 ? "border-f1-red bg-[#2A2A30] scale-105" : ""
+                                                "bg-white border-2 border-black rounded-none p-3 transition-all cursor-pointer group hover:bg-gray-50 shadow-hard-sm",
+                                                hoveredDist && Math.abs(corner.distance - hoveredDist) < 100 ? "bg-black text-white border-f1-red" : ""
                                             )}
                                         >
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-sm font-bold text-black">Turn {corner.number}</span>
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className={cn("text-sm font-bold", hoveredDist && Math.abs(corner.distance - hoveredDist) < 100 ? "text-white" : "text-black")}>
+                                                    Turn {corner.number}
+                                                </span>
                                                 <span className={cn(
-                                                    "text-xs font-bold px-2 py-0.5 rounded-full",
-                                                    corner.delta_at_apex < 0 ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"
+                                                    "text-xs font-bold px-2 py-0.5 rounded-full border",
+                                                    corner.delta_at_apex < 0 ? "bg-green-100 text-green-700 border-green-700" : "bg-red-100 text-red-700 border-red-700"
                                                 )}>
                                                     {corner.delta_at_apex > 0 ? "+" : ""}{corner.delta_at_apex} sec
                                                 </span>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-2 text-xs">
-                                                <div className="bg-black/30 rounded-lg p-2">
-                                                    <div className="text-gray-500 text-[10px] uppercase mb-1">Min Speed</div>
-                                                    <div className="text-black font-bold font-mono">{corner.d1_min_speed} <span className="text-gray-500">km/h</span></div>
+
+                                            {/* Grey Boxes Layout */}
+                                            <div className="grid grid-cols-2 gap-2 mb-3">
+                                                {/* Speed */}
+                                                <div className="bg-[#D1D5DB] p-2 flex flex-col justify-between h-16 border-l-2 border-black/10">
+                                                    <div className="text-[10px] font-bold text-gray-600 uppercase">Min Speed</div>
+                                                    <div className="text-xl font-bold font-mono text-black leading-none">
+                                                        {corner.d1_min_speed} <span className="text-xs text-gray-500 font-sans font-normal">km/h</span>
+                                                    </div>
                                                 </div>
-                                                <div className="bg-black/30 rounded-lg p-2">
-                                                    <div className="text-gray-500 text-[10px] uppercase mb-1">Gear</div>
-                                                    <div className="text-black font-bold font-mono text-lg">{corner.d1_gear}</div>
+                                                {/* Gear */}
+                                                <div className="bg-[#D1D5DB] p-2 flex flex-col justify-between h-16 border-l-2 border-black/10">
+                                                    <div className="text-[10px] font-bold text-gray-600 uppercase">Gear</div>
+                                                    <div className="text-xl font-bold font-mono text-black leading-none">
+                                                        {corner.d1_gear}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            {/* Delta bar */}
-                                            <div className="mt-2 h-1.5 w-full bg-[#2A2A30] rounded-full overflow-hidden">
+
+                                            {/* Bottom Bar */}
+                                            <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                                                 <div
-                                                    className={cn("h-full transition-all", corner.delta_at_apex < 0 ? "bg-gradient-to-r from-green-600 to-green-400" : "bg-gradient-to-r from-red-600 to-red-400")}
-                                                    style={{ width: `${Math.min(Math.abs(corner.delta_at_apex) * 50, 100)}%` }}
+                                                    className={cn("h-full rounded-full", corner.delta_at_apex < 0 ? "bg-green-500" : "bg-red-500")}
+                                                    style={{ width: `${Math.min(Math.abs(corner.delta_at_apex) * 50 + 20, 100)}%` }}
                                                 ></div>
                                             </div>
                                         </motion.div>

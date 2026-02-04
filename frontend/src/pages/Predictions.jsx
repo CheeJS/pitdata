@@ -41,7 +41,7 @@ const PodiumSlot = ({ position, driver, color, onRemove, isLocked }) => {
                         {!isLocked && (
                             <button
                                 onClick={onRemove}
-                                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-black text-white rounded-full flex items-center justify-center text-[10px] font-bold border border-white hover:bg-f1-red hover:border-black transition-colors"
+                                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-black text-white rounded-full flex items-center justify-center text-xs font-bold border border-white hover:bg-f1-red hover:border-black transition-colors"
                             >
                                 ×
                             </button>
@@ -88,7 +88,7 @@ const DriverCard = ({ code, meta, isSelected, isLocked, onSelect, type = 'conten
             <div className="relative z-10 flex justify-between items-start">
                 <div className="flex flex-col">
                     <span className={cn("font-bold text-black block", isContender ? "text-xl md:text-2xl" : "text-base md:text-lg")}>{code}</span>
-                    <span className={cn("text-gray-600 font-bold uppercase", isContender ? "text-xs tracking-wider" : "text-[10px]")}>
+                    <span className={cn("text-gray-600 font-bold uppercase", isContender ? "text-xs tracking-wider" : "text-xs")}>
                         {teamName}
                     </span>
                 </div>
@@ -144,6 +144,24 @@ export default function Predictions() {
         'H': { color: '#F0F0F0', name: 'Hard' },
         'I': { color: '#39B54A', name: 'Inter' },
         'W': { color: '#366CD9', name: 'Wet' },
+    };
+
+    // Country Code Mapping (ISO Alpha-3 to Alpha-2 for FlagCDN)
+    const COUNTRY_MAP = {
+        'BHR': 'bh', 'SAU': 'sa', 'AUS': 'au', 'JPN': 'jp', 'CHN': 'cn', 'USA': 'us',
+        'MIA': 'us', 'EMI': 'it', 'MON': 'mc', 'CAN': 'ca', 'ESP': 'es', 'AUT': 'at',
+        'GBR': 'gb', 'HUN': 'hu', 'BEL': 'be', 'NED': 'nl', 'ITA': 'it', 'AZE': 'az',
+        'SIN': 'sg', 'MEX': 'mx', 'BRA': 'br', 'LVG': 'us', 'QAT': 'qa', 'ABU': 'ae',
+        'UNK': 'un'
+    };
+
+    const getFlagCode = (raceCode) => {
+        if (!raceCode) return 'un';
+        // Try direct map first
+        const code = raceCode.toUpperCase();
+        if (COUNTRY_MAP[code]) return COUNTRY_MAP[code];
+        // Fallback to slicing if not in map (risky but better than nothing for straightforward ones like IT from ITA)
+        return code.slice(0, 2).toLowerCase();
     };
 
     // 1. Initialize Identity & Fetch Data
@@ -305,7 +323,12 @@ export default function Predictions() {
     // AI Prediction Mock (Static for now, could be dynamic later)
     const aiPrediction = { winner: "VER", p2: "NOR", p3: "LEC", confidence: 78, safetyCar: false, winningGap: "8.5s" };
 
-    if (!selectedRace) return <div className="p-8 text-black animate-pulse">Loading Grand Prix Data...</div>;
+    if (!selectedRace) return (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center min-h-[50vh]">
+            <Trophy className="w-12 h-12 text-gray-300 mb-4 animate-pulse" />
+            <div className="text-xl font-heading uppercase font-bold text-gray-400 animate-pulse">Loading Grand Prix Data...</div>
+        </div>
+    );
 
     const locked = !!userVote || !isPredictionWindowOpen;
 
@@ -337,7 +360,7 @@ export default function Predictions() {
             <header className="relative overflow-hidden bg-white border-b-2 border-black min-h-[140px] md:min-h-[200px] shrink-0 flex flex-col justify-end p-4 md:p-8">
                 <div className="absolute inset-0 z-0">
                     <img
-                        src={`https://flagcdn.com/w1280/${selectedRace.code?.slice(0, 2) || 'un'}.png`}
+                        src={`https://flagcdn.com/w1280/${getFlagCode(selectedRace.code)}.png`}
                         alt=""
                         className="w-full h-full object-cover opacity-15 grayscale"
                     />
@@ -347,10 +370,15 @@ export default function Predictions() {
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                     <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                            {isPredictionWindowOpen ? (
+                            {voteWindow.is_open ? (
                                 <span className="px-3 py-1 bg-emerald-100 text-xs font-heading font-black text-emerald-700 border border-emerald-700 uppercase tracking-wide flex items-center gap-1">
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                     Voting Open
+                                </span>
+                            ) : voteWindow.status === 'CLOSED_TOO_EARLY' ? (
+                                <span className="px-3 py-1 bg-yellow-100 text-xs font-heading font-black text-yellow-700 border border-yellow-700 uppercase tracking-wide flex items-center gap-1">
+                                    <Clock size={12} className="text-yellow-700" />
+                                    Opens Soon
                                 </span>
                             ) : (
                                 <span className="px-3 py-1 bg-red-100 text-xs font-heading font-black text-red-600 border border-red-600 uppercase tracking-wide">
@@ -464,7 +492,7 @@ export default function Predictions() {
                                 {/* EXTRAS */}
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                                     <div className="bg-white rounded-none p-4 border-2 border-black shadow-hard-sm">
-                                        <div className="text-[10px] font-bold font-heading uppercase text-gray-500 mb-2">Winning Gap</div>
+                                        <div className="text-xs font-bold font-heading uppercase text-gray-500 mb-2">Winning Gap</div>
                                         <div className="flex flex-col gap-1.5">
                                             {['< 5s', '5-10s', '> 10s'].map(gap => (
                                                 <button key={gap} onClick={() => !locked && setWinningGap(gap)} disabled={locked}
@@ -474,7 +502,7 @@ export default function Predictions() {
                                         </div>
                                     </div>
                                     <div className="bg-white rounded-none p-4 border-2 border-black shadow-hard-sm">
-                                        <div className="text-[10px] font-bold font-heading uppercase text-gray-500 mb-2">Pit Stops</div>
+                                        <div className="text-xs font-bold font-heading uppercase text-gray-500 mb-2">Pit Stops</div>
                                         <div className="flex flex-col gap-1.5">
                                             {[1, 2, 3].map(stops => (
                                                 <button key={stops} onClick={() => !locked && setPitStrategy(prev => ({ ...prev, stops }))} disabled={locked}
@@ -484,7 +512,7 @@ export default function Predictions() {
                                         </div>
                                     </div>
                                     <div className="bg-white rounded-none p-4 border-2 border-black shadow-hard-sm">
-                                        <div className="text-[10px] font-bold font-heading uppercase text-gray-500 mb-2">Safety Car</div>
+                                        <div className="text-xs font-bold font-heading uppercase text-gray-500 mb-2">Safety Car</div>
                                         <div className="flex flex-col gap-1.5">
                                             {['Yes', 'No'].map(opt => (
                                                 <button key={opt} onClick={() => !locked && setSafetyCar(prev => ({ ...prev, enabled: opt === 'Yes' }))} disabled={locked}
@@ -561,11 +589,11 @@ export default function Predictions() {
 
                                         <div className="grid grid-cols-2 gap-3 mt-auto pt-2 border-t border-black/5">
                                             <div className="bg-white p-2 border border-black/5">
-                                                <span className="block text-[10px] font-heading font-medium text-gray-400 uppercase mb-0.5">Gap</span>
+                                                <span className="block text-xs font-heading font-medium text-gray-400 uppercase mb-0.5">Gap</span>
                                                 <span className="font-bold text-sm text-black">{userVote.winningGap}</span>
                                             </div>
                                             <div className="bg-white p-2 border border-black/5">
-                                                <span className="block text-[10px] font-heading font-medium text-gray-400 uppercase mb-0.5">Strategy</span>
+                                                <span className="block text-xs font-heading font-medium text-gray-400 uppercase mb-0.5">Strategy</span>
                                                 <span className="font-bold text-sm text-black">{userVote.pitStrategy?.stops} Stop(s)</span>
                                             </div>
                                         </div>
@@ -585,7 +613,7 @@ export default function Predictions() {
                                                 key={pos}
                                                 onClick={() => setPodiumTab(pos)}
                                                 className={cn(
-                                                    "px-3 py-0.5 text-[10px] font-bold font-heading uppercase transition-all",
+                                                    "px-3 py-0.5 text-xs font-bold font-heading uppercase transition-all",
                                                     podiumTab === pos ? "bg-black text-white shadow-sm" : "text-gray-500 hover:text-black"
                                                 )}
                                             >
@@ -691,7 +719,7 @@ export default function Predictions() {
                                                 return (
                                                     <div key={stops} className={cn("flex-1 p-2 text-center border transition-all relative", isHighest ? "bg-black text-white border-black" : "bg-gray-50 text-gray-600 border-gray-200")}>
                                                         {isUserPick && <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-f1-red rounded-full border border-black" />}
-                                                        <div className="text-[10px] font-heading uppercase opacity-80">{stops} Stop</div>
+                                                        <div className="text-xs font-heading uppercase opacity-80">{stops} Stop</div>
                                                         <div className="text-lg font-black leading-none mt-1">{pct}%</div>
                                                     </div>
                                                 )

@@ -12,6 +12,7 @@ from datetime import datetime
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 from services.f1_service import get_db_session, get_db_engine, Race, Result, Circuit, Lap, RaceStatus, Base
+from services.utils import get_race_code_from_name
 
 # =================================================================================================
 # UTILITIES

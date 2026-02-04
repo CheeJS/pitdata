@@ -791,7 +791,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                             }}
                             className={cn("w-full accent-f1-red h-4 bg-[#222] rounded-none appearance-none cursor-pointer border border-black", !!error && "opacity-50 cursor-not-allowed")}
                         />
-                        <div className="flex justify-between text-[10px] font-mono text-gray-500 font-bold">
+                        <div className="flex justify-between text-xs font-mono text-gray-500 font-bold">
                             <span>{new Date(raceTime * 1000).toISOString().substr(11, 8)}</span>
                             <span>{new Date(maxTime * 1000).toISOString().substr(11, 8)}</span>
                         </div>
@@ -812,7 +812,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                             <button
                                 key={s}
                                 onClick={() => setSpeed(s)}
-                                className={cn("px-2.5 py-1 text-[10px] font-bold rounded transition-colors",
+                                className={cn("px-2.5 py-1 text-xs font-bold rounded transition-colors",
                                     speed === s ? "bg-f1-red text-black" : "bg-white text-gray-600 hover:text-black")}
                             >
                                 {s}x
@@ -820,7 +820,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                         ))}
                     </div>
                     {currentWeather && (
-                        <div className="flex items-center gap-3 text-[10px] text-gray-600">
+                        <div className="flex items-center gap-3 text-xs text-gray-600">
                             <span><Thermometer size={10} className="inline mr-0.5" />{currentWeather.temp}°C</span>
                             <span className={currentWeather.rain ? "text-blue-400" : ""}><Droplets size={10} className="inline mr-0.5" />{currentWeather.rain ? "WET" : "DRY"}</span>
                         </div>
@@ -927,7 +927,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
 
                         <div className="hidden xl:flex bg-white border border-gray-300 mx-1">
                             {[1, 5, 20, 50].map(s => (
-                                <button key={s} onClick={() => setSpeed(s)} className={cn("px-2 py-1 text-[10px] font-bold transition-colors border-r border-gray-200 last:border-r-0", speed === s ? "bg-black text-white" : "text-gray-500 hover:text-black")}>{s}x</button>
+                                <button key={s} onClick={() => setSpeed(s)} className={cn("px-2 py-1 text-xs font-bold transition-colors border-r border-gray-200 last:border-r-0", speed === s ? "bg-black text-white" : "text-gray-500 hover:text-black")}>{s}x</button>
                             ))}
                         </div>
 
@@ -970,7 +970,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                         className="absolute top-3 right-3 z-20 bg-black/70 backdrop-blur-sm rounded-none px-2 py-1.5 border border-[#333] flex items-center gap-1.5"
                     >
                         <List size={14} className="text-gray-600" />
-                        <span className="text-[10px] text-gray-600">P1-5</span>
+                        <span className="text-xs text-gray-600">P1-5</span>
                         {showLeaderboard ? <ChevronUp size={12} className="text-gray-600" /> : <ChevronDown size={12} className="text-gray-600" />}
                     </button>
 
@@ -998,7 +998,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                             )}>{d.rank}</span>
                                             <div className="w-1 h-4 rounded-none" style={{ backgroundColor: meta?.color || '#444' }} />
                                             <span className="text-xs font-medium text-black w-10">{d.driver}</span>
-                                            <span className="text-[10px] text-gray-600 font-mono">
+                                            <span className="text-xs text-gray-600 font-mono">
                                                 {d.interval ? `+${d.interval.toFixed(1)}` : 'Leader'}
                                             </span>
                                         </div>
@@ -1020,7 +1020,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                         <RotateCcw size={12} className="text-f1-red" />
                                         Available Replays
                                     </div>
-                                    <div className="text-[10px] text-gray-200">
+                                    <div className="text-xs text-gray-200">
                                         Select from the year selector above
                                     </div>
                                 </div>
@@ -1063,11 +1063,11 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                     )}
                                 >
                                     <span className={cn(
-                                        "text-[10px] font-bold w-3",
+                                        "text-xs font-bold w-3",
                                         d.rank === 1 ? "text-f1-red" : d.rank <= 3 ? "text-black" : "text-gray-600"
                                     )}>{d.rank}</span>
                                     <div className="w-0.5 h-3 rounded-none" style={{ backgroundColor: meta?.color || '#444' }} />
-                                    <span className="text-[10px] font-medium text-black">{d.driver}</span>
+                                    <span className="text-xs font-medium text-black">{d.driver}</span>
                                 </button>
                             );
                         })}
@@ -1110,10 +1110,10 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 {/* LEFT: LEADERBOARD */}
                 <div className="w-48 bg-white border-r-2 border-black flex flex-col min-h-0 shrink-0 z-10">
                     <div className="p-2 border-b-2 border-black bg-gray-100/50 flex justify-between items-center shrink-0">
-                        <span className="text-[10px] font-heading font-bold uppercase tracking-wider text-black">Live Standings</span>
+                        <span className="text-xs font-heading font-bold uppercase tracking-wider text-black">Live Standings</span>
                         <div className="flex items-center gap-1.5">
                             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                            <span className="text-[10px] font-bold text-red-500 uppercase">LIVE</span>
+                            <span className="text-xs font-bold text-red-500 uppercase">LIVE</span>
                         </div>
                     </div>
                     <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-gray-400">
@@ -1152,7 +1152,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                             {/* Driver Name */}
                                             <div className="flex-1 min-w-0">
                                                 <span className={cn("font-bold text-sm block truncate leading-tight", activeDriver === d.driver ? "text-black" : "text-gray-800", isDNF && "text-gray-400")}>{d.driver}</span>
-                                                <span className="text-[10px] text-gray-600 block uppercase tracking-wide font-semibold leading-snug">{meta?.team}</span>
+                                                <span className="text-xs text-gray-600 block uppercase tracking-wide font-semibold leading-snug">{meta?.team}</span>
                                             </div>
 
                                             {/* Interval/Tyre */}
@@ -1275,7 +1275,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
 
                         {/* Battles */}
                         <div className="p-3 border-b-2 border-black shrink-0 bg-gray-50">
-                            <div className="text-[10px] font-bold uppercase text-gray-700 mb-2 flex items-center gap-1 tracking-wider">
+                            <div className="text-xs font-bold uppercase text-gray-700 mb-2 flex items-center gap-1 tracking-wider">
                                 <Circle size={8} className="text-orange-500 fill-orange-500" /> Close Battles
                             </div>
                             {battles.length > 0 ? (
@@ -1301,7 +1301,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                         <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-gray-100">
                             <div className="p-2.5 text-xs font-bold uppercase text-gray-600 flex items-center justify-between shrink-0 border-b border-black/10 bg-gray-200">
                                 <span className="flex items-center gap-1">Race Feed</span>
-                                <span className="font-mono text-[10px]">{visibleEvents.length}</span>
+                                <span className="font-mono text-xs">{visibleEvents.length}</span>
                             </div>
                             <div ref={feedRef} className="flex-1 overflow-y-auto px-3 pt-3 pb-4 min-h-0 scrollbar-thin scrollbar-thumb-gray-400">
                                 <div className="space-y-3">
@@ -1320,7 +1320,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                                 (e.type === 'FLAG' && !['RED', 'GREEN', 'YELLOW'].includes(e.flagType)) && "border-gray-400"
                                             )}>
                                             <div className="flex items-center justify-between">
-                                                <span className={cn("text-[10px] font-bold uppercase tracking-wider",
+                                                <span className={cn("text-xs font-bold uppercase tracking-wider",
                                                     e.type === 'OVERTAKE' ? "text-green-700" :
                                                         e.type === 'LOST' ? "text-red-700" :
                                                             e.type === 'PIT' ? "text-gray-600" :
@@ -1328,7 +1328,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                                 )}>
                                                     {e.type}
                                                 </span>
-                                                {(e.type !== 'PIT' && e.lap) && <span className="text-[10px] font-mono text-gray-500 font-semibold">L{e.lap}</span>}
+                                                {(e.type !== 'PIT' && e.lap) && <span className="text-xs font-mono text-gray-500 font-semibold">L{e.lap}</span>}
                                             </div>
 
                                             <div className="text-xs leading-tight">
@@ -1368,7 +1368,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                         </motion.div>
                                     ))}
                                     {visibleEvents.length === 0 && (
-                                        <div className="text-[10px] text-gray-400 italic text-center py-8">Waiting for race start...</div>
+                                        <div className="text-xs text-gray-400 italic text-center py-8">Waiting for race start...</div>
                                     )}
                                 </div>
                             </div>

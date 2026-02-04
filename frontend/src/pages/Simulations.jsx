@@ -6,6 +6,7 @@ import {
     Trophy, Activity, Zap, Timer, ChevronRight, TrendingUp, AlertTriangle, Calculator, Map, Info, Dna, RefreshCw, Clock, Play, BarChart3, Brain, CheckCircle2
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import DriverSprite from '../components/DriverSprite';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Label, ComposedChart, Area, BarChart, Bar, Cell } from 'recharts';
 import API_BASE from '../config/api';
@@ -53,17 +54,17 @@ export default function Simulations() {
                         <button onClick={() => setActiveTab('simulator')}
                             className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-heading uppercase transition-all",
                                 activeTab === 'simulator' ? "bg-f1-red text-white" : "text-black hover:bg-gray-100")}>
-                            <BarChart3 size={14} /> Race Sim
+                            <BarChart3 size={16} /> Race Sim
                         </button>
                         <button onClick={() => setActiveTab('strategy')}
                             className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-heading uppercase transition-all",
                                 activeTab === 'strategy' ? "bg-f1-red text-white" : "text-black hover:bg-gray-100")}>
-                            <Activity size={14} /> Strategy
+                            <Activity size={16} /> Strategy
                         </button>
                         <button onClick={() => setActiveTab('ai')}
                             className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-heading uppercase transition-all",
                                 activeTab === 'ai' ? "bg-f1-red text-white" : "text-black hover:bg-gray-100")}>
-                            <Brain size={14} /> AI
+                            <Brain size={16} /> AI
                         </button>
                     </div>
                 </div>
@@ -159,7 +160,7 @@ function ChampionshipCalculator() {
                 {/* SCENARIOS TICKER */}
                 <div className="bg-f1-paper border border-black rounded-none p-4 flex-1 overflow-y-auto custom-scrollbar">
                     <h3 className="text-xs font-bold uppercase text-gray-600 mb-3 flex items-center gap-2">
-                        <Zap size={12} /> Championship Scenarios
+                        <Zap size={14} /> Championship Scenarios
                     </h3>
                     <div className="space-y-3">
                         {data.scenarios.length > 0 ? data.scenarios.map((s, i) => (
@@ -210,7 +211,7 @@ function ChampionshipCalculator() {
                                 <div className="text-right">
                                     {d.can_win ? (
                                         <div className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded text-xs font-bold uppercase flex items-center gap-1">
-                                            <Trophy size={12} /> Can Win
+                                            <Trophy size={14} /> Can Win
                                         </div>
                                     ) : (
                                         <div className="bg-red-500/20 text-red-400 px-3 py-1 rounded text-xs font-bold uppercase">
@@ -294,7 +295,7 @@ function RaceSimulator({ races, year }) {
                 {/* METHODOLOGY INFO */}
                 <div className="bg-f1-paper border-2 border-black shadow-hard-sm p-5">
                     <h4 className="text-xs font-heading uppercase text-black mb-3 flex items-center gap-2">
-                        <BarChart3 size={12} /> Monte Carlo Simulation
+                        <BarChart3 size={14} /> Monte Carlo Simulation
                     </h4>
                     <div className="space-y-3 text-sm text-gray-700">
                         <p>
@@ -1051,7 +1052,7 @@ function AIPredictions({ races, year }) {
                                                     {d.name}
                                                     {d.code === 'VER' && <Trophy size={10} className="text-yellow-500" />}
                                                 </div>
-                                                <div className="text-[10px] text-gray-700 font-medium">{d.team}</div>
+                                                <div className="text-xs text-gray-700 font-medium">{d.team}</div>
                                             </div>
                                         </div>
 

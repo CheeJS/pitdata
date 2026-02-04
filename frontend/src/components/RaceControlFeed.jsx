@@ -68,7 +68,7 @@ export default function RaceControlFeed({ raceId }) {
                             key={f}
                             onClick={() => setFilter(f)}
                             className={cn(
-                                "text-[10px] uppercase font-bold px-2 py-1 rounded transition-colors",
+                                "text-xs uppercase font-bold px-2 py-1 rounded transition-colors",
                                 filter === f ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
                             )}
                         >
@@ -90,7 +90,7 @@ export default function RaceControlFeed({ raceId }) {
                 ) : (
                     filteredMessages.map((msg, i) => (
                         <div key={i} className="flex gap-3 items-start p-2 rounded hover:bg-white/5 transition-colors group">
-                            <div className="w-16 shrink-0 text-[10px] font-mono text-gray-500 pt-0.5">
+                            <div className="w-16 shrink-0 text-xs font-mono text-gray-500 pt-0.5">
                                 {msg.time}
                             </div>
                             <div className="flex-1">
@@ -105,7 +105,7 @@ export default function RaceControlFeed({ raceId }) {
                                         {msg.category === 'SafetyCar' ? 'Safety Car' : msg.category}
                                     </span>
                                     {msg.lap && (
-                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A2A30] text-gray-400">
+                                        <span className="text-xs px-1.5 py-0.5 rounded bg-[#2A2A30] text-gray-400">
                                             LAP {msg.lap}
                                         </span>
                                     )}

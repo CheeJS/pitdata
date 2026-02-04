@@ -4,9 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .pixelated {
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
+}
+
 @layer base {
   html {
-    image-rendering: pixelated;
     /* font-smoothing: none is not standard, using webkit alias */
     -webkit-font-smoothing: none;
     -moz-osx-font-smoothing: grayscale;
@@ -48,12 +56,12 @@
   }
 
   :root {
-    --background: 45 10% 96%;
-    --foreground: 0 0% 3.9%;
-    --card: 45 10% 96%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 45 10% 96%;
-    --popover-foreground: 0 0% 3.9%;
+    --background: 45 25% 87%;
+    --foreground: 0 0% 11%;
+    --card: 45 30% 94%;
+    --card-foreground: 0 0% 11%;
+    --popover: 45 30% 94%;
+    --popover-foreground: 0 0% 11%;
     --primary: 0 0% 9%;
     --primary-foreground: 0 0% 98%;
     --secondary: 45 8% 92%;

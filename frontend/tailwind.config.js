@@ -9,12 +9,12 @@ export default {
 		extend: {
 			colors: {
 				f1: {
-					red: '#FF0000', // Pure Red
-					dark: '#000000', // Pure Black
-					carbon: '#222222', // Dark Gray
-					gray: '#888888', // Med Gray
-					light: '#EEEDEB', // Warm Grey - easier on the eyes
-					paper: '#F9F9F7' // Warm White - for cards
+					red: '#CC0000', // Deep Vintage Red
+					dark: '#1C1C1C', // Soft Black/Charcoal
+					carbon: '#2A2A2A', // Dark Gray
+					gray: '#666666',
+					light: '#E6E2D6', // VISIBLE Beige/Bone (Not white)
+					paper: '#F4F1EA' // Cream/Bone White (Distinct from background)
 				},
 				team: {
 					ferrari: '#FF2800',

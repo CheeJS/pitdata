@@ -52,7 +52,7 @@ const DigitGroup = ({ value, label, isLarge = false, minDigits = 2 }) => {
             </div>
             <div className={cn(
                 "mt-1 bg-black text-white font-heading uppercase tracking-widest px-1",
-                isLarge ? "text-[8px] lg:text-[10px]" : "text-[6px]"
+                isLarge ? "text-xs" : "text-[10px]"
             )}>
                 {label}
             </div>

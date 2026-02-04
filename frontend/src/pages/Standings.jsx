@@ -5,7 +5,25 @@ import { cn } from '../lib/utils';
 import { motion } from 'framer-motion';
 
 import { PixelCard } from '../components/PixelUI';
+import DriverSprite from '../components/DriverSprite';
 import API_BASE from '../config/api';
+
+function getTeamId(teamName) {
+    if (!teamName) return 'red_bull';
+    const lower = teamName.toLowerCase();
+    if (lower.includes('red bull')) return 'red_bull';
+    if (lower.includes('ferrari')) return 'ferrari';
+    if (lower.includes('mclaren')) return 'mclaren';
+    if (lower.includes('mercedes')) return 'mercedes';
+    if (lower.includes('aston')) return 'aston_martin';
+    if (lower.includes('alpine')) return 'alpine';
+    if (lower.includes('williams')) return 'williams';
+    if (lower.includes('haas')) return 'haas';
+    if (lower.includes('audi') || lower.includes('sauber')) return 'audi';
+    if (lower.includes('rb') || lower.includes('racing bulls') || lower.includes('alpha')) return 'racing_bulls';
+    if (lower.includes('cadillac')) return 'cadillac';
+    return 'red_bull';
+}
 
 export default function Standings() {
     const [data, setData] = useState(null);
@@ -105,7 +123,7 @@ export default function Standings() {
                                                 <tr
                                                     key={d.code}
                                                     className={cn(
-                                                        "transition-all duration-200 border-l-4 group",
+                                                        "transition-all duration-200 border-l-4 group h-16",
                                                         eliminated && "opacity-50 grayscale",
                                                         isPodium ? "hover:shadow-[inset_0_0_30px_rgba(255,0,0,0.1)]" : "hover:bg-yellow-50"
                                                     )}
@@ -124,13 +142,15 @@ export default function Standings() {
                                                     </td>
                                                     <td className="p-2 md:p-3">
                                                         <div className="flex items-center gap-3">
-                                                            <div
-                                                                className={cn(
-                                                                    "w-2 md:w-3 h-6 md:h-8 border border-black transition-all duration-200",
-                                                                    isPodium && "group-hover:shadow-[0_0_10px_currentColor]"
-                                                                )}
-                                                                style={{ backgroundColor: teamColor, color: teamColor }}
-                                                            />
+                                                            {/* Driver Sprite - Crop Wrapper with Zoom */}
+                                                            <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                                                                <DriverSprite
+                                                                    driver={d.code}
+                                                                    size="xl"
+                                                                    className="transform scale-[3] origin-center relative z-10 translate-y-6"
+                                                                    style={{ imageRendering: 'pixelated' }}
+                                                                />
+                                                            </div>
                                                             <div>
                                                                 <div className={cn(
                                                                     "text-base md:text-xl font-heading leading-tight",
@@ -178,7 +198,7 @@ export default function Standings() {
                                                 <tr
                                                     key={c.name}
                                                     className={cn(
-                                                        "transition-all duration-200 border-l-4 group",
+                                                        "transition-all duration-200 border-l-4 group h-16",
                                                         isPodium ? "hover:shadow-[inset_0_0_30px_rgba(255,0,0,0.1)]" : "hover:bg-yellow-50"
                                                     )}
                                                     style={{
@@ -196,13 +216,15 @@ export default function Standings() {
                                                     </td>
                                                     <td className="p-2 md:p-3">
                                                         <div className="flex items-center gap-3">
-                                                            <div
-                                                                className={cn(
-                                                                    "w-3 md:w-4 h-8 md:h-10 border border-black transition-all duration-200",
-                                                                    isPodium && "group-hover:shadow-[0_0_10px_currentColor]"
-                                                                )}
-                                                                style={{ backgroundColor: teamColor, color: teamColor }}
-                                                            />
+                                                            {/* Team Sprite - Crop Wrapper with Zoom */}
+                                                            <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                                                                <DriverSprite
+                                                                    teamId={getTeamId(c.name)}
+                                                                    size="xl"
+                                                                    className="transform scale-[3] origin-center relative z-10 translate-y-6"
+                                                                    style={{ imageRendering: 'pixelated' }}
+                                                                />
+                                                            </div>
                                                             <span className={cn(
                                                                 "text-base md:text-xl font-heading",
                                                                 i === 0 && "text-xl md:text-2xl"

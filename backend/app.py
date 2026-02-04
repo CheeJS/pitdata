@@ -344,5 +344,6 @@ def paddock_vote():
 if __name__ == '__main__':
     # Use FLASK_DEBUG=true in development, defaults to False for production
     debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
-    app.run(debug=debug_mode)
+    print("Starting server on port 5001...")
+    app.run(host='0.0.0.0', port=5001, debug=debug_mode)
 

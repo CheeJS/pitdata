@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from dotenv import load_dotenv
+from services.utils import get_race_code_from_name
 
 load_dotenv()
 
@@ -2098,6 +2099,29 @@ def get_dashboard_data(year=2026):
         race = session.query(Race).get(target_race_id)
         if not race: return None
 
+        # Prepare Next Race Card Data (Dynamic)
+        next_race_card = None
+        if next_race:
+            try:
+                # Calculate time string
+                delta_days = (next_race.date - current_time.date()).days
+                if delta_days < 0: time_txt = "Today"
+                elif delta_days == 0: time_txt = "Tomorrow"
+                elif delta_days == 1: time_txt = "In 1 Day"
+                elif delta_days < 7: time_txt = f"In {delta_days} Days"
+                elif delta_days < 14: time_txt = "Next Week"
+                else: time_txt = f"In {int(delta_days/7)} Weeks"
+                
+                # Shorten name
+                short_name = next_race.race_name.replace("Grand Prix", "GP").strip()
+                
+                next_race_card = {
+                    "name": short_name,
+                    "time_text": time_txt
+                }
+            except Exception as e:
+                print(f"Error calculating next race card: {e}")
+
         # Build payload
         payload = {
             "mode": mode,
@@ -2125,6 +2149,7 @@ def get_dashboard_data(year=2026):
                 "pit_loss": 20.5,
                 "weather": {"temp": 24, "rain_prob": 10, "condition": "Sunny"}
             },
+            "next_race_card": next_race_card,
             # If results mode, include top 3 + winner
             "results": None
         }
@@ -2263,7 +2288,8 @@ def get_active_prediction_race(year=2026):
                 "name": target_race.race_name,
                 "circuit": target_race.circuit_name,
                 "date": target_race.date.isoformat() if target_race.date else None,
-                "round": target_race.round
+                "round": target_race.round,
+                "code": get_race_code_from_name(target_race.race_name)
             },
             "vote_window": {
                 "is_open": vote_status == "OPEN",

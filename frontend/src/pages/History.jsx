@@ -149,7 +149,7 @@ export default function History() {
 
                                                                 <div>
                                                                     <div className="text-sm font-medium text-black">{race.name}</div>
-                                                                    <div className="text-[10px] text-gray-500">{race.circuit}</div>
+                                                                    <div className="text-xs text-gray-500">{race.circuit}</div>
                                                                 </div>
                                                             </div>
                                                             <ChevronRight size={16} className="text-gray-600" />
@@ -304,7 +304,7 @@ function TimelineRaceCard({ race, onClick, delay }) {
                 {/* Date Badge */}
                 <div className="flex-shrink-0 w-10 sm:w-14 text-center">
                     <div className="text-lg sm:text-2xl font-black text-black leading-none">{dayNum}</div>
-                    <div className="text-[10px] font-bold text-gray-500 uppercase">{monthShort}</div>
+                    <div className="text-xs font-bold text-gray-500 uppercase">{monthShort}</div>
                 </div>
 
                 {/* Divider */}
@@ -323,7 +323,7 @@ function TimelineRaceCard({ race, onClick, delay }) {
                 {/* Info */}
                 <div className="flex-1 text-left min-w-0">
                     <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-gray-500 uppercase">Round {race.round}</span>
+                        <span className="text-xs font-bold text-gray-500 uppercase">Round {race.round}</span>
                     </div>
                     <h3 className="text-sm sm:text-base md:text-lg font-bold text-black group-hover:text-f1-red transition-colors truncate">
                         {race.name} <span className="font-normal text-gray-500">Grand Prix</span>
@@ -336,11 +336,11 @@ function TimelineRaceCard({ race, onClick, delay }) {
                 {/* Status + Arrow */}
                 <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                     {isPast ? (
-                        <span className="text-[9px] sm:text-[10px] bg-gray-100 text-gray-600 px-1.5 sm:px-2.5 py-0.5 sm:py-1 border border-black font-heading uppercase">
+                        <span className="text-[9px] sm:text-xs bg-gray-100 text-gray-600 px-1.5 sm:px-2.5 py-0.5 sm:py-1 border border-black font-heading uppercase">
                             Completed
                         </span>
                     ) : (
-                        <span className="text-[9px] sm:text-[10px] bg-f1-red text-white px-1.5 sm:px-2.5 py-0.5 sm:py-1 border border-black font-heading uppercase">
+                        <span className="text-[9px] sm:text-xs bg-f1-red text-white px-1.5 sm:px-2.5 py-0.5 sm:py-1 border border-black font-heading uppercase">
                             Upcoming
                         </span>
                     )}
@@ -445,7 +445,7 @@ function RaceDetailView({ data }) {
                                                 <div className="w-1 h-8 rounded-none" style={{ backgroundColor: getTeamColor(row.team) }}></div>
                                                 <div>
                                                     <div className="font-bold text-black leading-tight">{row.driver}</div>
-                                                    <div className="text-[10px] text-gray-500 uppercase">{row.code}</div>
+                                                    <div className="text-xs text-gray-500 uppercase">{row.code}</div>
                                                 </div>
                                             </div>
                                         </td>
