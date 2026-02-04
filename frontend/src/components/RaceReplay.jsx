@@ -5,6 +5,8 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 
+import API_BASE from '../config/api';
+
 
 const getStatusClasses = (status) => {
     const s = (status || "").toUpperCase();
@@ -58,7 +60,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
     useEffect(() => {
         const fetchRaces = async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/races?year=${year}`);
+                const res = await axios.get(`${API_BASE}/api/races?year=${year}`);
                 setRaceList(res.data);
 
                 // If initialRaceId is provided and valid for this year, use it. Otherwise default to first race.
@@ -86,7 +88,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
 
             setError(null);
             try {
-                const repRes = await axios.get(`http://localhost:5000/api/replay/${raceId}`);
+                const repRes = await axios.get(`${API_BASE}/api/replay/${raceId}`);
 
                 // Handle expected missing data (200 OK with error code)
                 if (repRes.data.code === 'NO_DATA' || repRes.data.error) {
