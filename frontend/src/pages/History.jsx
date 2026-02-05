@@ -75,7 +75,7 @@ export default function History() {
     }, [races]);
 
     return (
-        <div className="h-full flex flex-col overflow-hidden bg-gray-200">
+        <div className="flex flex-col flex-1 overflow-hidden bg-gray-200">
             <AnimatePresence mode="wait">
                 {view === 'list' ? (
                     <motion.div
@@ -420,45 +420,45 @@ function RaceDetailView({ data }) {
             {/* Content */}
             <div className="bg-white border-2 border-black overflow-hidden flex-1 flex flex-col">
                 <div className="overflow-auto custom-scrollbar flex-1">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse min-w-[500px]">
                         <thead className="bg-gray-100 text-black text-xs uppercase font-heading tracking-wider sticky top-0 z-10 border-b-2 border-black">
                             <tr>
-                                <th className="px-6 py-4 w-16">Pos</th>
-                                <th className="px-6 py-4">Driver</th>
-                                <th className="px-6 py-4">Constructor</th>
-                                <th className="px-6 py-4 text-right">Time/Gap</th>
-                                {activeTab === 'R' && <th className="px-6 py-4 text-right">Pts</th>}
+                                <th className="px-2 md:px-6 py-3 md:py-4 w-12 md:w-16">Pos</th>
+                                <th className="px-2 md:px-6 py-3 md:py-4">Driver</th>
+                                <th className="px-2 md:px-6 py-3 md:py-4 hidden md:table-cell">Constructor</th>
+                                <th className="px-2 md:px-6 py-3 md:py-4 text-right">Time/Gap</th>
+                                {activeTab === 'R' && <th className="px-2 md:px-6 py-3 md:py-4 text-right w-14 md:w-auto">Pts</th>}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-black">
+                        <tbody className="divide-y divide-gray-200">
                             {sortedResults.map((row, i) => {
                                 const isPodium = i < 3 && (activeTab === 'R' || activeTab === 'S');
                                 const bgClass = isPodium ? 'bg-gradient-to-r from-white/5 to-transparent' : '';
 
                                 return (
                                     <tr key={i} className={cn("hover:bg-gray-50 transition-colors group", bgClass)}>
-                                        <td className="px-6 py-4 font-heading font-bold text-lg text-gray-500 group-hover:text-black">
+                                        <td className="px-2 md:px-6 py-3 md:py-4 font-heading font-bold text-base md:text-lg text-gray-500 group-hover:text-black">
                                             {row.pos}
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-1 h-8 rounded-none" style={{ backgroundColor: getTeamColor(row.team) }}></div>
+                                        <td className="px-2 md:px-6 py-3 md:py-4">
+                                            <div className="flex items-center gap-2 md:gap-3">
+                                                <div className="w-1 h-6 md:h-8 rounded-none" style={{ backgroundColor: getTeamColor(row.team) }}></div>
                                                 <div>
-                                                    <div className="font-bold text-black leading-tight">{row.driver}</div>
-                                                    <div className="text-xs text-gray-500 uppercase">{row.code}</div>
+                                                    <div className="font-bold text-black leading-tight text-sm md:text-base">{row.driver}</div>
+                                                    <div className="text-[10px] md:text-xs text-gray-500 uppercase">{row.code}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-400">
+                                        <td className="px-2 md:px-6 py-3 md:py-4 text-sm text-gray-400 hidden md:table-cell">
                                             {row.team}
                                         </td>
-                                        <td className="px-6 py-4 text-right font-mono text-sm text-black group-hover:text-black">
+                                        <td className="px-2 md:px-6 py-3 md:py-4 text-right font-mono text-xs md:text-sm text-black group-hover:text-black">
                                             {row.time}
                                         </td>
                                         {activeTab === 'R' && (
-                                            <td className="px-6 py-4 text-right">
+                                            <td className="px-2 md:px-6 py-3 md:py-4 text-right">
                                                 {row.pts > 0 && (
-                                                    <span className="inline-block min-w-[30px] text-center font-bold bg-gray-100 border border-black py-1 px-2 text-xs text-black">
+                                                    <span className="inline-block min-w-[24px] md:min-w-[30px] text-center font-bold bg-gray-100 border border-black py-0.5 md:py-1 px-1 md:px-2 text-[10px] md:text-xs text-black">
                                                         {row.pts}
                                                     </span>
                                                 )}

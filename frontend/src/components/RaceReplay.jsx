@@ -771,7 +771,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                     <button
                         disabled={!!error}
                         onClick={() => !error && setIsPlaying(!isPlaying)}
-                        className={cn("w-14 h-14 flex items-center justify-center bg-f1-red border-2 border-black text-black shrink-0 shadow-hard active:translate-y-1 active:shadow-none transition-all", !!error && "opacity-50 cursor-not-allowed")}
+                        className={cn("w-14 h-14 flex items-center justify-center bg-f1-red border-2 border-black text-white shrink-0 shadow-hard active:translate-y-1 active:shadow-none transition-all", !!error && "opacity-50 cursor-not-allowed")}
                     >
                         {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
                     </button>
@@ -969,11 +969,11 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                     {/* Mini Leaderboard Toggle - Top Right */}
                     <button
                         onClick={() => setShowLeaderboard(!showLeaderboard)}
-                        className="absolute top-3 right-3 z-20 bg-black/70 backdrop-blur-sm rounded-none px-2 py-1.5 border border-[#333] flex items-center gap-1.5"
+                        className="absolute top-3 right-3 z-20 bg-white/90 backdrop-blur-sm rounded-none px-2 py-1.5 border-2 border-black flex items-center gap-1.5 shadow-hard-sm"
                     >
-                        <List size={14} className="text-gray-600" />
-                        <span className="text-xs text-gray-600">P1-5</span>
-                        {showLeaderboard ? <ChevronUp size={12} className="text-gray-600" /> : <ChevronDown size={12} className="text-gray-600" />}
+                        <List size={14} className="text-black" />
+                        <span className="text-xs text-black font-bold">P1-5</span>
+                        {showLeaderboard ? <ChevronUp size={12} className="text-black" /> : <ChevronDown size={12} className="text-black" />}
                     </button>
 
                     {/* Mini Leaderboard - Top 5 Positions */}
@@ -1066,10 +1066,10 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                 >
                                     <span className={cn(
                                         "text-xs font-bold w-3",
-                                        d.rank === 1 ? "text-f1-red" : d.rank <= 3 ? "text-black" : "text-gray-600"
+                                        d.rank === 1 ? "text-f1-red" : isTop3 && !isActive ? "text-white" : "text-gray-600"
                                     )}>{d.rank}</span>
                                     <div className="w-0.5 h-3 rounded-none" style={{ backgroundColor: meta?.color || '#444' }} />
-                                    <span className="text-xs font-medium text-black">{d.driver}</span>
+                                    <span className={cn("text-xs font-medium", isTop3 && !isActive ? "text-white" : "text-black")}>{d.driver}</span>
                                 </button>
                             );
                         })}
@@ -1092,7 +1092,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                 </div>
                                 <div className="text-center">
                                     <div className="text-[9px] text-gray-600 uppercase">Gap</div>
-                                    <div className="text-sm font-mono text-gray-300">
+                                    <div className="text-sm font-mono font-bold text-black">
                                         {(() => {
                                             const pos = currentPositions.find(p => p.driver === activeDriver);
                                             return pos?.interval ? `+${pos.interval.toFixed(1)}s` : 'Leader';

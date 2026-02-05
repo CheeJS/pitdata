@@ -156,7 +156,7 @@ export default function App() {
         "transition-all duration-300",
         activeTab === 'replay'
           ? "fixed inset-0 top-14 md:top-0 left-0 md:left-20 lg:left-64 overflow-y-auto z-0 bg-gray-200"
-          : "flex-1 pt-14 pb-4 md:pb-0 md:pt-0 md:ml-20 lg:ml-64 p-2 md:p-8 lg:p-12 overflow-y-auto min-h-screen"
+          : "flex-1 p-2 pt-14 pb-4 md:pb-0 md:pt-0 md:ml-20 lg:ml-64 md:p-8 lg:p-12 overflow-y-auto min-h-screen"
       )} style={activeTab === 'replay' ? { height: '100dvh' } : {}}>
         <div className={cn(
           "mx-auto transition-all duration-300",
@@ -221,15 +221,15 @@ function MobileNavItem({ icon, label, active, onClick }) {
     <button
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-3 px-4 py-3 rounded-none transition-all duration-300 relative",
+        "w-full flex items-center gap-3 px-4 py-3 rounded-none transition-all duration-300 relative border-b-2 border-transparent",
         active
-          ? "bg-gradient-to-r from-f1-red/20 to-transparent text-f1-red"
-          : "text-gray-400 hover:text-white hover:bg-white/5"
+          ? "bg-f1-red text-white font-bold"
+          : "text-f1-dark hover:text-white hover:bg-black"
       )}
     >
-      {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-f1-red rounded-none-full" />}
-      {React.cloneElement(icon, { size: 20, className: active ? "text-f1-red" : "text-gray-400" })}
-      <span className="font-medium tracking-wide text-sm">{label}</span>
+      {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-none-full" />}
+      {React.cloneElement(icon, { size: 20, className: active ? "text-white" : "text-f1-dark" })}
+      <span className="font-heading tracking-wide text-sm whitespace-nowrap">{label}</span>
     </button>
   )
 }

@@ -198,24 +198,24 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
                 <div className="p-4 border-b border-black shrink-0 space-y-3">
                     <div className="flex items-center justify-between">
                         <h1 className="text-lg font-bold text-black">Analysis</h1>
-                        <div className="flex items-center gap-2">
-                            <select
-                                value={year}
-                                onChange={(e) => setYear(Number(e.target.value))}
-                                className="bg-gray-100 border border-[#333] text-black text-xs rounded-lg px-2 py-1 outline-none"
-                            >
-                                {AVAILABLE_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                            </select>
-                            <span className="bg-f1-red text-black text-[9px] font-bold px-1.5 py-0.5 rounded">TELEMETRY</span>
-                        </div>
+                        <span className="bg-f1-red text-white text-[9px] font-bold px-1.5 py-0.5">TELEMETRY</span>
                     </div>
-                    <select
-                        value={raceId}
-                        onChange={(e) => setRaceId(Number(e.target.value))}
-                        className="w-full bg-white border border-black rounded-lg px-3 py-2 text-sm text-black"
-                    >
-                        {raceList.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                    </select>
+                    <div className="grid grid-cols-2 gap-2">
+                        <select
+                            value={year}
+                            onChange={(e) => setYear(Number(e.target.value))}
+                            className="bg-white border-2 border-black text-black text-sm px-3 py-2 outline-none font-bold"
+                        >
+                            {AVAILABLE_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                        <select
+                            value={raceId}
+                            onChange={(e) => setRaceId(Number(e.target.value))}
+                            className="bg-white border-2 border-black text-black text-sm px-3 py-2 outline-none"
+                        >
+                            {raceList.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                        </select>
+                    </div>
                 </div >
 
                 {/* Driver Selection */}
