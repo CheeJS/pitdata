@@ -62,10 +62,42 @@ export default function App() {
     fetchData();
   }, []);
 
-  // Close mobile menu when tab changes
+  // URL & Navigation Handling
+  useEffect(() => {
+    // 1. Handle initial load based on URL
+    const path = window.location.pathname;
+    const tabFromPath = path === '/' ? 'dashboard' : path.substring(1);
+
+    // Validate if tab exists (basic check, can be more robust)
+    const validTabs = ['dashboard', 'replay', 'analysis', 'standings', 'simulations', 'history', 'predictions'];
+    if (validTabs.includes(tabFromPath)) {
+      setActiveTab(tabFromPath);
+    }
+
+    // 2. Handle Back/Forward buttons
+    const handlePopState = () => {
+      const newPath = window.location.pathname;
+      const newTab = newPath === '/' ? 'dashboard' : newPath.substring(1);
+      if (validTabs.includes(newTab)) {
+        setActiveTab(newTab);
+      } else if (newPath === '/') {
+        setActiveTab('dashboard');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Update URL when tab changes (client-side navigation)
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setMobileMenuOpen(false);
+
+    const newPath = tab === 'dashboard' ? '/' : `/${tab}`;
+    if (window.location.pathname !== newPath) {
+      window.history.pushState({}, '', newPath);
+    }
   };
 
   return (
@@ -127,13 +159,13 @@ export default function App() {
         </div>
 
         <nav className="flex-1 py-8 px-2 lg:px-4 space-y-2">
-          <NavItem icon={<Activity />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-          <NavItem icon={<Timer />} label="Race Replay" active={activeTab === 'replay'} onClick={() => setActiveTab('replay')} />
-          <NavItem icon={<BarChart />} label="Analysis" active={activeTab === 'analysis'} onClick={() => setActiveTab('analysis')} />
-          <NavItem icon={<Trophy />} label="Standings" active={activeTab === 'standings'} onClick={() => setActiveTab('standings')} />
-          <NavItem icon={<Brain />} label="Simulations" active={activeTab === 'simulations'} onClick={() => setActiveTab('simulations')} />
-          <NavItem icon={<Calendar />} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
-          <NavItem icon={<Zap />} label="Predictions" active={activeTab === 'predictions'} onClick={() => setActiveTab('predictions')} />
+          <NavItem icon={<Activity />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => handleTabChange('dashboard')} />
+          <NavItem icon={<Timer />} label="Race Replay" active={activeTab === 'replay'} onClick={() => handleTabChange('replay')} />
+          <NavItem icon={<BarChart />} label="Analysis" active={activeTab === 'analysis'} onClick={() => handleTabChange('analysis')} />
+          <NavItem icon={<Trophy />} label="Standings" active={activeTab === 'standings'} onClick={() => handleTabChange('standings')} />
+          <NavItem icon={<Brain />} label="Simulations" active={activeTab === 'simulations'} onClick={() => handleTabChange('simulations')} />
+          <NavItem icon={<Calendar />} label="History" active={activeTab === 'history'} onClick={() => handleTabChange('history')} />
+          <NavItem icon={<Zap />} label="Predictions" active={activeTab === 'predictions'} onClick={() => handleTabChange('predictions')} />
 
         </nav>
 
