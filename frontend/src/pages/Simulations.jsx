@@ -111,8 +111,8 @@ export default function Simulations() {
                 </div>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-hidden">
+            {/* Content - Desktop only (mobile has its own content in the mobile layout above) */}
+            <div className="hidden md:flex flex-1 overflow-hidden">
                 {activeTab === 'simulator' && <RaceSimulator races={races} year={year} />}
                 {activeTab === 'strategy' && <StrategyView races={races} />}
                 {activeTab === 'ai' && <AIPredictions races={races} year={year} />}
@@ -279,9 +279,9 @@ function RaceSimulator({ races, year }) {
     const teamColors = { "Red Bull Racing": "#3671C6", "Mercedes": "#6CD3BF", "Ferrari": "#E8002D", "McLaren": "#FF8000", "Aston Martin": "#229971", "Alpine": "#FF87BC", "Williams": "#64C4FF", "RB": "#6692FF", "Sauber": "#52E252", "Haas": "#B6BABD" };
 
     return (
-        <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row gap-3 md:gap-6 min-h-0 overflow-hidden p-3 md:p-0">
             {/* LEFT: CONTROLS */}
-            <div className="lg:w-1/3 flex flex-col gap-4 shrink-0">
+            <div className="lg:w-1/3 flex flex-col gap-3 md:gap-4 shrink-0">
                 {/* LAST RUN BANNER */}
                 {lastRun && !data && (
                     <div className="bg-f1-paper border-2 border-black shadow-hard-sm p-4">
@@ -292,8 +292,8 @@ function RaceSimulator({ races, year }) {
                 )}
 
 
-                {/* METHODOLOGY INFO */}
-                <div className="bg-f1-paper border-2 border-black shadow-hard-sm p-5">
+                {/* METHODOLOGY INFO - Hidden on mobile for space */}
+                <div className="hidden md:block bg-f1-paper border-2 border-black shadow-hard-sm p-4 md:p-5">
                     <h4 className="text-xs font-heading uppercase text-black mb-3 flex items-center gap-2">
                         <BarChart3 size={14} /> Monte Carlo Simulation
                     </h4>
@@ -329,7 +329,7 @@ function RaceSimulator({ races, year }) {
                 </div>
 
                 {/* CONFIG PANEL */}
-                <div className="bg-f1-paper border-2 border-black shadow-hard-sm p-6 space-y-6">
+                <div className="bg-f1-paper border-2 border-black shadow-hard-sm p-4 md:p-6 space-y-4 md:space-y-6">
                     <div>
                         <label className="text-xs font-heading uppercase text-black block mb-2">Select Race</label>
                         <select
@@ -379,7 +379,7 @@ function RaceSimulator({ races, year }) {
                         whileTap={{ scale: 0.98 }}
                         onClick={runSimulation}
                         disabled={loading}
-                        className="w-full bg-f1-red text-white py-4 font-heading uppercase flex items-center justify-center gap-2 shadow-hard border-2 border-black disabled:opacity-50"
+                        className="w-full bg-f1-red text-white py-3 md:py-4 font-heading uppercase flex items-center justify-center gap-2 shadow-hard border-2 border-black disabled:opacity-50"
                     >
                         {loading ? <RefreshCw className="animate-spin" size={20} /> : <Play size={20} />}
                         {loading ? "Simulating..." : "Run Simulation"}
@@ -412,7 +412,7 @@ function RaceSimulator({ races, year }) {
                                         initial={{ opacity: 0, width: 0 }}
                                         animate={{ opacity: 1, width: "100%" }}
                                         transition={{ delay: i * 0.05 }}
-                                        className="bg-f1-paper p-4 border-2 border-black shadow-hard-sm flex items-center gap-4 relative overflow-hidden"
+                                        className="bg-f1-paper p-2 md:p-4 border-2 border-black shadow-hard-sm flex items-center gap-2 md:gap-4 relative overflow-hidden"
                                     >
                                         {/* Background bar */}
                                         <motion.div
@@ -422,11 +422,11 @@ function RaceSimulator({ races, year }) {
                                             className="absolute left-0 top-0 bottom-0 opacity-15"
                                             style={{ backgroundColor: color }}
                                         />
-                                        <div className="w-8 h-8 rounded-none flex items-center justify-center text-sm font-bold z-10" style={{ backgroundColor: color + "30", color: color }}>
+                                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-none flex items-center justify-center text-xs md:text-sm font-bold z-10" style={{ backgroundColor: color + "30", color: color }}>
                                             {i + 1}
                                         </div>
-                                        <div className="flex-1 z-10">
-                                            <div className="font-bold text-black flex items-center gap-2">
+                                        <div className="flex-1 z-10 min-w-0">
+                                            <div className="font-bold text-black text-sm md:text-base flex items-center gap-1 md:gap-2 truncate">
                                                 {d.name}
                                                 {d.wins_2025 > 0 && (
                                                     <span className="bg-yellow-500/20 text-yellow-500 text-[9px] px-1.5 py-0.5 rounded font-bold" title="2025 Season Wins">
@@ -434,14 +434,14 @@ function RaceSimulator({ races, year }) {
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="text-sm text-gray-700 flex items-center gap-2">
-                                                {d.team}
-                                                <span className="text-xs text-gray-600">• {d.reliability}% reliable</span>
+                                            <div className="text-xs md:text-sm text-gray-700 flex items-center gap-1 md:gap-2 truncate">
+                                                <span className="truncate">{d.team}</span>
+                                                <span className="hidden md:inline text-xs text-gray-600">• {d.reliability}% reliable</span>
                                             </div>
                                         </div>
-                                        <div className="text-right z-10">
-                                            <div className="text-2xl font-mono font-black text-black">{d.win_probability}%</div>
-                                            <div className="text-xs text-gray-600">Podium: {d.podium_probability}%</div>
+                                        <div className="text-right z-10 shrink-0">
+                                            <div className="text-lg md:text-2xl font-mono font-black text-black">{d.win_probability}%</div>
+                                            <div className="text-[10px] md:text-xs text-gray-600">Podium: {d.podium_probability}%</div>
                                         </div>
                                     </motion.div>
                                 );
@@ -617,25 +617,25 @@ function StrategyView({ races }) {
 
             {/* MAIN CONTENT */}
             <div className="p-4 md:p-6 flex flex-col flex-1 min-h-0 overflow-y-auto custom-scrollbar pb-20 md:pb-6">
-                {/* ONE-LINE DEFINITION */}
-                <div className="mb-4 flex items-baseline gap-2">
+                {/* ONE-LINE DEFINITION - Hidden on mobile (redundant with selectors) */}
+                <div className="hidden md:flex mb-4 items-baseline gap-2">
                     <span className="text-gray-600 text-sm">Simulating</span>
                     <strong className="text-black text-lg">{selectedRace?.name} ({selectedRace?.laps} laps)</strong>
                     <span className="text-gray-600 text-sm">starting</span>
                     <strong className="text-black text-lg">P{gridPos}</strong>
                 </div>
 
-                {/* METHODOLOGY PANEL */}
-                <div className="bg-f1-paper border border-black rounded-none p-4 mb-6">
+                {/* METHODOLOGY PANEL - Hidden on mobile */}
+                <div className="hidden md:block bg-f1-paper border border-black rounded-none p-4 mb-6">
                     <div className="flex items-start gap-4">
                         <div className="flex-1">
                             <h4 className="text-xs font-bold uppercase text-gray-600 mb-2 flex items-center gap-2">
                                 <Activity size={12} /> How Strategy is Calculated
                             </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                            <p className="hidden md:block text-sm text-gray-700 leading-relaxed mb-3">
                                 We compare <span className="text-black font-semibold">1-stop, 2-stop, and aggressive strategies</span> by modeling tire degradation curves and pit stop time losses for each compound.
                             </p>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mt-2 md:mt-4">
                                 <div className="bg-f1-paper border-2 border-black p-3 shadow-hard-sm">
                                     <div className="text-xs font-heading text-gray-500 uppercase mb-1">Pit Loss</div>
                                     <div className="text-lg font-bold text-black font-mono">~22s</div>
@@ -662,7 +662,7 @@ function StrategyView({ races }) {
                 </div>
 
                 {/* INSIGHT + SCENARIO */}
-                <div className="flex flex-col xl:flex-row gap-6 mb-6 shrink-0">
+                <div className="flex flex-col xl:flex-row gap-3 md:gap-6 mb-4 md:mb-6 shrink-0">
                     {/* INSIGHT PANEL */}
                     <div className="flex-[2] bg-f1-paper border-2 border-black shadow-hard p-4">
                         <div className="flex justify-between items-start mb-4">
@@ -670,8 +670,8 @@ function StrategyView({ races }) {
                                 <div className="text-xs font-heading uppercase text-f1-red mb-1 flex items-center gap-2">
                                     <Trophy size={12} /> Optimal Strategy
                                 </div>
-                                <h2 className="text-2xl font-heading text-black">{verdict.recommended}</h2>
-                                <div className="flex items-center gap-4 mt-2">
+                                <h2 className="text-lg md:text-2xl font-heading text-black">{verdict.recommended}</h2>
+                                <div className="flex flex-wrap items-center gap-2 md:gap-4 mt-2">
                                     <div className="flex items-center gap-1.5 bg-gray-100 border border-black px-2 py-0.5">
                                         <Activity size={10} className="text-f1-red" />
                                         <span className="text-xs uppercase font-heading text-gray-600">Gain:</span>
@@ -688,8 +688,8 @@ function StrategyView({ races }) {
                         <p className="text-sm text-gray-600 italic">" {verdict.reason} "</p>
                     </div>
 
-                    {/* SCENARIO DECK */}
-                    <div className="flex-1 bg-f1-paper p-4 border-2 border-black shadow-hard-sm space-y-4 min-w-[240px]">
+                    {/* SCENARIO DECK - Collapsed on mobile */}
+                    <div className="flex-1 bg-f1-paper p-3 md:p-4 border-2 border-black shadow-hard-sm space-y-3 md:space-y-4 min-w-[200px] md:min-w-[240px]">
                         <div className="flex justify-between items-center">
                             <h4 className="text-xs font-heading uppercase text-black flex items-center gap-2">
                                 <Calculator size={12} /> Scenario Lab
@@ -748,9 +748,9 @@ function StrategyView({ races }) {
                 </div>
 
                 {/* STRATEGY CARDS */}
-                <div className="flex gap-4 mb-6 overflow-x-auto pb-2 shrink-0">
+                <div className="flex gap-2 md:gap-4 mb-4 md:mb-6 overflow-x-auto pb-2 shrink-0">
                     {data.strategies.map((strat, i) => (
-                        <div key={strat.name} className={cn("min-w-[200px] p-4 border-2 flex-shrink-0", strat.is_best ? "bg-f1-paper border-f1-red shadow-hard" : "bg-f1-paper border-black shadow-hard-sm")}>
+                        <div key={strat.name} className={cn("min-w-[140px] md:min-w-[200px] p-3 md:p-4 border-2 flex-shrink-0", strat.is_best ? "bg-f1-paper border-f1-red shadow-hard" : "bg-f1-paper border-black shadow-hard-sm")}>
                             <div className="flex justify-between items-start mb-2">
                                 <h4 className="font-heading text-black text-sm">{strat.name}</h4>
                                 {strat.is_best && <span className="bg-f1-red text-white text-[8px] px-1.5 py-0.5 font-heading uppercase">BEST</span>}
@@ -764,7 +764,7 @@ function StrategyView({ races }) {
                 </div>
 
                 {/* CHART */}
-                <div className="h-[400px] shrink-0">
+                <div className="h-[250px] md:h-[400px] shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={chartData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
@@ -839,17 +839,18 @@ function AIPredictions({ races, year }) {
     const teamColors = { "Red Bull Racing": "#3671C6", "Mercedes": "#6CD3BF", "Ferrari": "#E8002D", "McLaren": "#FF8000", "Aston Martin": "#229971", "Alpine": "#FF87BC", "Williams": "#64C4FF", "RB": "#6692FF", "Sauber": "#52E252", "Haas": "#B6BABD" };
 
     return (
-        <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row gap-3 md:gap-6 min-h-0 overflow-hidden p-3 md:p-0">
             {/* LEFT: Config */}
-            <div className="lg:w-1/3 flex flex-col gap-4 shrink-0">
-                <div className="bg-f1-paper border-2 border-black shadow-hard p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 bg-f1-red/20 border border-black flex items-center justify-center">
-                            <Brain size={24} className="text-f1-red" />
+            <div className="lg:w-1/3 flex flex-col gap-3 md:gap-4 shrink-0">
+                <div className="bg-f1-paper border-2 border-black shadow-hard p-4 md:p-6">
+                    <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-f1-red/20 border border-black flex items-center justify-center">
+                            <Brain size={20} className="text-f1-red md:hidden" />
+                            <Brain size={24} className="text-f1-red hidden md:block" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-heading text-black">AI Model</h2>
-                            <p className="text-sm text-gray-600">The model thinks...</p>
+                            <h2 className="text-base md:text-lg font-heading text-black">AI Model</h2>
+                            <p className="text-xs md:text-sm text-gray-600">The model thinks...</p>
                         </div>
                     </div>
 
@@ -951,8 +952,8 @@ function AIPredictions({ races, year }) {
                     )}
                 </div>
 
-                {/* METHODOLOGY PANEL - inside left column */}
-                <div className="bg-f1-paper border-2 border-black shadow-hard-sm p-4">
+                {/* METHODOLOGY PANEL - Hidden on mobile */}
+                <div className="hidden md:block bg-f1-paper border-2 border-black shadow-hard-sm p-4">
                     <h4 className="text-xs font-heading uppercase text-black mb-3 flex items-center gap-2">
                         <Brain size={12} /> AI Model Methodology
                     </h4>
@@ -1002,20 +1003,20 @@ function AIPredictions({ races, year }) {
                     </div>
                 ) : (
                     <>
-                        <div className="p-4 border-b-2 border-black bg-gray-100 flex justify-between items-center shrink-0">
+                        <div className="p-3 md:p-4 border-b-2 border-black bg-gray-100 flex flex-col md:flex-row md:justify-between md:items-center gap-2 shrink-0">
                             <div>
-                                <h3 className="text-sm font-heading uppercase text-f1-red flex items-center gap-2">
+                                <h3 className="text-xs md:text-sm font-heading uppercase text-f1-red flex items-center gap-2">
                                     <Brain size={14} /> AI Win Probabilities
                                 </h3>
-                                <div className="text-xs text-gray-700 font-medium">Based on circuit-specific historical data</div>
+                                <div className="text-[10px] md:text-xs text-gray-700 font-medium">Based on circuit-specific historical data</div>
                             </div>
                             <div className="flex items-center gap-2">
                                 {viewMode === 'preseason' ? (
-                                    <span className="bg-amber-500 text-white px-3 py-1.5 text-xs font-heading uppercase border-2 border-black shadow-hard-sm">
+                                    <span className="bg-amber-500 text-white px-2 py-1 text-[10px] font-heading uppercase border-2 border-black shadow-hard-sm">
                                         PRE-SEASON
                                     </span>
                                 ) : (
-                                    <span className="bg-emerald-500 text-white px-3 py-1.5 text-xs font-heading uppercase border-2 border-black shadow-hard-sm">
+                                    <span className="bg-emerald-500 text-white px-2 py-1 text-[10px] font-heading uppercase border-2 border-black shadow-hard-sm">
                                         POST-QUALI
                                     </span>
                                 )}
@@ -1030,7 +1031,7 @@ function AIPredictions({ races, year }) {
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: i * 0.05 }}
-                                        className="bg-f1-paper p-3 border-2 border-black shadow-hard-sm flex items-center gap-4 relative overflow-hidden group hover:border-f1-red transition-colors"
+                                        className="bg-f1-paper p-2 md:p-3 border-2 border-black shadow-hard-sm flex items-center gap-2 md:gap-4 relative overflow-hidden group hover:border-f1-red transition-colors"
                                     >
                                         {/* Background Probability Bar */}
                                         <motion.div
@@ -1042,8 +1043,8 @@ function AIPredictions({ races, year }) {
                                         />
 
                                         {/* Rank & Driver Info */}
-                                        <div className="flex items-center gap-3 w-[220px] z-10 shrink-0">
-                                            <div className="w-8 h-8 rounded-none flex items-center justify-center text-sm font-bold font-mono"
+                                        <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0 z-10">
+                                            <div className="w-6 h-6 md:w-8 md:h-8 rounded-none flex items-center justify-center text-xs md:text-sm font-bold font-mono shrink-0"
                                                 style={{ backgroundColor: color + "20", color: color, border: `1px solid ${color}40` }}>
                                                 {i + 1}
                                             </div>
@@ -1056,33 +1057,23 @@ function AIPredictions({ races, year }) {
                                             </div>
                                         </div>
 
-                                        {/* Key Stats */}
-                                        <div className="flex-1 flex items-center gap-8 z-10">
+                                        {/* Key Stats - Simplified on mobile */}
+                                        <div className="flex items-center gap-3 md:gap-8 z-10">
                                             {/* Win Probability */}
-                                            <div className="flex flex-col w-24">
-                                                <span className="text-[9px] uppercase font-bold text-gray-600 mb-0.5">Win Prob</span>
-                                                <div className="flex items-end gap-1">
-                                                    <span className="text-lg font-bold text-black leading-none">{d.win_probability}%</span>
-                                                    <div className="h-1.5 flex-1 bg-gray-200 border border-black overflow-hidden mb-1">
-                                                        <div className="h-full" style={{ width: `${d.win_probability}%`, backgroundColor: color }} />
-                                                    </div>
-                                                </div>
+                                            <div className="flex flex-col w-16 md:w-24">
+                                                <span className="text-[8px] md:text-[9px] uppercase font-bold text-gray-600 mb-0.5">Win</span>
+                                                <span className="text-base md:text-lg font-bold text-black leading-none">{d.win_probability}%</span>
                                             </div>
 
                                             {/* Podium Probability */}
-                                            <div className="flex flex-col w-24">
-                                                <span className="text-[9px] uppercase font-bold text-gray-600 mb-0.5">Podium</span>
-                                                <div className="flex items-end gap-1">
-                                                    <span className="text-sm font-bold text-gray-600 leading-none">{d.podium_probability}%</span>
-                                                    <div className="h-1.5 flex-1 bg-gray-200 border border-black overflow-hidden mb-0.5">
-                                                        <div className="h-full bg-gray-500" style={{ width: `${d.podium_probability}%` }} />
-                                                    </div>
-                                                </div>
+                                            <div className="flex flex-col w-16 md:w-24">
+                                                <span className="text-[8px] md:text-[9px] uppercase font-bold text-gray-600 mb-0.5">Podium</span>
+                                                <span className="text-sm md:text-base font-bold text-gray-600 leading-none">{d.podium_probability}%</span>
                                             </div>
                                         </div>
 
-                                        {/* Feature Insights */}
-                                        <div className="w-[180px] flex gap-3 z-10 border-l border-black pl-4">
+                                        {/* Feature Insights - Hidden on mobile */}
+                                        <div className="hidden md:flex w-[180px] gap-3 z-10 border-l border-black pl-4">
                                             {d.features && (
                                                 <>
                                                     <div className="flex-1">

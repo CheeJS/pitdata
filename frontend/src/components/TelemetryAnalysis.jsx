@@ -121,8 +121,8 @@ export default function TelemetryAnalysis({ raceId: initialRaceId }) {
             try {
                 const res = await axios.get(`${API_BASE}/api/replay/${raceId}`);
                 setReplayData(res.data);
-                // Default drivers
-                if (res.data.data[1] && res.data.data[1].length >= 2) {
+                // Default drivers - check if data exists first
+                if (res.data?.data?.[1] && res.data.data[1].length >= 2) {
                     setActiveDriver(res.data.data[1][0].driver); // P1
                     setCompareDriver(res.data.data[1][1].driver); // P2
                 }

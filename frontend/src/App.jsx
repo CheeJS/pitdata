@@ -302,9 +302,12 @@ function DashboardView({ data, standingsData }) {
             <p className="text-sm text-gray-600 mb-4">{data.circuit} • {data.date}</p>
             <div className="flex items-center gap-3 pt-3 border-t-2 border-f1-dark">
               <div className="w-2 h-10 border-2 border-f1-dark" style={{ backgroundColor: winnerColor }} />
-              <div>
+              <div className="flex-1">
                 <div className="text-xs text-gray-500 uppercase font-bold">Winner</div>
                 <div className="text-lg font-heading text-f1-dark">{data.winner}</div>
+              </div>
+              <div className="relative w-16 h-12 overflow-visible">
+                <DriverSprite driver={data.winner?.split(' ')[1]?.substring(0, 3).toUpperCase() || 'VER'} size="md" variant="win" className="absolute -top-4 right-0" />
               </div>
             </div>
           </section>
@@ -312,47 +315,87 @@ function DashboardView({ data, standingsData }) {
 
         {/* Podium - Minimal Horizontal */}
         {/* Podium - Minimal Horizontal */}
-        <section className="bg-f1-paper border-4 border-f1-dark p-4 shadow-hard">
-          <h3 className="text-xs font-heading text-f1-dark uppercase tracking-wider mb-4">Podium</h3>
-          <div className="flex items-end justify-center gap-3 h-32">
-            {/* P2 */}
-            {podium[1] && (
-              <div className="flex-1 flex flex-col items-center">
-                <DriverSprite driver={podium[1].code} size="md" />
-                <span className="text-xs font-heading text-f1-dark mb-1">{podium[1].code}</span>
-                <div className="w-full h-16 border-2 border-f1-dark flex items-center justify-center relative overflow-hidden"
-                  style={{ backgroundColor: getTeamColor(podium[1].team) }}>
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-                  <span className="text-2xl font-black text-f1-dark/20 z-10">2</span>
-                </div>
+        {/* Mobile Results Sections */}
+        <div className="bg-white rounded-none border-4 border-f1-dark flex flex-col overflow-hidden shadow-hard">
+          <div className="p-4 border-b-4 border-f1-dark flex justify-between items-center bg-f1-light">
+            <h3 className="text-xs font-bold text-f1-dark uppercase tracking-widest font-heading">Qualifying Results</h3>
+            <span className="text-xs bg-black text-white px-2 py-0.5 font-bold">Sat</span>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-black">
+            {(!data.results?.Q || data.results.Q.length === 0) ? (
+              <div className="h-full flex flex-col items-center justify-center gap-2 py-4">
+                <img src="/waiting-qualifying-result.gif" alt="Awaiting qualifying" className="w-32 h-32 object-contain" />
+                <span className="text-xs text-gray-500 font-medium">Waiting for qualifying session</span>
               </div>
-            )}
-            {/* P1 */}
-            {podium[0] && (
-              <div className="flex-1 flex flex-col items-center">
-                <DriverSprite driver={podium[0].code} size="lg" />
-                <span className="text-sm font-heading text-f1-dark mb-1">{podium[0].code}</span>
-                <div className="w-full h-24 border-2 border-f1-dark flex items-center justify-center relative overflow-hidden shadow-hard-sm"
-                  style={{ backgroundColor: getTeamColor(podium[0].team) }}>
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent" />
-                  <span className="text-3xl font-black text-f1-dark/20 z-10">1</span>
-                </div>
-              </div>
-            )}
-            {/* P3 */}
-            {podium[2] && (
-              <div className="flex-1 flex flex-col items-center">
-                <DriverSprite driver={podium[2].code} size="md" />
-                <span className="text-xs font-heading text-f1-dark mb-1">{podium[2].code}</span>
-                <div className="w-full h-12 border-2 border-f1-dark flex items-center justify-center relative overflow-hidden"
-                  style={{ backgroundColor: getTeamColor(podium[2].team) }}>
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-                  <span className="text-xl font-black text-f1-dark/20 z-10">3</span>
-                </div>
-              </div>
+            ) : (
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-f1-dark border-b-2 border-f1-dark/10">
+                    <th className="py-2 text-left pl-2 font-heading">#</th>
+                    <th className="py-2 text-left font-heading">Driver</th>
+                    <th className="py-2 text-right pr-2 font-heading">Time</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {data.results.Q.map((r) => (
+                    <tr key={r.pos} className="hover:bg-yellow-100 transition-none group">
+                      <td className="py-2 pl-2 font-mono text-f1-dark font-bold">{r.pos}</td>
+                      <td className="py-2">
+                        <div className="font-bold text-f1-dark">{r.driver}</div>
+                        <div className="text-xs text-gray-500 truncate max-w-[80px]">{r.team}</div>
+                      </td>
+                      <td className="py-2 pr-2 text-right font-mono text-gray-600">{r.time}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
-        </section>
+        </div>
+
+        <div className="bg-white rounded-none border-4 border-f1-dark flex flex-col overflow-hidden shadow-hard">
+          <div className="p-4 border-b-4 border-f1-dark flex justify-between items-center bg-f1-light">
+            <h3 className="text-xs font-bold text-f1-red uppercase tracking-widest font-heading flex items-center gap-2">
+              Race Results
+            </h3>
+            <span className="text-xs bg-f1-red text-white px-2 py-0.5 font-bold">Sun</span>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-black">
+            {(!data.results?.R || data.results.R.length === 0) ? (
+              <div className="h-full flex flex-col items-center justify-center gap-2 py-4">
+                <img src="/waiting-race-results.gif" alt="Awaiting race" className="w-32 h-32 object-contain" />
+                <span className="text-xs text-gray-500 font-medium">Waiting for race results</span>
+              </div>
+            ) : (
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-f1-dark border-b-2 border-f1-dark/10">
+                    <th className="py-2 text-left pl-2 font-heading">#</th>
+                    <th className="py-2 text-left font-heading">Driver</th>
+                    <th className="py-2 text-right pr-2 font-heading">Pts</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {data.results.R.map((r) => (
+                    <tr key={r.pos} className="hover:bg-yellow-100 transition-none group">
+                      <td className={`py-2 pl-2 font-mono font-bold ${r.pos <= 3 ? 'text-f1-red' : 'text-gray-500'}`}>{r.pos}</td>
+                      <td className="py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1 h-6 border border-f1-dark" style={{ backgroundColor: getTeamColor(r.team) }} />
+                          <div>
+                            <div className="font-bold text-f1-dark">{r.driver}</div>
+                            <div className="text-xs text-gray-500 truncate max-w-[80px]">{r.team}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-2 pr-2 text-right font-mono font-bold text-f1-dark">{r.pts > 0 ? `+${r.pts}` : ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
 
         {/* Championship Standings - Clean List */}
         {standingsData && (
@@ -566,7 +609,10 @@ function DashboardView({ data, standingsData }) {
                 {/* Results List */}
                 <div className="bg-f1-paper border-4 border-f1-dark shadow-hard p-4 md:p-6 mb-8">
                   <div className="flex justify-between items-center mb-6 border-b-2 border-f1-dark pb-4">
-                    <h3 className="text-xl md:text-2xl font-heading uppercase">
+                    <h3 className="text-xl md:text-2xl font-heading uppercase flex items-center gap-2">
+                      {resultType === 'R' && (
+                        <img src="/checkered-flag-waves.gif" alt="Checkered flag" className="w-8 h-8 object-contain" />
+                      )}
                       {resultType === 'Q' ? 'Qualifying Results' : 'Race Results'}
                     </h3>
                     <div className="flex bg-gray-100 rounded-lg p-1 border-2 border-f1-dark">
@@ -720,13 +766,9 @@ function DashboardView({ data, standingsData }) {
             </div>
             <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-black">
               {(!data.results?.Q || data.results.Q.length === 0) ? (
-                <div className="h-full flex items-center justify-center text-gray-400 text-xs italic">
-                  <div className="text-center">
-                    <div className="mb-2">Upcoming</div>
-                    <div className="flex gap-2 text-xs text-gray-400">
-                      <span>Q1</span><span>Q2</span><span>Q3</span>
-                    </div>
-                  </div>
+                <div className="h-full flex flex-col items-center justify-center gap-2">
+                  <img src="/waiting-qualifying-result.gif" alt="Awaiting qualifying" className="w-32 h-32 object-contain" />
+                  <span className="text-xs text-gray-500 font-medium">Waiting for qualifying session</span>
                 </div>
               ) : (
                 <table className="w-full text-xs">
@@ -757,12 +799,18 @@ function DashboardView({ data, standingsData }) {
           {/* 2. Race Results */}
           <div className="bg-white rounded-none border-4 border-f1-dark flex flex-col overflow-hidden shadow-hard">
             <div className="p-4 border-b-4 border-f1-dark flex justify-between items-center bg-f1-light">
-              <h3 className="text-xs font-bold text-f1-red uppercase tracking-widest font-heading">Race Results</h3>
+              <h3 className="text-xs font-bold text-f1-red uppercase tracking-widest font-heading flex items-center gap-2">
+                <img src="/checkered-flag-waves.gif" alt="" className="w-5 h-5 object-contain" />
+                Race Results
+              </h3>
               <span className="text-xs bg-f1-red text-white px-2 py-0.5 font-bold">Sun</span>
             </div>
             <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-black">
               {(!data.results?.R || data.results.R.length === 0) ? (
-                <div className="h-full flex items-center justify-center text-gray-400 text-xs italic">Upcoming</div>
+                <div className="h-full flex flex-col items-center justify-center gap-2">
+                  <img src="/waiting-race-results.gif" alt="Awaiting race" className="w-32 h-32 object-contain" />
+                  <span className="text-xs text-gray-500 font-medium">Waiting for race results</span>
+                </div>
               ) : (
                 <table className="w-full text-xs">
                   <thead>

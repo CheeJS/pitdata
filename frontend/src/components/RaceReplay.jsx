@@ -983,15 +983,15 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="absolute top-14 right-3 z-20 bg-black/80 backdrop-blur-sm rounded-none border border-black overflow-hidden"
+                                className="absolute top-14 right-3 z-20 bg-white/95 backdrop-blur-sm rounded-none border-2 border-black shadow-hard overflow-hidden"
                             >
                                 {currentPositions.slice(0, 5).map((d) => {
                                     const meta = replayData?.drivers?.[d.driver];
                                     return (
                                         <div key={d.driver}
                                             className={cn(
-                                                "flex items-center justify-between py-0.5 px-2 border-b border-gray-100 group hover:bg-black hover:text-white transition-colors cursor-pointer",
-                                                d.gapToLeader === 0 && "bg-yellow-50/50",
+                                                "flex items-center justify-between py-1.5 px-2.5 border-b border-gray-200 group hover:bg-gray-100 transition-colors cursor-pointer",
+                                                d.gapToLeader === 0 && "bg-yellow-50",
                                                 d.status === 'DNF' && "opacity-50 grayscale"
                                             )}    >
                                             <span className={cn(
@@ -1059,17 +1059,17 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                     key={d.driver}
                                     onClick={() => setActiveDriver(d.driver)}
                                     className={cn(
-                                        "flex items-center gap-1 px-2 py-1 rounded shrink-0 transition-all",
-                                        isActive ? "bg-white/10 ring-1 ring-white/30" : "bg-white",
-                                        isTop3 && !isActive && "bg-[#151515]"
+                                        "flex items-center gap-1 px-2 py-1 rounded shrink-0 transition-all border",
+                                        isActive ? "bg-f1-red/10 border-f1-red" : "bg-white border-gray-200",
+                                        isTop3 && !isActive && "bg-gray-100 border-gray-300"
                                     )}
                                 >
                                     <span className={cn(
                                         "text-xs font-bold w-3",
-                                        d.rank === 1 ? "text-f1-red" : isTop3 && !isActive ? "text-white" : "text-gray-600"
+                                        d.rank === 1 ? "text-f1-red" : "text-gray-700"
                                     )}>{d.rank}</span>
                                     <div className="w-0.5 h-3 rounded-none" style={{ backgroundColor: meta?.color || '#444' }} />
-                                    <span className={cn("text-xs font-medium", isTop3 && !isActive ? "text-white" : "text-black")}>{d.driver}</span>
+                                    <span className="text-xs font-medium text-black">{d.driver}</span>
                                 </button>
                             );
                         })}
