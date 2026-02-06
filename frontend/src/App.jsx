@@ -800,7 +800,6 @@ function DashboardView({ data, standingsData }) {
           <div className="bg-white rounded-none border-4 border-f1-dark flex flex-col overflow-hidden shadow-hard">
             <div className="p-4 border-b-4 border-f1-dark flex justify-between items-center bg-f1-light">
               <h3 className="text-xs font-bold text-f1-red uppercase tracking-widest font-heading flex items-center gap-2">
-                <img src="/checkered-flag-waves.gif" alt="" className="w-5 h-5 object-contain" />
                 Race Results
               </h3>
               <span className="text-xs bg-f1-red text-white px-2 py-0.5 font-bold">Sun</span>
