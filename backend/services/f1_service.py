@@ -2037,8 +2037,14 @@ def get_dashboard_data(year=2026):
     try:
         current_time = datetime.utcnow()
         
-        # 1. Get latest race with results
-        latest_race_with_results = session.query(Race).join(Result).filter(Race.year == year).order_by(Race.date.desc()).first()
+        # 1. Get latest race with RACE results (session_type='R' only — not qualifying)
+        latest_race_with_results = (
+            session.query(Race)
+            .join(Result)
+            .filter(Race.year == year, Result.session_type == 'R', Result.position > 0)
+            .order_by(Race.date.desc())
+            .first()
+        )
         
         # 2. Get next upcoming race
         next_race = session.query(Race).filter(Race.year == year, Race.date >= current_time).order_by(Race.date.asc()).first()

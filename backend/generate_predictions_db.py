@@ -16,6 +16,28 @@ import sys
 from datetime import datetime
 from services.f1_service import get_db_session, Race, Result
 
+# Module-level DB availability cache — tested once, reused for all calls
+_db_available = None
+
+def _check_db():
+    global _db_available
+    if _db_available is not None:
+        return _db_available
+    import socket
+    old_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(5)  # 5-second probe
+    try:
+        s = get_db_session()
+        s.execute("SELECT 1")
+        s.close()
+        _db_available = True
+    except Exception:
+        _db_available = False
+        print("   (DB unavailable – driver historical stats will use defaults)")
+    finally:
+        socket.setdefaulttimeout(old_timeout)
+    return _db_available
+
 # DYNAMIC YEAR CONFIGURATION
 def get_prediction_config(target_year=None):
     """Get configuration for prediction year"""
@@ -68,41 +90,62 @@ TEAM_PERFORMANCE_2025 = {
 
 def get_driver_stats_from_db(driver_code, circuit_name, training_year):
     """Extract driver statistics from database"""
-    session = get_db_session()
-    
-    # Get all race results for this driver in training year
-    results = session.query(Result).join(Race).filter(
-        Race.year == training_year,
-        Result.driver_code == driver_code,
-        Result.session_type == 'R',
-        Result.position.isnot(None)
-    ).all()
-    
-    # Circuit-specific stats
-    circuit_results = [r for r in results if circuit_name.lower() in r.race.circuit_name.lower()]
-    circuit_avg_pos = np.mean([r.position for r in circuit_results]) if circuit_results else 10.0
-    
-    # Overall stats
-    avg_position = np.mean([r.position for r in results]) if results else 10.0
-    wins = sum(1 for r in results if r.position == 1)
-    podiums = sum(1 for r in results if r.position <= 3)
-    dnfs = sum(1 for r in results if r.status and ('DNF' in r.status or 'Retired' in r.status))
-    
-    # Recent form (last 5 races)
-    recent = sorted(results, key=lambda x: x.race.round, reverse=True)[:5]
-    recent_form = np.mean([r.position for r in recent]) if recent else 10.0
-    
-    session.close()
-    
-    return {
-        'circuit_avg_position': circuit_avg_pos,
-        'overall_avg_position': avg_position,
-        'win_rate': wins / len(results) if results else 0,
-        'podium_rate': podiums / len(results) if results else 0,
-        'dnf_rate': dnfs / len(results) if results else 0,
-        'recent_form': recent_form,
-        'races_count': len(results)
+    default_stats = {
+        'circuit_avg_position': 10.0,
+        'overall_avg_position': 10.0,
+        'win_rate': 0,
+        'podium_rate': 0,
+        'dnf_rate': 0,
+        'recent_form': 10.0,
+        'races_count': 0
     }
+    if not _check_db():
+        return default_stats
+    try:
+        session = get_db_session()
+    except Exception:
+        return default_stats
+
+    try:
+        # Get all race results for this driver in training year
+        results = session.query(Result).join(Race).filter(
+            Race.year == training_year,
+            Result.driver_code == driver_code,
+            Result.session_type == 'R',
+            Result.position.isnot(None)
+        ).all()
+        
+        # Circuit-specific stats
+        circuit_results = [r for r in results if circuit_name.lower() in r.race.circuit_name.lower()]
+        circuit_avg_pos = np.mean([r.position for r in circuit_results]) if circuit_results else 10.0
+        
+        # Overall stats
+        avg_position = np.mean([r.position for r in results]) if results else 10.0
+        wins = sum(1 for r in results if r.position == 1)
+        podiums = sum(1 for r in results if r.position <= 3)
+        dnfs = sum(1 for r in results if r.status and ('DNF' in r.status or 'Retired' in r.status))
+        
+        # Recent form (last 5 races)
+        recent = sorted(results, key=lambda x: x.race.round, reverse=True)[:5]
+        recent_form = np.mean([r.position for r in recent]) if recent else 10.0
+        
+        session.close()
+        
+        return {
+            'circuit_avg_position': circuit_avg_pos,
+            'overall_avg_position': avg_position,
+            'win_rate': wins / len(results) if results else 0,
+            'podium_rate': podiums / len(results) if results else 0,
+            'dnf_rate': dnfs / len(results) if results else 0,
+            'recent_form': recent_form,
+            'races_count': len(results)
+        }
+    except Exception:
+        try:
+            session.close()
+        except Exception:
+            pass
+        return default_stats
 
 
 def estimate_qualifying_times(drivers_list, team_performance):
@@ -257,6 +300,109 @@ def predict_race_db(circuit_name, race_round, target_year, training_year):
         'weather': {'conditions': 'Dry', 'temperature': 25},
         'results': results,
         'model_confidence': 65.0
+    }
+
+
+def predict_race_advanced_with_actual_quali(circuit_name, race_round, actual_quali_times, target_year, training_year=None):
+    """
+    Predict race using ACTUAL qualifying times from Saturday.
+    actual_quali_times: dict of {driver_code: lap_time_in_seconds}, e.g. {"NOR": 75.098, "VER": 75.234}
+    """
+    if training_year is None:
+        training_year = target_year - 1
+
+    print(f"\n{'='*60}")
+    print(f"POST-QUALIFYING: Round {race_round}: {circuit_name}")
+    print(f"Using ACTUAL qualifying times for {len(actual_quali_times)} drivers")
+    print(f"{'='*60}")
+
+    max_team_points = max(TEAM_PERFORMANCE_2025.values())
+
+    # Normalize actual quali times so missing drivers get an estimated time
+    estimated_quali = estimate_qualifying_times(DRIVER_LINEUP_2026, TEAM_PERFORMANCE_2025)
+    # Override with actual times where available
+    merged_quali = {**estimated_quali}
+    for code, t in actual_quali_times.items():
+        if code in DRIVER_LINEUP_2026:
+            # Scale actual seconds to comparable range (estimated base is 90.0)
+            # We keep actual times as-is since it's just a relative ranking
+            merged_quali[code] = float(t)
+
+    # Normalise so all times are in the same scale
+    actual_min = min(actual_quali_times.values()) if actual_quali_times else 75.0
+    scale = 90.0 / actual_min if actual_min > 0 else 1.0
+    for code in actual_quali_times:
+        if code in merged_quali:
+            merged_quali[code] = merged_quali[code] * scale
+
+    # Build prediction dataset
+    prediction_data = []
+    for driver_code, info in DRIVER_LINEUP_2026.items():
+        team = info['team']
+        team_points = TEAM_PERFORMANCE_2025.get(team, 0)
+        stats = get_driver_stats_from_db(driver_code, circuit_name, training_year)
+
+        prediction_data.append({
+            'Driver': driver_code,
+            'QualifyingTime': merged_quali.get(driver_code, 90.0 * 1.15),
+            'HasActualQuali': driver_code in actual_quali_times,
+            'TeamPerformanceScore': team_points / max_team_points if max_team_points > 0 else 0.5,
+            'CircuitAvgPosition': stats['circuit_avg_position'],
+            'OverallAvgPosition': stats['overall_avg_position'],
+            'WinRate': stats['win_rate'],
+            'RecentForm': stats['recent_form'],
+            'RainProbability': 0.0,
+            'Temperature': 25.0
+        })
+
+    df = pd.DataFrame(prediction_data)
+
+    # Qualifying carries more weight post-quali (40% vs 30%)
+    df['PredictedScore'] = (
+        df['QualifyingTime'] * 0.40 +
+        df['CircuitAvgPosition'] * 0.23 +
+        df['OverallAvgPosition'] * 0.17 +
+        df['RecentForm'] * 0.12 +
+        (1 - df['TeamPerformanceScore']) * 10 * 0.08
+    )
+
+    df = df.sort_values('PredictedScore').reset_index(drop=True)
+
+    scores = df['PredictedScore'].values
+    inverted = 1 / (scores - scores.min() + 1.0)
+    probabilities = (inverted / inverted.sum()) * 100
+    df['win_probability'] = probabilities
+    df['podium_probability'] = np.minimum(probabilities * 2.5, 95.0)
+
+    results = []
+    for idx, row in df.head(10).iterrows():
+        driver_code = row['Driver']
+        results.append({
+            'code': driver_code,
+            'name': DRIVER_LINEUP_2026[driver_code]['name'],
+            'team': DRIVER_LINEUP_2026[driver_code]['team'],
+            'win_probability': float(round(row['win_probability'], 1)),
+            'podium_probability': float(round(row['podium_probability'], 1)),
+            'confidence': 200.0,
+            'wet_boost': False,
+            'actual_quali': driver_code in actual_quali_times,
+            'features': {
+                'circuit_avg': float(round(row['CircuitAvgPosition'], 1)),
+                'recent_form': float(round(row['RecentForm'], 1)),
+                'team_score': float(round(row['TeamPerformanceScore'], 2))
+            }
+        })
+
+    race_code = get_circuit_code(circuit_name)
+    print(f"✓ Top 3: {results[0]['name']}, {results[1]['name']}, {results[2]['name']}")
+
+    return {
+        'race': race_code,
+        'prediction_year': target_year,
+        'model_type': 'database_ml_post_quali',
+        'weather': {'conditions': 'Dry', 'temperature': 25},
+        'results': results,
+        'model_confidence': 82.0
     }
 
 

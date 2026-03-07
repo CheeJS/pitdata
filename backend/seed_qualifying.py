@@ -46,7 +46,7 @@ def seed_qualifying_results(year):
         try:
             print(f"    Fetching qualifying results...")
             ff1_session = fastf1.get_session(year, race.round, 'Q')
-            ff1_session.load(telemetry=False, weather=False, messages=False)
+            ff1_session.load(telemetry=False, weather=False, messages=True)
             
             if not hasattr(ff1_session, 'results') or ff1_session.results.empty:
                 print(f"    No qualifying data available")
@@ -101,10 +101,21 @@ if __name__ == "__main__":
     print("="*60)
     print("QUALIFYING RESULTS SEEDER")
     print("="*60)
-    
-    seed_qualifying_results(2024)
-    seed_qualifying_results(2025)
+
+    import argparse
+    parser = argparse.ArgumentParser(description='Seed qualifying results')
+    parser.add_argument('year', nargs='?', type=int, default=None,
+                        help='Year to seed (default: seeds 2024, 2025, 2026)')
+    args = parser.parse_args()
+
+    if args.year:
+        seed_qualifying_results(args.year)
+    else:
+        seed_qualifying_results(2024)
+        seed_qualifying_results(2025)
+        seed_qualifying_results(2026)
     
     print("\n" + "="*60)
     print("ALL DONE!")
+    print("="*60)
     print("="*60)
