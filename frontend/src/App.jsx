@@ -638,50 +638,6 @@ function DashboardView({ data, standingsData }) {
                   </div>
                 </div>
 
-                {/* Podium Strip */}
-                {podium.length > 0 && (
-                  <div className="mt-8 pt-6 border-t-2 border-f1-dark/10">
-                    <div className="flex items-end justify-center gap-4">
-                      {/* P2 */}
-                      {podium[1] && (
-                        <div className="flex flex-col items-center">
-                          <DriverSprite driver={podium[1].code} size="lg" />
-                          <span className="text-sm font-bold text-f1-dark mb-2">{podium[1].code}</span>
-                          <div className="w-24 h-20 rounded-none border-2 border-f1-dark flex items-center justify-center relative overflow-hidden"
-                            style={{ backgroundColor: getTeamColor(podium[1].team) }}>
-                            <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-                            <span className="text-3xl font-black text-f1-dark/20 z-10">2</span>
-                          </div>
-                        </div>
-                      )}
-                      {/* P1 */}
-                      {podium[0] && (
-                        <div className="flex flex-col items-center">
-                          <DriverSprite driver={podium[0].code} size="xl" />
-                          <Trophy className="text-yellow-500 mb-2" size={20} />
-                          <span className="text-lg font-bold text-f1-dark mb-2">{podium[0].code}</span>
-                          <div className="w-28 h-28 rounded-none border-2 border-f1-dark flex items-center justify-center relative overflow-hidden shadow-hard-sm"
-                            style={{ backgroundColor: getTeamColor(podium[0].team) }}>
-                            <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent" />
-                            <span className="text-4xl font-black text-f1-dark/20 z-10">1</span>
-                          </div>
-                        </div>
-                      )}
-                      {/* P3 */}
-                      {podium[2] && (
-                        <div className="flex flex-col items-center">
-                          <DriverSprite driver={podium[2].code} size="lg" />
-                          <span className="text-sm font-bold text-f1-dark mb-2">{podium[2].code}</span>
-                          <div className="w-24 h-16 rounded-none border-2 border-f1-dark flex items-center justify-center relative overflow-hidden"
-                            style={{ backgroundColor: getTeamColor(podium[2].team) }}>
-                            <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-                            <span className="text-2xl font-black text-f1-dark/20 z-10">3</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </div>
