@@ -2074,16 +2074,20 @@ def get_dashboard_data(year=2026):
             gap_between_races = (next_race.date - latest_race_with_results.date).total_seconds() / 86400
             
             # Smart switching logic:
-            # - If race was < 3 days ago: Always show results (fresh results priority)
-            # - If gap is small (back-to-back): Show results for first 50% of gap
-            # - If gap is large (rest week): Show results for 3 days max
-            
-            if days_since_last_race < 3:
-                # Fresh results - always show
+            # NOTE: Race.date is the EVENT START (Thursday), not race day (Sunday).
+            # The actual race happens ~3-4 days after Race.date, so all thresholds
+            # are offset by +4 days to correctly reflect time since the actual race.
+            #
+            # - If event started < 7 days ago (~3 days since race day): Always show results
+            # - If gap is small (back-to-back, event starts ≤ 11 days apart): Show results for first 50% of gap
+            # - If gap is large (rest week): Show results for 7 days after event start
+
+            if days_since_last_race < 7:
+                # Fresh results — event started within a week (race day within ~3 days)
                 mode = "LATEST_RESULTS"
                 target_race_id = latest_race_with_results.id
-            elif gap_between_races <= 7:
-                # Back-to-back race (7 days or less between races)
+            elif gap_between_races <= 11:
+                # Back-to-back race (event starts ≤ 11 days apart)
                 # Show results for first 50% of gap, then switch to next race
                 if days_since_last_race < (gap_between_races / 2):
                     mode = "LATEST_RESULTS"
@@ -2092,9 +2096,9 @@ def get_dashboard_data(year=2026):
                     mode = "NEXT_RACE"
                     target_race_id = next_race.id
             else:
-                # Normal gap (> 7 days)
-                # Show results for 3 days, then switch to next race
-                if days_since_last_race < 3:
+                # Normal gap (> 11 days between event starts)
+                # Show results for 7 days after event start (~3 days after race day)
+                if days_since_last_race < 7:
                     mode = "LATEST_RESULTS"
                     target_race_id = latest_race_with_results.id
                 else:
