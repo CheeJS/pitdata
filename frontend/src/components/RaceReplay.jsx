@@ -103,6 +103,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 setReplayData(repRes.data);
 
                 let minStart = Infinity;
+                // Try lap 1 entries that have both cummulative and time
                 if (repRes.data?.data?.[1]) {
                     repRes.data.data[1].forEach(d => {
                         if (d.cummulative && d.time) {
@@ -110,6 +111,18 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                             if (start < minStart) minStart = start;
                         }
                     });
+                }
+                // Fallback: lap 1 times are null for recent races (FastF1 can't compute them).
+                // Estimate race start = min(lap1.cummulative) - avg(lap2.time)
+                if (minStart === Infinity && repRes.data?.data?.[1] && repRes.data?.data?.[2]) {
+                    const lap2Times = repRes.data.data[2]
+                        .filter(d => d.time && d.time > 60 && d.time < 300)
+                        .map(d => d.time);
+                    const avgLap2 = lap2Times.length > 0
+                        ? lap2Times.reduce((a, b) => a + b, 0) / lap2Times.length
+                        : 90;
+                    const minLap1Cum = Math.min(...repRes.data.data[1].map(d => d.cummulative || Infinity));
+                    if (minLap1Cum !== Infinity) minStart = minLap1Cum - avgLap2;
                 }
                 if (minStart === Infinity) minStart = 0;
                 setTimeOffset(minStart);
@@ -770,7 +783,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                     </button>
                     <button
                         disabled={!!error}
-                        onClick={() => !error && setIsPlaying(!isPlaying)}
+                        onClick={() => { if (error) return; if (raceTime >= maxTime - 1) { setRaceTime(0); setIsPlaying(true); } else { setIsPlaying(!isPlaying); } }}
                         className={cn("w-14 h-14 flex items-center justify-center bg-f1-red border-2 border-black text-white shrink-0 shadow-hard active:translate-y-1 active:shadow-none transition-all", !!error && "opacity-50 cursor-not-allowed")}
                     >
                         {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
@@ -933,7 +946,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                             ))}
                         </div>
 
-                        <button disabled={!!error} onClick={() => !error && setIsPlaying(!isPlaying)} className={cn("w-10 h-10 flex items-center justify-center bg-f1-red border border-black text-black shadow-sm active:translate-y-[1px] active:shadow-none transition-all", !!error && "opacity-50 cursor-not-allowed")}>
+                        <button disabled={!!error} onClick={() => { if (error) return; if (raceTime >= maxTime - 1) { setRaceTime(0); setIsPlaying(true); } else { setIsPlaying(!isPlaying); } }} className={cn("w-10 h-10 flex items-center justify-center bg-f1-red border border-black text-black shadow-sm active:translate-y-[1px] active:shadow-none transition-all", !!error && "opacity-50 cursor-not-allowed")}>
                             {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-0.5" />}
                         </button>
                     </div>
