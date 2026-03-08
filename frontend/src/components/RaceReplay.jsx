@@ -28,7 +28,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
     const [timeOffset, setTimeOffset] = useState(0);
     const [raceTime, setRaceTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [speed, setSpeed] = useState(100);
+    const [speed, setSpeed] = useState(20);
     const [loading, setLoading] = useState(false);
     const [mobileTab, setMobileTab] = useState('map'); // 'map', 'standings', 'events'
     const [showLeaderboard, setShowLeaderboard] = useState(true); // Toggle mini leaderboard
@@ -36,15 +36,41 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
     const [error, setError] = useState(null);
     const AVAILABLE_YEARS = [2026, 2025, 2024];
 
-    // Calculate Local Time
-    const localTime = useMemo(() => {
-        if (!replayData?.startTime) return null;
-        try {
-            const start = new Date(replayData.startTime);
-            // raceTime already accounts for timeOffset (maxTime = finalTime - timeOffset)
-            return new Date(start.getTime() + (raceTime * 1000));
-        } catch (e) { return null; }
-    }, [replayData, raceTime]);
+    // Race elapsed time formatted as H:MM:SS
+    const elapsedTime = useMemo(() => {
+        const t = Math.max(0, Math.floor(raceTime));
+        const h = Math.floor(t / 3600);
+        const m = Math.floor((t % 3600) / 60);
+        const s = t % 60;
+        if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }, [raceTime]);
+
+    // Detect race restart from a large gap between consecutive laps (red flag stoppage).
+    // Returns the session-absolute time when the race resumed, or null if no stoppage.
+    const restartTime = useMemo(() => {
+        if (!replayData?.data) return null;
+        const lapNums = Object.keys(replayData.data).map(Number).sort((a, b) => a - b);
+        for (let i = 1; i < lapNums.length; i++) {
+            const lapN = lapNums[i];
+            const prevLapN = lapNums[i - 1];
+            const lapEntries = replayData.data[lapN];
+            const prevLapEntries = replayData.data[prevLapN];
+            if (!lapEntries?.length || !prevLapEntries?.length) continue;
+            const prevEnds = prevLapEntries.map(d => d.cummulative).filter(Boolean);
+            const currStarts = lapEntries
+                .filter(d => d.cummulative && d.time)
+                .map(d => d.cummulative - d.time);
+            if (!prevEnds.length || !currStarts.length) continue;
+            const avgPrevEnd = prevEnds.reduce((a, b) => a + b, 0) / prevEnds.length;
+            const avgCurrStart = currStarts.reduce((a, b) => a + b, 0) / currStarts.length;
+            if (avgCurrStart - avgPrevEnd > 600) {
+                // Gap > 10 min = red flag stoppage followed by restart
+                return avgCurrStart;
+            }
+        }
+        return null;
+    }, [replayData]);
 
 
 
@@ -223,8 +249,14 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
             if (ev.status === 'WEATHER') weather = ev.weather;
         }
 
+        // If status is stuck RED/SUSPENDED but lap data shows the race resumed,
+        // inject a synthetic GREEN to unblock car movement.
+        if ((status === 'RED' || status === 'SUSPENDED') && restartTime !== null && effectiveTimeInFlags >= restartTime) {
+            status = 'GREEN';
+        }
+
         return { currentStatus: status, currentWeather: weather };
-    }, [replayData, raceTime, timeOffset]);
+    }, [replayData, raceTime, timeOffset, restartTime]);
 
     // Positions
     const currentPositions = useMemo(() => {
@@ -823,16 +855,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 <div className="flex items-center justify-between px-4 py-2.5 border-t border-black bg-white">
                     <div className="flex items-center gap-1.5">
                         <span className="text-[9px] text-gray-600 uppercase mr-1">Speed</span>
-                        {[50, 100, 200, 500].map(s => (
-                            <button
-                                key={s}
-                                onClick={() => setSpeed(s)}
-                                className={cn("px-2.5 py-1 text-xs font-bold rounded transition-colors",
-                                    speed === s ? "bg-f1-red text-black" : "bg-white text-gray-600 hover:text-black")}
-                            >
-                                {s}x
-                            </button>
-                        ))}
+                        {[5, 20, 50, 100].map(s => (
                     </div>
                     {currentWeather && (
                         <div className="flex items-center gap-3 text-xs text-gray-600">
@@ -916,12 +939,12 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    {/* Clock */}
+                    {/* Elapsed Time */}
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-[#151515] border-2 border-gray-600 shadow-sm">
                         <div className="flex flex-col items-end leading-none">
-                            <span className="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-0.5">Local Time</span>
+                            <span className="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-0.5">Elapsed</span>
                             <span className="text-sm font-heading font-white text-white tracking-widest">
-                                {localTime ? localTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'}
+                                {elapsedTime}
                             </span>
                         </div>
                     </div>
@@ -941,7 +964,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                         <button onClick={() => setRaceTime(0)} className="p-1.5 text-gray-600 hover:text-black hover:bg-gray-200 rounded"><RotateCcw size={16} /></button>
 
                         <div className="hidden xl:flex bg-white border border-gray-300 mx-1">
-                            {[50, 100, 200, 500].map(s => (
+                            {[5, 20, 50, 100].map(s => (
                                 <button key={s} onClick={() => setSpeed(s)} className={cn("px-2 py-1 text-xs font-bold transition-colors border-r border-gray-200 last:border-r-0", speed === s ? "bg-black text-white" : "text-gray-500 hover:text-black")}>{s}x</button>
                             ))}
                         </div>

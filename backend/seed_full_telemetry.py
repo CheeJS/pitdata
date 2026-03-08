@@ -154,65 +154,105 @@ def seed_full_race_data(year, race_round, race_id, session_db):
             
             print(f"    Added telemetry for {tel_count} drivers")
 
-        # --- RACE STATUS (Flags, SC, VSC) ---
+        # --- RACE STATUS (Flags, SC, VSC) via track_status + race_control_messages ---
         print(f"    Processing race control events...")
         existing_status = session_db.query(RaceStatus).filter_by(race_id=race_id).count()
         if existing_status > 0:
-             print(f"    Race status events already exist ({existing_status}), skipping...")
-        else:
-             rc_msgs = ff1_session.race_control_messages
-             if rc_msgs is not None and not rc_msgs.empty:
-                 count_ev = 0
-                 for _, row in rc_msgs.iterrows():
-                     msg = str(row['Message'])
-                     category = row['Category']
-                     flag = row['Flag'] if 'Flag' in row else None
-                     
-                     status_val = None
-                     msg_upper = msg.upper()
-                     cat_upper = str(category).upper()
-                     
-                     if "SAFETY CAR" in msg_upper or "SAFETY CAR" in cat_upper:
-                         if "VIRTUAL" in msg_upper or "VIRTUAL" in cat_upper: status_val = "VSC"
-                         else: status_val = "SC"
-                     elif "RED FLAG" in msg_upper or (flag == "Red" and "FLAG" in cat_upper): status_val = "RED"
-                     elif "YELLOW FLAG" in msg_upper or (flag == "Yellow" and "FLAG" in cat_upper): status_val = "YELLOW"
-                     elif "GREEN FLAG" in msg_upper or (flag == "Green" and "FLAG" in cat_upper): status_val = "GREEN"
-                     elif "CHEQUERED" in msg_upper or "CHECKERED" in msg_upper: status_val = "CHEQUERED"
-                     
-                     # Logic from fix_track_status.py:
-                     # If it's a pure flag, let it be categorized as such (or skip if we want authoritative TrackStatus, 
-                     # but here we are in the main seeder which might not be using TrackStatus API property directly like the fix script).
-                     # For safety, let's include EVERYTHING but attempt to categorize.
-                     
-                     category_val = "MESSAGE"
-                     if status_val:
-                         category_val = "FLAG"
-                     else:
-                         # Copy raw message to status if it's not a standard flag status
-                         status_val = msg
-                     
-                     if status_val:
-                         time_val = None
-                         raw_time = row['Time']
-                         if pd.notna(raw_time):
-                             if hasattr(raw_time, 'total_seconds'): time_val = raw_time.total_seconds()
-                             elif isinstance(raw_time, pd.Timedelta): time_val = raw_time.total_seconds()
-                             elif isinstance(raw_time, (pd.Timestamp, datetime)):
-                                 try: time_val = (raw_time - ff1_session.date).total_seconds()
-                                 except: pass
-                         
-                         if time_val is not None:
-                             rs = RaceStatus(
-                                 race_id=race_id, 
-                                 time=time_val, 
-                                 status=status_val, 
-                                 weather=None,
-                                 category=category_val
-                            )
-                             session_db.add(rs)
-                             count_ev += 1
-                 print(f"    Added {count_ev} status events")
+            print(f"    Clearing {existing_status} existing status events to re-seed with track_status...")
+            session_db.query(RaceStatus).filter_by(race_id=race_id).delete()
+            session_db.flush()
+
+        count_ev = 0
+
+        # --- PRIMARY: track_status — authoritative per-second flag state ---
+        # Status codes: '1'=Green, '2'=Yellow, '4'=SC, '5'=Red, '6'=VSC, '7'=VSCEnding(→Green)
+        # Message values: AllClear, Yellow, SCDeployed, SCEnding, Red, VSCDeployed, VSCEnding
+        STATUS_CODE_MAP = {
+            '1': 'GREEN', '2': 'YELLOW', '4': 'SC', '5': 'RED', '6': 'VSC', '7': 'GREEN'
+        }
+        MSG_MAP = {
+            'AllClear': 'GREEN', 'Yellow': 'YELLOW', 'SCDeployed': 'SC',
+            'SCEnding': 'SC', 'Red': 'RED', 'VSCDeployed': 'VSC', 'VSCEnding': 'GREEN'
+        }
+        try:
+            ts = ff1_session.track_status
+            if ts is not None and not ts.empty:
+                for _, row in ts.iterrows():
+                    raw_time = row['Time']
+                    time_val = None
+                    if pd.notna(raw_time):
+                        if hasattr(raw_time, 'total_seconds'):
+                            time_val = raw_time.total_seconds()
+                        elif isinstance(raw_time, (int, float)):
+                            time_val = float(raw_time)
+                    if time_val is None:
+                        continue
+
+                    msg_str = str(row.get('Message', '')).strip()
+                    code_str = str(row.get('Status', '')).strip()
+                    status_val = MSG_MAP.get(msg_str) or STATUS_CODE_MAP.get(code_str)
+                    if not status_val:
+                        continue
+
+                    session_db.add(RaceStatus(
+                        race_id=race_id,
+                        time=time_val,
+                        status=status_val,
+                        weather=None,
+                        category='FLAG'
+                    ))
+                    count_ev += 1
+                print(f"    Added {count_ev} track_status flag events")
+        except Exception as ts_err:
+            print(f"    track_status unavailable ({ts_err}), falling back to race_control_messages")
+
+        # --- SECONDARY: race_control_messages — non-flag events (penalties, DRS, etc.) ---
+        try:
+            rc_msgs = ff1_session.race_control_messages
+            if rc_msgs is not None and not rc_msgs.empty:
+                msg_count = 0
+                for _, row in rc_msgs.iterrows():
+                    msg = str(row['Message'])
+                    category = str(row.get('Category', ''))
+                    flag = row['Flag'] if 'Flag' in row else None
+                    msg_upper = msg.upper()
+                    cat_upper = category.upper()
+
+                    # Determine if this is a flag event (already covered by track_status)
+                    is_flag = (
+                        "SAFETY CAR" in msg_upper or "SAFETY CAR" in cat_upper or
+                        "RED FLAG" in msg_upper or (flag == "Red" and "FLAG" in cat_upper) or
+                        "YELLOW FLAG" in msg_upper or (flag == "Yellow" and "FLAG" in cat_upper) or
+                        "GREEN FLAG" in msg_upper or (flag == "Green" and "FLAG" in cat_upper) or
+                        "VIRTUAL" in msg_upper or "CHEQUERED" in msg_upper or "CHECKERED" in msg_upper
+                    )
+                    if is_flag:
+                        continue  # Skip — covered by track_status
+
+                    time_val = None
+                    raw_time = row['Time']
+                    if pd.notna(raw_time):
+                        if hasattr(raw_time, 'total_seconds'): time_val = raw_time.total_seconds()
+                        elif isinstance(raw_time, pd.Timedelta): time_val = raw_time.total_seconds()
+                        elif isinstance(raw_time, (pd.Timestamp, datetime)):
+                            try: time_val = (raw_time - ff1_session.date).total_seconds()
+                            except: pass
+                    if time_val is None:
+                        continue
+
+                    session_db.add(RaceStatus(
+                        race_id=race_id,
+                        time=time_val,
+                        status=msg,
+                        weather=None,
+                        category='MESSAGE'
+                    ))
+                    msg_count += 1
+                print(f"    Added {msg_count} race control message events")
+        except Exception as rc_err:
+            print(f"    race_control_messages error: {rc_err}")
+
+        print(f"    Total status events: {count_ev}")
         
         session_db.commit()
         return True
