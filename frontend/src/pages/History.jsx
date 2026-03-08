@@ -360,9 +360,6 @@ function RaceDetailView({ data }) {
         { id: 'S', label: 'Sprint' },
         { id: 'SS', label: 'Sprint Quali' },
         { id: 'Q', label: 'Qualifying' },
-        { id: 'FP3', label: 'FP3' },
-        { id: 'FP2', label: 'FP2' },
-        { id: 'FP1', label: 'FP1' },
     ].filter(t => availableSessions.includes(t.id));
 
     useEffect(() => {

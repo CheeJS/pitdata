@@ -28,7 +28,7 @@ function getTeamId(teamName) {
 export default function Standings() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [year, setYear] = useState(2025);
+    const [year, setYear] = useState(2026);
     const [mobileTab, setMobileTab] = useState('drivers'); // 'drivers' or 'constructors'
     const availableYears = [2026, 2025, 2024];
 
