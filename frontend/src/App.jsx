@@ -460,22 +460,16 @@ function DashboardView({ data, standingsData }) {
         {/* ========== CINEMATIC HERO ========== */}
         <header className="relative overflow-hidden bg-f1-paper border-4 border-f1-dark min-h-[200px] md:min-h-[320px] group shadow-hard">
 
-          {/* Background Effects - Enhanced with gradients */}
+          {/* Background */}
           <div className="absolute inset-0 z-0">
-            <div className="absolute inset-0 bg-f1-light opacity-90" />
-            {/* Animated racing stripe gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-f1-red/5 to-transparent animate-racing-stripe" />
-            {/* Diagonal accent stripe */}
-            <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-f1-red/10 via-f1-red/5 to-transparent" />
-            {/* Bottom edge glow */}
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/5 to-transparent" />
+            <div className="absolute inset-0 bg-f1-light" />
             {/* Grid pattern */}
-            <div className="absolute inset-0 opacity-10" style={{
-              backgroundImage: 'linear-gradient(#000 2px, transparent 2px), linear-gradient(90deg, #000 2px, transparent 2px)',
+            <div className="absolute inset-0 opacity-[0.07]" style={{
+              backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)',
               backgroundSize: '32px 32px'
             }} />
-            {/* Corner accent */}
-            <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-f1-red/10 to-transparent rounded-br-full" />
+            {/* Right accent bar */}
+            <div className="absolute top-0 right-0 w-1 h-full bg-f1-red" />
           </div>
 
           {/* Content */}
@@ -487,8 +481,8 @@ function DashboardView({ data, standingsData }) {
                 {/* Top Badge Row */}
                 <div className="flex items-center justify-between mb-auto">
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-none bg-f1-red/90 text-white text-xs font-black uppercase tracking-widest shadow-[0_0_20px_rgba(230,0,0,0.4)] animate-pulse">
-                      <div className="w-2 h-2 rounded-none bg-white animate-pulse" />
+                    <div className="flex items-center gap-2 px-4 py-2 bg-f1-red text-white text-xs font-black uppercase tracking-widest">
+                      <div className="w-2 h-2 bg-white" />
                       Race Week
                     </div>
                     <span className="text-gray-500 text-sm font-medium">Round {data.round} of 24</span>
@@ -514,9 +508,8 @@ function DashboardView({ data, standingsData }) {
 
                   {/* Countdown & Featured Driver */}
                   <div className="text-right flex items-end gap-6">
-                    {/* Featured Driver Animation - Side by Side */}
-                    <div className="hidden xl:block relative group mb-1">
-                      <div className="absolute inset-0 bg-f1-red/20 rounded-full blur-xl animate-pulse"></div>
+                    {/* Featured Driver - Side by Side */}
+                    <div className="hidden xl:block relative mb-1">
                       <div className="transform scale-[2.5] origin-bottom translate-y-36">
                         <DriverSprite driver="VER" size="xl" variant="win" className="relative z-10" />
                       </div>
@@ -594,50 +587,66 @@ function DashboardView({ data, standingsData }) {
             ) : (
               /* ===== RESULTS MODE ===== */
               <>
-                {/* Top Row */}
-                <div className="flex items-center justify-between mb-auto">
+                {/* Top meta row */}
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <span className="px-3 py-1.5 rounded-none bg-green-500/20 text-green-400 text-xs font-bold uppercase tracking-widest border border-green-500/30">
+                    <span className="px-3 py-1 bg-black text-white text-[10px] font-black uppercase tracking-widest">
                       ✓ Race Complete
                     </span>
-                    <span className="text-gray-500 text-sm">{data.date}</span>
+                    <span className="text-gray-400 text-xs font-mono uppercase tracking-wider">
+                      Round {data.round} &nbsp;·&nbsp; {data.date ? new Date(data.date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+                    </span>
+                  </div>
+                  <div className="hidden md:flex items-center gap-1 text-[10px] text-gray-400 font-mono uppercase tracking-widest">
+                    <MapPin size={10} className="text-gray-400" />
+                    {data.circuit}
                   </div>
                 </div>
 
-                {/* Main */}
-                {/* Main */}
-                <div className="flex-1 flex items-end justify-between gap-8 mt-6">
-                  <div className="flex-1">
-                    <div className="text-f1-dark text-sm font-medium mb-2 flex items-center gap-2">
-                      <MapPin size={14} className="text-green-500" />
-                      {data.circuit}
-                    </div>
-                    <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-f1-dark uppercase tracking-tighter leading-[0.85] italic">
+                {/* Main layout: title left, winner right */}
+                <div className="flex-1 flex items-stretch justify-between gap-6">
+
+                  {/* Left — Race title */}
+                  <div className="flex flex-col justify-end flex-1 min-w-0">
+                    <h1 className="text-4xl md:text-6xl lg:text-8xl font-black text-f1-dark uppercase tracking-tighter leading-none italic">
                       {data.raceName?.replace(' Grand Prix', '')}
-                      <span className="block text-xl md:text-2xl lg:text-3xl not-italic text-gray-500 mt-2 tracking-normal">Grand Prix</span>
                     </h1>
+                    <span className="text-base md:text-xl lg:text-2xl font-bold text-gray-400 uppercase tracking-widest mt-1">Grand Prix</span>
                   </div>
 
-                  {/* Winner Spotlight */}
-                  {/* Winner Spotlight */}
-                  <div className="text-right flex flex-col items-end">
-                    <div className="text-gray-500 text-xs uppercase tracking-widest mb-2 font-bold">Race Winner</div>
-
-                    <div className="flex items-center gap-4 mb-2">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-yellow-500/20 rounded-full blur-xl animate-pulse"></div>
-                        {/* Scale wrapper for zoom effect */}
-                        <div className="transform scale-150 origin-bottom-right">
-                          <DriverSprite driver={data.winner?.split(' ')[1]?.substring(0, 3).toUpperCase() || 'VER'} size="xl" variant="win" className="relative z-10" />
+                  {/* Right — Winner card */}
+                  <div className="flex-shrink-0 flex flex-col justify-between items-end">
+                    {/* P1 */}
+                    <div className="flex flex-col items-end">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Race Winner</span>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="text-2xl md:text-4xl lg:text-5xl font-black text-f1-dark italic tracking-tight leading-none">
+                            {data.winner}
+                          </div>
+                          <div className="text-sm md:text-base font-bold text-gray-400 mt-1">{data.winnerTeam}</div>
+                        </div>
+                        <div className="transform scale-[1.8] origin-bottom-right translate-y-2">
+                          <DriverSprite driver={data.winner?.split(' ')[1]?.substring(0, 3).toUpperCase() || 'VER'} size="xl" variant="win" />
                         </div>
                       </div>
-                      <div className="text-3xl md:text-5xl lg:text-6xl font-black text-f1-dark italic tracking-tight">{data.winner}</div>
                     </div>
 
-                    <div className="text-xl md:text-2xl font-bold text-gray-500">{data.winnerTeam}</div>
+                    {/* P2 / P3 inline */}
+                    {data.results?.R?.length >= 3 && (
+                      <div className="flex items-center gap-4 mt-4 border-t border-f1-dark/10 pt-3">
+                        {[1, 2].map(i => (
+                          <div key={i} className="flex items-center gap-2">
+                            <span className="text-[10px] font-black text-gray-300 w-4">P{i + 1}</span>
+                            <div className="w-0.5 h-4" style={{ backgroundColor: getTeamColor(data.results.R[i]?.team) }} />
+                            <span className="text-xs font-bold text-f1-dark">{data.results.R[i]?.driver?.split(' ').pop()}</span>
+                            <span className="text-[10px] text-gray-400 hidden md:inline">{data.results.R[i]?.team?.split(' ')[0]}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
-
               </>
             )}
           </div>
