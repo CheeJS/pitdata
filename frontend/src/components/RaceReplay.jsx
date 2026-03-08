@@ -28,7 +28,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
     const [timeOffset, setTimeOffset] = useState(0);
     const [raceTime, setRaceTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [speed, setSpeed] = useState(5);
+    const [speed, setSpeed] = useState(100);
     const [loading, setLoading] = useState(false);
     const [mobileTab, setMobileTab] = useState('map'); // 'map', 'standings', 'events'
     const [showLeaderboard, setShowLeaderboard] = useState(true); // Toggle mini leaderboard
@@ -41,10 +41,10 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
         if (!replayData?.startTime) return null;
         try {
             const start = new Date(replayData.startTime);
-            // Add timeOffset to align with the actual lap data, + raceTime for playback progress
-            return new Date(start.getTime() + ((timeOffset + raceTime) * 1000));
+            // raceTime already accounts for timeOffset (maxTime = finalTime - timeOffset)
+            return new Date(start.getTime() + (raceTime * 1000));
         } catch (e) { return null; }
-    }, [replayData, raceTime, timeOffset]);
+    }, [replayData, raceTime]);
 
 
 
@@ -810,7 +810,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                 <div className="flex items-center justify-between px-4 py-2.5 border-t border-black bg-white">
                     <div className="flex items-center gap-1.5">
                         <span className="text-[9px] text-gray-600 uppercase mr-1">Speed</span>
-                        {[1, 5, 20, 50].map(s => (
+                        {[50, 100, 200, 500].map(s => (
                             <button
                                 key={s}
                                 onClick={() => setSpeed(s)}
@@ -928,7 +928,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                         <button onClick={() => setRaceTime(0)} className="p-1.5 text-gray-600 hover:text-black hover:bg-gray-200 rounded"><RotateCcw size={16} /></button>
 
                         <div className="hidden xl:flex bg-white border border-gray-300 mx-1">
-                            {[1, 5, 20, 50].map(s => (
+                            {[50, 100, 200, 500].map(s => (
                                 <button key={s} onClick={() => setSpeed(s)} className={cn("px-2 py-1 text-xs font-bold transition-colors border-r border-gray-200 last:border-r-0", speed === s ? "bg-black text-white" : "text-gray-500 hover:text-black")}>{s}x</button>
                             ))}
                         </div>
