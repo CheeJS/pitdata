@@ -911,6 +911,8 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                     <div className="flex items-center gap-1.5">
                         <span className="text-[9px] text-gray-600 uppercase mr-1">Speed</span>
                         {[5, 20, 50, 100].map(s => (
+                            <button key={s} onClick={() => setSpeed(s)} className={cn("px-2 py-1 text-xs font-bold border transition-colors", speed === s ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-300 hover:text-black")}>{s}x</button>
+                        ))}
                     </div>
                     {currentWeather && (
                         <div className="flex items-center gap-3 text-xs text-gray-600">
