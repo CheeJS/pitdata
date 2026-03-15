@@ -7,6 +7,44 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import API_BASE from '../config/api';
 
+const CIRCUIT_TIMEZONES = {
+    'Melbourne': 'Australia/Melbourne',
+    'Sakhir': 'Asia/Bahrain',
+    'Jeddah': 'Asia/Riyadh',
+    'Suzuka': 'Asia/Tokyo',
+    'Shanghai': 'Asia/Shanghai',
+    'Miami': 'America/New_York',
+    'Imola': 'Europe/Rome',
+    'Monte Carlo': 'Europe/Monaco',
+    'Montréal': 'America/Toronto',
+    'Montreal': 'America/Toronto',
+    'Barcelona': 'Europe/Madrid',
+    'Spielberg': 'Europe/Vienna',
+    'Silverstone': 'Europe/London',
+    'Budapest': 'Europe/Budapest',
+    'Spa-Francorchamps': 'Europe/Brussels',
+    'Zandvoort': 'Europe/Amsterdam',
+    'Monza': 'Europe/Rome',
+    'Baku': 'Asia/Baku',
+    'Singapore': 'Asia/Singapore',
+    'Austin': 'America/Chicago',
+    'Mexico City': 'America/Mexico_City',
+    'São Paulo': 'America/Sao_Paulo',
+    'Sao Paulo': 'America/Sao_Paulo',
+    'Las Vegas': 'America/Los_Angeles',
+    'Lusail': 'Asia/Qatar',
+    'Abu Dhabi': 'Asia/Dubai',
+    'Yas Marina': 'Asia/Dubai',
+    'Madrid': 'Europe/Madrid',
+};
+
+const getCircuitTimezone = (circuitName) => {
+    if (!circuitName) return 'UTC';
+    for (const [key, tz] of Object.entries(CIRCUIT_TIMEZONES)) {
+        if (circuitName.toLowerCase().includes(key.toLowerCase())) return tz;
+    }
+    return 'UTC';
+};
 
 const getStatusClasses = (status) => {
     const s = (status || "").toUpperCase();
@@ -28,7 +66,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
     const [timeOffset, setTimeOffset] = useState(0);
     const [raceTime, setRaceTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [speed, setSpeed] = useState(20);
+    const [speed, setSpeed] = useState(5);
     const [loading, setLoading] = useState(false);
     const [mobileTab, setMobileTab] = useState('map'); // 'map', 'standings', 'events'
     const [showLeaderboard, setShowLeaderboard] = useState(true); // Toggle mini leaderboard
@@ -45,6 +83,24 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
         if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     }, [raceTime]);
+
+    // Local (circuit) clock time during replay
+    const localRaceTime = useMemo(() => {
+        if (!replayData?.startTime) return null;
+        const startMs = new Date(replayData.startTime).getTime();
+        // If startTime has no time component (midnight UTC), we can't show accurate local time
+        const startDate = new Date(replayData.startTime);
+        if (startDate.getUTCHours() === 0 && startDate.getUTCMinutes() === 0 && startDate.getUTCSeconds() === 0) return null;
+        const circuit = raceList.find(r => r.id === raceId)?.circuit || '';
+        const tz = getCircuitTimezone(circuit);
+        const currentMs = startMs + raceTime * 1000;
+        try {
+            return new Date(currentMs).toLocaleTimeString('en-GB', {
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                hour12: false, timeZone: tz
+            });
+        } catch { return null; }
+    }, [replayData, raceTime, raceId, raceList]);
 
     // Detect race restart from a large gap between consecutive laps (red flag stoppage).
     // Returns the session-absolute time when the race resumed, or null if no stoppage.
@@ -833,7 +889,6 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                             onChange={(e) => {
                                 setRaceTime(parseFloat(e.target.value));
                                 setIsPlaying(false);
-                                setRaceEvents([]);
                                 prevPositionsRef.current = {};
                             }}
                             className={cn("w-full accent-f1-red h-4 bg-[#222] rounded-none appearance-none cursor-pointer border border-black", !!error && "opacity-50 cursor-not-allowed")}
@@ -948,6 +1003,17 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                             </span>
                         </div>
                     </div>
+
+                    {localRaceTime && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#151515] border-2 border-gray-600 shadow-sm">
+                            <div className="flex flex-col items-end leading-none">
+                                <span className="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-0.5">Local Time</span>
+                                <span className="text-sm font-heading font-white text-white tracking-widest">
+                                    {localRaceTime}
+                                </span>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="h-8 w-px bg-black/20 mx-1" />
 

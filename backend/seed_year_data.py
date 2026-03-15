@@ -79,6 +79,7 @@ def seed_schedule(year, session_db):
                         elif s_name == 'Qualifying': race.qualifying_date = dt
                         elif s_name == 'Sprint': race.sprint_date = dt
                         elif s_name == 'Sprint Qualifying' or s_name == 'Sprint Shootout': race.sprint_qualifying_date = dt
+                        elif s_name == 'Race' or s_name == 'Feature Race': race.date = dt
                 
                 session_db.add(race)
                 count += 1
