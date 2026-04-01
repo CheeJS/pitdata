@@ -35,7 +35,7 @@ QUALI_GRACE_MIN  = 45    # start polling this many minutes after quali ends
 RACE_GRACE_MIN   = 90    # start polling this many minutes after race ends
 # How many hours after session end to keep retrying before giving up
 QUALI_WINDOW_H   = 8
-RACE_WINDOW_H    = 10
+RACE_WINDOW_H    = 24   # extended to 24h to handle slow FastF1 publishing
 # Typical session durations in minutes (used to estimate end time from start time)
 QUALI_DURATION_MIN = 60
 RACE_DURATION_MIN  = 110

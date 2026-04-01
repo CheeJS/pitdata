@@ -25,7 +25,8 @@ export default function Simulations() {
         const fetchData = async () => {
             try {
                 const racesRes = await axios.get(`${API_BASE}/api/races?year=${year}`);
-                setRaces(racesRes.data);
+                // Filter out cancelled races from simulations
+                setRaces(racesRes.data.filter(r => !r.cancelled));
             } catch (e) {
                 console.error("Sim Error", e);
             } finally {

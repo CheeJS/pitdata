@@ -1132,7 +1132,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                 </div>
                             )}
                         </div>
-                    ) : replayData?.map ? (
+                    ) : replayData?.map && replayData.map.x?.length > 0 ? (
                         <SVGTrackMap
                             map={replayData.map}
                             positions={currentPositions}
@@ -1144,7 +1144,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                         <div className="h-full flex items-center justify-center">
                             <div className="text-center">
                                 <div className="w-8 h-8 border-2 border-f1-red border-t-transparent rounded-none animate-spin mx-auto" />
-                                <div className="text-gray-600 text-sm mt-2">Loading track...</div>
+                                <div className="text-gray-600 text-sm mt-2">No track map data. Run <code>seed_race_telemetry.py</code> to populate.</div>
                             </div>
                         </div>
                     )}
@@ -1328,7 +1328,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                                 </div>
                             </div>
                         </div>
-                    ) : replayData?.map ? (
+                    ) : replayData?.map && replayData.map.x?.length > 0 ? (
                         <SVGTrackMap
                             map={replayData.map}
                             positions={currentPositions}
@@ -1341,7 +1341,7 @@ export default function RaceReplay({ raceId: initialRaceId, onPlayingChange }) {
                             <svg width="300" height="200" viewBox="0 0 300 200" className="opacity-20 mb-4">
                                 <ellipse cx="150" cy="100" rx="130" ry="80" fill="none" stroke="#333" strokeWidth="20" strokeDasharray="10,5" />
                             </svg>
-                            <p className="text-gray-600 text-sm">Track map loading...</p>
+                            <p className="text-gray-600 text-sm">No track map data — circuit telemetry not yet available.</p>
                         </div>
                     )}
                 </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Flag, Trophy, Calendar, ChevronRight, ChevronUp, ChevronDown, Activity, Zap, Timer, MapPin, BarChart, Brain, Menu, X, Thermometer, MessageSquare, Clock, Coffee } from 'lucide-react';
+import { Flag, Trophy, Calendar, ChevronRight, ChevronUp, ChevronDown, Activity, Zap, Timer, MapPin, BarChart, Brain, Menu, X, Thermometer, MessageSquare, Clock, Coffee, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 import { cn } from './lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -23,6 +23,9 @@ export default function App() {
   const [standingsData, setStandingsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [newsDismissed, setNewsDismissed] = useState(
+    () => localStorage.getItem('news_dismissed_bhr_sau_2026') === 'true'
+  );
 
   useEffect(() => {
     // Fetch real data in parallel
@@ -182,6 +185,26 @@ export default function App() {
           </a>
         </div>
       </aside>
+
+      {/* Breaking News Banner */}
+      {!newsDismissed && (
+        <div className="fixed top-14 md:top-0 left-0 md:left-20 lg:left-64 right-0 z-40 bg-f1-red border-b-2 border-black flex items-center gap-3 px-4 py-2 text-white text-xs font-heading uppercase">
+          <AlertTriangle size={14} className="shrink-0 animate-pulse" />
+          <span className="flex-1 tracking-wide">
+            BREAKING — 2026 BAHRAIN &amp; SAUDI ARABIAN GRAND PRIX CANCELLED. Revised calendar in effect from Miami (Round 4).
+          </span>
+          <button
+            onClick={() => {
+              setNewsDismissed(true);
+              localStorage.setItem('news_dismissed_bhr_sau_2026', 'true');
+            }}
+            className="shrink-0 hover:opacity-70 transition-opacity"
+            aria-label="Dismiss"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className={cn(

@@ -302,6 +302,15 @@ def get_active_drivers(year=2025):
     finally:
         session.close()
 
+# Races cancelled mid-season — excluded from predictions/simulations, shown as cancelled everywhere
+CANCELLED_RACES = {
+    2026: {'Bahrain Grand Prix', 'Saudi Arabian Grand Prix'},
+}
+
+def is_race_cancelled(race_name: str, year: int) -> bool:
+    return race_name in CANCELLED_RACES.get(year, set())
+
+
 def get_races_list(year=None):
     session = get_db_session()
     try:
@@ -409,6 +418,14 @@ def get_races_list(year=None):
             
             is_open = open_time <= now <= close_time
             
+            cancelled = is_race_cancelled(r.race_name, r.year)
+            if cancelled:
+                race_status = "Cancelled"
+            elif r.date < now:
+                race_status = "Completed"
+            else:
+                race_status = "Upcoming"
+
             result.append({
                 "id": r.id,     # DB ID (Integer) for History/Results API
                 "code": code,   # String Code ('aus') for Strategy/Simulations
@@ -416,12 +433,13 @@ def get_races_list(year=None):
                 "date": f"{r.date.isoformat()}Z",
                 "circuit": r.circuit_name,
                 "round": r.round,
-                "status": "Completed" if r.date < now else "Upcoming",
+                "status": race_status,
+                "cancelled": cancelled,
                 "laps": laps,
                 "conditions": f"{cond['weather']} • {cond['temp']} • {cond['deg']}",
                 "sc_context": f"Based on {cond['sc_prob']} incident rate",
                 "predictions": {
-                    "is_open": is_open,
+                    "is_open": is_open and not cancelled,
                     "open_time": open_time.isoformat(),
                     "close_time": close_time.isoformat()
                 }
@@ -2240,9 +2258,11 @@ def get_active_prediction_race(year=2026):
     try:
         current_time = datetime.utcnow()
         
-        # Get latest race with results and next upcoming race
+        # Get latest race with results and next upcoming non-cancelled race
         latest_race_with_results = session.query(Race).join(Result).filter(Race.year == year).order_by(Race.date.desc()).first()
-        next_race = session.query(Race).filter(Race.year == year, Race.date >= current_time).order_by(Race.date.asc()).first()
+        # Skip cancelled races when finding the next upcoming race
+        all_upcoming = session.query(Race).filter(Race.year == year, Race.date >= current_time).order_by(Race.date.asc()).all()
+        next_race = next((r for r in all_upcoming if not is_race_cancelled(r.race_name, year)), None)
         
         target_race = None
         vote_status = "CLOSED"

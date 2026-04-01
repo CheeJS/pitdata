@@ -127,34 +127,38 @@ export default function History() {
 
                                                 {/* Races */}
                                                 <div className="space-y-2 pl-[40px]">
-                                                    {monthRaces.map((race) => (
+                                                    {monthRaces.map((race) => {
+                                                        const isCancelled = race.cancelled === true || race.status === 'Cancelled';
+                                                        return (
                                                         <button
                                                             key={race.id}
-                                                            onClick={() => {
+                                                            onClick={isCancelled ? undefined : () => {
                                                                 setSelectedRaceId(race.id);
                                                                 setView('detail');
                                                             }}
-                                                            className="w-full bg-white border border-black rounded-none p-3 flex items-center justify-between text-left hover:border-f1-red/30 transition-colors"
+                                                            className={`w-full bg-white border border-black rounded-none p-3 flex items-center justify-between text-left transition-colors ${isCancelled ? 'opacity-60 cursor-default' : 'hover:border-f1-red/30'}`}
                                                         >
                                                             <div className="flex items-center gap-3">
                                                                 <div className="text-center shrink-0 w-10">
-                                                                    <div className="text-lg font-bold text-black">{new Date(race.date).getDate()}</div>
+                                                                    <div className={`text-lg font-bold ${isCancelled ? 'text-gray-400 line-through' : 'text-black'}`}>{new Date(race.date).getDate()}</div>
                                                                     <div className="text-[9px] text-gray-500 uppercase">{new Date(race.date).toLocaleDateString('en-US', { month: 'short' })}</div>
                                                                 </div>
 
                                                                 {/* Mobile Flag */}
-                                                                <div className="flex-shrink-0 w-8 h-6 rounded overflow-hidden shadow-sm border border-white/10">
+                                                                <div className={`flex-shrink-0 w-8 h-6 rounded overflow-hidden shadow-sm border border-white/10 ${isCancelled ? 'grayscale' : ''}`}>
                                                                     <img src={getFlagUrl(race.code)} alt={race.code} className="w-full h-full object-cover" loading="lazy" />
                                                                 </div>
 
                                                                 <div>
-                                                                    <div className="text-sm font-medium text-black">{race.name}</div>
+                                                                    <div className={`text-sm font-medium ${isCancelled ? 'text-gray-400 line-through' : 'text-black'}`}>{race.name}</div>
                                                                     <div className="text-xs text-gray-500">{race.circuit}</div>
+                                                                    {isCancelled && <div className="text-[9px] font-heading uppercase text-red-500 mt-0.5">Cancelled</div>}
                                                                 </div>
                                                             </div>
-                                                            <ChevronRight size={16} className="text-gray-600" />
+                                                            {!isCancelled && <ChevronRight size={16} className="text-gray-600" />}
                                                         </button>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         ))}
@@ -285,6 +289,7 @@ export default function History() {
 
 function TimelineRaceCard({ race, onClick, delay }) {
     const isPast = new Date(race.date) < new Date();
+    const isCancelled = race.cancelled === true || race.status === 'Cancelled';
     const flagUrl = getFlagUrl(race.code);
 
     // Parse date for display
@@ -297,13 +302,13 @@ function TimelineRaceCard({ race, onClick, delay }) {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay, duration: 0.3 }}
-            onClick={onClick}
-            className="w-full group"
+            onClick={isCancelled ? undefined : onClick}
+            className={`w-full group ${isCancelled ? 'cursor-default opacity-70' : ''}`}
         >
-            <div className="flex items-center gap-2 sm:gap-4 bg-white border-2 border-black hover:border-f1-red/50 rounded-none p-3 md:p-4 transition-all relative overflow-hidden">
+            <div className={`flex items-center gap-2 sm:gap-4 bg-white border-2 rounded-none p-3 md:p-4 transition-all relative overflow-hidden ${isCancelled ? 'border-gray-400' : 'border-black hover:border-f1-red/50'}`}>
                 {/* Date Badge */}
                 <div className="flex-shrink-0 w-10 sm:w-14 text-center">
-                    <div className="text-lg sm:text-2xl font-black text-black leading-none">{dayNum}</div>
+                    <div className={`text-lg sm:text-2xl font-black leading-none ${isCancelled ? 'text-gray-400 line-through' : 'text-black'}`}>{dayNum}</div>
                     <div className="text-xs font-bold text-gray-500 uppercase">{monthShort}</div>
                 </div>
 
@@ -311,7 +316,7 @@ function TimelineRaceCard({ race, onClick, delay }) {
                 <div className="w-px h-10 bg-gray-300 hidden sm:block" />
 
                 {/* Flag Image */}
-                <div className="flex-shrink-0 w-8 h-6 sm:w-12 sm:h-8 rounded overflow-hidden shadow-lg border border-white/10">
+                <div className={`flex-shrink-0 w-8 h-6 sm:w-12 sm:h-8 rounded overflow-hidden shadow-lg border border-white/10 ${isCancelled ? 'grayscale' : ''}`}>
                     <img
                         src={flagUrl}
                         alt={race.code}
@@ -325,7 +330,7 @@ function TimelineRaceCard({ race, onClick, delay }) {
                     <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-gray-500 uppercase">Round {race.round}</span>
                     </div>
-                    <h3 className="text-sm sm:text-base md:text-lg font-bold text-black group-hover:text-f1-red transition-colors truncate">
+                    <h3 className={`text-sm sm:text-base md:text-lg font-bold transition-colors truncate ${isCancelled ? 'text-gray-400 line-through' : 'text-black group-hover:text-f1-red'}`}>
                         {race.name} <span className="font-normal text-gray-500">Grand Prix</span>
                     </h3>
                     <div className="flex items-center gap-1 text-gray-500 text-xs mt-0.5">
@@ -335,7 +340,11 @@ function TimelineRaceCard({ race, onClick, delay }) {
 
                 {/* Status + Arrow */}
                 <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                    {isPast ? (
+                    {isCancelled ? (
+                        <span className="text-[9px] sm:text-xs bg-gray-200 text-gray-600 px-1.5 sm:px-2.5 py-0.5 sm:py-1 border border-gray-500 font-heading uppercase">
+                            Cancelled
+                        </span>
+                    ) : isPast ? (
                         <span className="text-[9px] sm:text-xs bg-gray-100 text-gray-600 px-1.5 sm:px-2.5 py-0.5 sm:py-1 border border-black font-heading uppercase">
                             Completed
                         </span>
@@ -344,7 +353,7 @@ function TimelineRaceCard({ race, onClick, delay }) {
                             Upcoming
                         </span>
                     )}
-                    <ChevronRight size={16} className="text-gray-600 group-hover:text-f1-red group-hover:translate-x-1 transition-all hidden sm:block" />
+                    {!isCancelled && <ChevronRight size={16} className="text-gray-600 group-hover:text-f1-red group-hover:translate-x-1 transition-all hidden sm:block" />}
                 </div>
             </div>
         </motion.button>
