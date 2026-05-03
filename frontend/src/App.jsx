@@ -534,7 +534,7 @@ function DashboardView({ data, standingsData }) {
                     {/* Featured Driver - Side by Side */}
                     <div className="hidden xl:block relative mb-1">
                       <div className="transform scale-[2.5] origin-bottom translate-y-36">
-                        <DriverSprite driver="VER" size="xl" variant="win" className="relative z-10" />
+                        <DriverSprite driver={standingsData?.drivers?.[0]?.code || 'VER'} size="xl" variant="win" className="relative z-10" />
                       </div>
                       <div className="absolute -bottom-2 -left-4 bg-black text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider border border-white/20 -rotate-2">
                         Leader
