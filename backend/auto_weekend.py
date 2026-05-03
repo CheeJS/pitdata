@@ -46,7 +46,7 @@ LOCK_FILE = '/tmp/f1_auto_weekend.lock'
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 import fastf1
 import pandas as pd
-from services.f1_service import get_db_session, Race, Result, Lap
+from services.f1_service import get_db_session, Race, Result, Lap, CANCELLED_RACES
 
 CACHE_DIR = os.path.join(os.path.dirname(__file__), '..', 'data_pipeline', 'f1_cache')
 os.makedirs(CACHE_DIR, exist_ok=True)
@@ -90,19 +90,23 @@ def dt_utc(naive_dt):
 
 
 def get_current_race(year):
-    """Return the most recent Race row for this year (past or current weekend)."""
+    """Return the most recent Race row for this year (past or current weekend).
+    Skips cancelled races so the cron targets the actual running race."""
     db = get_db_session()
     try:
         now = datetime.now(timezone.utc)
         # Race from the last 10 days or the next 4 days (covers the whole weekend)
         window_start = now - timedelta(days=10)
         window_end   = now + timedelta(days=4)
-        race = (
+        cancelled = CANCELLED_RACES.get(year, set())
+        races = (
             db.query(Race)
             .filter(Race.year == year, Race.date >= window_start, Race.date <= window_end)
             .order_by(Race.date.asc())
-            .first()
+            .all()
         )
+        # Skip cancelled races — a cancelled race in the window must not shadow the real race
+        race = next((r for r in races if r.race_name not in cancelled), None)
         return race
     finally:
         db.close()
