@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import os
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
@@ -2064,9 +2064,14 @@ def get_dashboard_data(year=2026):
             .first()
         )
         
-        # 2. Get next upcoming race (skip cancelled races)
+        # 2. Get next upcoming race (skip cancelled races).
+        # Look back 12 h so a race stored at midnight isn't immediately "past"
+        # and to keep showing the current race weekend until results are seeded.
         cancelled_names = CANCELLED_RACES.get(year, set())
-        _all_upcoming = session.query(Race).filter(Race.year == year, Race.date >= current_time).order_by(Race.date.asc()).all()
+        _all_upcoming = session.query(Race).filter(
+            Race.year == year,
+            Race.date >= current_time - timedelta(hours=12)
+        ).order_by(Race.date.asc()).all()
         next_race = next((r for r in _all_upcoming if r.race_name not in cancelled_names), None)
         
         mode = "NEXT_RACE"  # Default

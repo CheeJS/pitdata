@@ -142,10 +142,11 @@ def get_race_end_utc(race):
     return dt_utc(race.date) + timedelta(minutes=RACE_DURATION_MIN)
 
 
-def fastf1_has_quali_data(year, race_round):
-    """Return True if FastF1 has qualifying session results available."""
+def fastf1_has_quali_data(year, race_name):
+    """Return True if FastF1 has qualifying session results available.
+    Uses race name (not round number) to avoid offset caused by cancelled rounds."""
     try:
-        session = fastf1.get_session(year, race_round, 'Q')
+        session = fastf1.get_session(year, race_name, 'Q')
         session.load(telemetry=False, weather=False, messages=False)
         return hasattr(session, 'results') and not session.results.empty
     except Exception as e:
@@ -153,10 +154,11 @@ def fastf1_has_quali_data(year, race_round):
         return False
 
 
-def fastf1_has_race_data(year, race_round):
-    """Return True if FastF1 has race lap data available."""
+def fastf1_has_race_data(year, race_name):
+    """Return True if FastF1 has race lap data available.
+    Uses race name (not round number) to avoid offset caused by cancelled rounds."""
     try:
-        session = fastf1.get_session(year, race_round, 'R')
+        session = fastf1.get_session(year, race_name, 'R')
         session.load(telemetry=False, weather=False, messages=False)
         laps = session.laps
         return laps is not None and len(laps) > 50  # at least some laps loaded
@@ -373,7 +375,7 @@ def _run(mode, year):
     # ── Check FastF1 availability ─────────────────────────────────────────────
 
     if do_quali:
-        if fastf1_has_quali_data(year, race.round):
+        if fastf1_has_quali_data(year, race.race_name):
             log("FastF1 quali data available ✓")
             success = run_quali_workflow(year, race)
             log("✅ Quali workflow done!" if success else "⚠ Quali workflow finished with errors")
@@ -381,7 +383,7 @@ def _run(mode, year):
             log("FastF1 quali data not ready yet — will retry next cron tick (15 min)")
 
     if do_race:
-        if fastf1_has_race_data(year, race.round):
+        if fastf1_has_race_data(year, race.race_name):
             log("FastF1 race data available ✓")
             success = run_race_workflow(year, race)
             log("✅ Race workflow done!" if success else "⚠ Race workflow finished with errors")

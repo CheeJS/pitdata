@@ -45,7 +45,7 @@ def seed_qualifying_results(year):
         
         try:
             print(f"    Fetching qualifying results...")
-            ff1_session = fastf1.get_session(year, race.round, 'Q')
+            ff1_session = fastf1.get_session(year, race.race_name, 'Q')
             ff1_session.load(telemetry=False, weather=False, messages=True)
             
             if not hasattr(ff1_session, 'results') or ff1_session.results.empty:
