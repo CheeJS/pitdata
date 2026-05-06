@@ -435,9 +435,7 @@ def main():
     
     print(f"\nFound {len(races)} races")
     
-    response = input("\nContinue? (y/n): ")
-    if response.lower() != 'y':
-        return
+    # Automation bypass
     
     output_dir = f'predictions/{target_year}'
     os.makedirs(output_dir, exist_ok=True)

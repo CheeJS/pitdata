@@ -843,12 +843,20 @@ def get_season_standings(year=2024):
     - Total Points
     - Position per race (for heatmap)
     - WDC Math (Max remaining points)
+    
+    NOTE: Excludes cancelled races from all standings calculations.
     """
     db_session = get_db_session()
     try:
+        # Exclude cancelled races from standings
+        cancelled_names = CANCELLED_RACES.get(year, set())
+        
         # Get all results for the year
-        # Join Race to filter by year
-        results = db_session.query(Result, Race).join(Race).filter(Race.year == year).all()
+        # Join Race to filter by year, excluding cancelled races
+        results = db_session.query(Result, Race).join(Race).filter(
+            Race.year == year,
+            ~Race.race_name.in_(cancelled_names) if cancelled_names else True
+        ).all()
         
         if not results:
             if year >= 2026:
@@ -912,8 +920,11 @@ def get_season_standings(year=2024):
         races_set = set()
         race_order = []
 
-        # Get all races first to establish order
-        all_races = db_session.query(Race).filter_by(year=year).order_by(Race.date).all()
+        # Get all races first to establish order (excluding cancelled races)
+        all_races = db_session.query(Race).filter(
+            Race.year == year,
+            ~Race.race_name.in_(cancelled_names) if cancelled_names else True
+        ).order_by(Race.date).all()
         race_map = {r.id: r.race_name for r in all_races} # ID -> Name
         race_list = [r.race_name for r in all_races]
         
@@ -1008,6 +1019,8 @@ def get_season_standings(year=2024):
             sorted_prev = sorted(driver_list, key=lambda x: prev_points_map.get(x["code"], 0), reverse=True)
             for rank, d in enumerate(sorted_prev):
                 d["prev_rank"] = rank + 1
+            # Sort by current points first so curr_rank is correct
+            driver_list.sort(key=lambda x: x["points"], reverse=True)
             for rank, d in enumerate(driver_list):
                 curr_rank = rank + 1
                 prev = d.get("prev_rank", curr_rank)
@@ -1412,7 +1425,6 @@ CIRCUIT_DATA = {
     "mex": {"pit_loss": 22.0, "deg_factor": 0.8, "overtake_delta": 1.2, "laps": 71},
     "bra": {"pit_loss": 20.5, "deg_factor": 1.1, "overtake_delta": 0.7, "laps": 71},
     "lvg": {"pit_loss": 20.0, "deg_factor": 0.7, "overtake_delta": 0.5, "laps": 50},
-    "qat": {"pit_loss": 23.5, "deg_factor": 1.5, "overtake_delta": 1.0, "laps": 57}, 
     "qat": {"pit_loss": 23.5, "deg_factor": 1.5, "overtake_delta": 1.0, "laps": 57}, 
     "abu": {"pit_loss": 22.0, "deg_factor": 1.1, "overtake_delta": 1.3, "laps": 58},
     "mad": {"pit_loss": 21.0, "deg_factor": 1.0, "overtake_delta": 1.2, "laps": 55}, # Madrid (2026)
@@ -2055,24 +2067,40 @@ def get_dashboard_data(year=2026):
     try:
         current_time = datetime.utcnow()
         
+        # Get cancelled races upfront
+        cancelled_names = CANCELLED_RACES.get(year, set())
+        
         # 1. Get latest race with RACE results (session_type='R' only — not qualifying)
-        latest_race_with_results = (
+        # IMPORTANT: Exclude cancelled races!
+        all_races_with_results = (
             session.query(Race)
             .join(Result)
             .filter(Race.year == year, Result.session_type == 'R', Result.position > 0)
             .order_by(Race.date.desc())
-            .first()
+            .all()
+        )
+        latest_race_with_results = next(
+            (r for r in all_races_with_results if r.race_name not in cancelled_names), 
+            None
         )
         
         # 2. Get next upcoming race (skip cancelled races).
         # Look back 12 h so a race stored at midnight isn't immediately "past"
         # and to keep showing the current race weekend until results are seeded.
-        cancelled_names = CANCELLED_RACES.get(year, set())
         _all_upcoming = session.query(Race).filter(
             Race.year == year,
             Race.date >= current_time - timedelta(hours=12)
         ).order_by(Race.date.asc()).all()
         next_race = next((r for r in _all_upcoming if r.race_name not in cancelled_names), None)
+
+        # If no upcoming race in the 12-hour window AND no results yet,
+        # grab the absolute nearest future race so we always have something to show.
+        if not next_race and not latest_race_with_results:
+            _any_future = session.query(Race).filter(
+                Race.year == year,
+                Race.date >= current_time
+            ).order_by(Race.date.asc()).all()
+            next_race = next((r for r in _any_future if r.race_name not in cancelled_names), None)
         
         mode = "NEXT_RACE"  # Default
         target_race_id = None
